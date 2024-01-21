@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new feature for LP
+body:
+
+- type: markdown
+  attributes:
+    value: |
+      When suggesting new features, please follow the guidelines in this template. This helps provide clear and actionable suggestions.
+      - Write a descriptive title above.
+      - Clearly describe the problem or need that this feature aims to address.
+      - If you have multiple feature suggestions, create a new request for each to maintain clarity.
+      - Search [open issues](https://github.com/erematorg/LP/issues) to ensure a similar feature request has not already been submitted. If you don't find a relevant match or if you're unsure, feel free to **open a new request**.
+
+- type: textarea
+  attributes:
+    label: Problem Description
+    description: |
+      A clear and concise description of the problem or need that this feature aims to address.
+
+- type: textarea
+  attributes:
+    label: Proposed Solution
+    description: |
+      A clear and concise description of the solution or functionality you would like to see implemented.
+
+- type: textarea
+  attributes:
+    label: Alternatives Considered
+    description: |
+      Describe any alternative solutions or features you have considered or think might be viable.
+
+- type: textarea
+  attributes:
+    label: Additional Context
+    description: |
+      Add any other context, examples, or use cases that provide additional information about the feature request.
