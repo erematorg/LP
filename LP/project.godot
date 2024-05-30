@@ -19,7 +19,7 @@ config/icon="res://logo.png"
 
 [autoload]
 
-SaveServer="*res://systems/save_system/save_system.gd"
+SaveSystem="*res://systems/save_system/SaveSystem.gd"
 
 [filesystem]
 

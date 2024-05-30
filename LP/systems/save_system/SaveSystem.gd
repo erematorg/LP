@@ -1,4 +1,3 @@
-class_name SaveSystem
 extends Node
 
 signal saving_started
@@ -197,5 +196,3 @@ func delete_save(file_name := save_name) -> bool:
 ## Returns the error message from the last save attempt.
 func get_save_error() -> String:
 	return save_error
-
-
