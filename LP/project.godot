@@ -21,6 +21,10 @@ config/icon="res://logo.png"
 
 SaveSystem="*res://systems/save_system/SaveSystem.gd"
 
+[dotnet]
+
+project/assembly_name="LP"
+
 [filesystem]
 
 import/blender/enabled=false
