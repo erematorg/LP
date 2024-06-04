@@ -12,4 +12,14 @@ public abstract partial class BTComposite : Node, BTNode
 			GD.PrintErr($"Composite {Name} must have atleast one child node!");
 		}
     }
+
+    public BTNode GetAsBTNode(Node node)
+    {
+        if(node is BTNode btNode)
+            return btNode;
+        else
+        {
+            throw new Exception($"Child {node.Name} is not a BTNode!");
+        }
+    }
 }
