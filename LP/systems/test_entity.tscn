@@ -1,0 +1,38 @@
+[gd_scene load_steps=10 format=3 uid="uid://bcksovgd8turl"]
+
+[ext_resource type="Script" path="res://systems/behaviour_tree/Entity.cs" id="1_ulcsw"]
+[ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="2_5cvti"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/BehaviourTree.cs" id="3_rungv"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/composite/Sequencer.cs" id="4_gohlj"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/composite/Selector.cs" id="4_jrhvd"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/leaf/GiveUpOnLife.cs" id="6_a68oe"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/leaf/StoreMousePosition.cs" id="6_gafcd"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/leaf/MoveToTarget.cs" id="7_72fgo"]
+[ext_resource type="Script" path="res://systems/behaviour_tree/nodes/leaf/IsMouseNearby.cs" id="7_nka8o"]
+
+[node name="TestEntity" type="Node2D"]
+script = ExtResource("1_ulcsw")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_5cvti")
+
+[node name="BehaviourTree" type="Node" parent="."]
+script = ExtResource("3_rungv")
+
+[node name="Selector" type="Node" parent="BehaviourTree"]
+script = ExtResource("4_jrhvd")
+
+[node name="FollowMouseSequencer" type="Node" parent="BehaviourTree/Selector"]
+script = ExtResource("4_gohlj")
+
+[node name="StoreMousePosition" type="Node" parent="BehaviourTree/Selector/FollowMouseSequencer"]
+script = ExtResource("6_gafcd")
+
+[node name="IsMouseNearby" type="Node" parent="BehaviourTree/Selector/FollowMouseSequencer"]
+script = ExtResource("7_nka8o")
+
+[node name="MoveToMousePosition" type="Node" parent="BehaviourTree/Selector/FollowMouseSequencer"]
+script = ExtResource("7_72fgo")
+
+[node name="GiveUpOnLife" type="Node" parent="BehaviourTree/Selector"]
+script = ExtResource("6_a68oe")

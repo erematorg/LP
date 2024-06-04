@@ -1,3 +1,8 @@
-[gd_scene format=3 uid="uid://dufajimkrr4nd"]
+[gd_scene load_steps=2 format=3 uid="uid://dufajimkrr4nd"]
+
+[ext_resource type="PackedScene" uid="uid://bcksovgd8turl" path="res://systems/test_entity.tscn" id="1_s3m0e"]
 
 [node name="BtTestScene" type="Node2D"]
+
+[node name="TestEntity" parent="." instance=ExtResource("1_s3m0e")]
+position = Vector2(375, 318)

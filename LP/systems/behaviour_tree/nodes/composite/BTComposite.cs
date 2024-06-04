@@ -1,6 +1,7 @@
 using Godot;
 using System;
 
+[GlobalClass]
 public abstract partial class BTComposite : Node, BTNode
 {
     public abstract BTResult Tick(Entity entity, Blackboard bb);

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 
+[GlobalClass]
 public partial class Selector : BTComposite
 {
     public override BTResult Tick(Entity entity, Blackboard bb)
