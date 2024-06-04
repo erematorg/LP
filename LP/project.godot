@@ -25,6 +25,10 @@ SaveSystem="*res://systems/save_system/SaveSystem.gd"
 
 project/assembly_name="LP"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/behaviour_tree_action_creator/plugin.cfg")
+
 [filesystem]
 
 import/blender/enabled=false
