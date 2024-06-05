@@ -67,6 +67,7 @@ color = Color(1, 1, 1, 1)
 span = 1
 reproduction_type = 0
 sex = 1
+trophic_level = 1
 
 [node name="Debug" type="Node2D"]
 script = SubResource("GDScript_ycrdk")

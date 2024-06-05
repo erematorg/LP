@@ -53,6 +53,9 @@ enum SEX {
 ## Specifies what role this entity is gonna play in reproduction.
 @export var sex: SEX
 
+## Determines the trophic levels of the entity (used for predation)
+@export var trophic_level := 1
+
 
 func _init(_preset: GeneticAttributes = null) -> void:
 	default_random_weights_preset = true
@@ -112,7 +115,7 @@ func merge(with: GeneticAttributes) -> GeneticAttributes:
 	merged.apply_preset()
 	GDReflection.transfer_values(merged, female, dict_to_array_only_true(female.reproduction_filter_female))
 	GDReflection.transfer_values(merged, male, dict_to_array_only_true(male.reproduction_filter_male))
-	merged.set_ramdomized_values()
+	merged.set_randomized_values()
 	return merged
 
 

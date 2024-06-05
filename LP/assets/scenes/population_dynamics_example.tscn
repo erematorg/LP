@@ -1,0 +1,216 @@
+[gd_scene load_steps=10 format=3 uid="uid://blf58duxk830w"]
+
+[ext_resource type="Script" path="res://systems/population_dynamics/PopulationDynamics.gd" id="1_aqjmg"]
+[ext_resource type="Script" path="res://systems/population_dynamics/PopulationVisualizer.gd" id="2_1y125"]
+[ext_resource type="Script" path="res://systems/dna_system/GeneticAttributes.gd" id="2_t2imi"]
+
+[sub_resource type="Gradient" id="Gradient_ii4cx"]
+
+[sub_resource type="Resource" id="Resource_wx01q"]
+script = ExtResource("2_t2imi")
+reproduction_filter_female = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+reproduction_filter_male = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+random_weights = {
+"color": SubResource("Gradient_ii4cx"),
+"default_filter_female_preset": Vector2(-0.1, 0.1),
+"default_filter_male_preset": Vector2(-0.1, 0.1),
+"default_random_weights_preset": Vector2(-0.1, 0.1),
+"queue_apply_preset": Vector2(-0.1, 0.1),
+"queue_randomize": Vector2(-0.1, 0.1),
+"reproduction_type": Vector2(-0.1, 0.1),
+"sex": Vector2(-0.1, 0.1),
+"size": Vector2(-0.1, 0.1),
+"span": Vector2(-0.1, 0.1),
+"trophic_level": Vector2(-0.1, 0.1),
+"weight": Vector2(-0.1, 0.1)
+}
+default_filter_female_preset = false
+default_filter_male_preset = false
+default_random_weights_preset = false
+queue_apply_preset = false
+queue_randomize = false
+size = 2.0
+weight = 1.0
+color = Color(0, 0.52549, 0.952941, 1)
+span = 500
+reproduction_type = 0
+sex = 0
+trophic_level = 1
+
+[sub_resource type="Gradient" id="Gradient_uym1b"]
+
+[sub_resource type="Resource" id="Resource_84pom"]
+script = ExtResource("2_t2imi")
+reproduction_filter_female = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+reproduction_filter_male = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+random_weights = {
+"color": SubResource("Gradient_uym1b"),
+"default_filter_female_preset": Vector2(-0.1, 0.1),
+"default_filter_male_preset": Vector2(-0.1, 0.1),
+"default_random_weights_preset": Vector2(-0.1, 0.1),
+"queue_apply_preset": Vector2(-0.1, 0.1),
+"queue_randomize": Vector2(-0.1, 0.1),
+"reproduction_type": Vector2(-0.1, 0.1),
+"sex": Vector2(-0.1, 0.1),
+"size": Vector2(-0.1, 0.1),
+"span": Vector2(-0.1, 0.1),
+"trophic_level": Vector2(-0.1, 0.1),
+"weight": Vector2(-0.1, 0.1)
+}
+default_filter_female_preset = false
+default_filter_male_preset = false
+default_random_weights_preset = false
+queue_apply_preset = false
+queue_randomize = false
+size = 4.0
+weight = 2.0
+color = Color(1, 1, 1, 1)
+span = 500
+reproduction_type = 0
+sex = 0
+trophic_level = 2
+
+[sub_resource type="Gradient" id="Gradient_4jj53"]
+
+[sub_resource type="Resource" id="Resource_agpit"]
+script = ExtResource("2_t2imi")
+reproduction_filter_female = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+reproduction_filter_male = {
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"queue_apply_preset": false,
+"queue_randomize": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"trophic_level": false,
+"weight": false
+}
+random_weights = {
+"color": SubResource("Gradient_4jj53"),
+"default_filter_female_preset": Vector2(-0.1, 0.1),
+"default_filter_male_preset": Vector2(-0.1, 0.1),
+"default_random_weights_preset": Vector2(-0.1, 0.1),
+"queue_apply_preset": Vector2(-0.1, 0.1),
+"queue_randomize": Vector2(-0.1, 0.1),
+"reproduction_type": Vector2(-0.1, 0.1),
+"sex": Vector2(-0.1, 0.1),
+"size": Vector2(-0.1, 0.1),
+"span": Vector2(-0.1, 0.1),
+"trophic_level": Vector2(-0.1, 0.1),
+"weight": Vector2(-0.1, 0.1)
+}
+default_filter_female_preset = false
+default_filter_male_preset = false
+default_random_weights_preset = false
+queue_apply_preset = false
+queue_randomize = false
+size = 2.0
+weight = 1.0
+color = Color(1, 0, 0, 1)
+span = 500
+reproduction_type = 1
+sex = 0
+trophic_level = 1
+
+[node name="PopulationDynamicsExample" type="Node2D"]
+
+[node name="Population" type="Node2D" parent="."]
+script = ExtResource("1_aqjmg")
+LIST_OF_GENETIC_ATTRIBUTES = Array[ExtResource("2_t2imi")]([SubResource("Resource_wx01q"), SubResource("Resource_84pom"), SubResource("Resource_agpit")])
+
+[node name="Population Visualizer" type="Node2D" parent="." node_paths=PackedStringArray("population_dynamics")]
+script = ExtResource("2_1y125")
+population_dynamics = NodePath("../Population")
