@@ -1,24 +1,27 @@
 class_name PopulationDynamics extends Node2D
 
-const VIEW_RADIUS = 50 # Boids algorithm
-const SEPARATION_RADIUS = 20 # Boids algorithm
-const COHESION_FACTOR = 0.01 # Boids algorithm
-const ALIGNMENT_FACTOR = 0.05 # Boids algorithm
-const SEPARATION_FACTOR = 0.1 # Boids algorithm
+# Constants for the Boids algorithm and spatial partitioning
+const VIEW_RADIUS = 50 # Radius within which boids perceive others
+const SEPARATION_RADIUS = 20 # Radius within which boids try to separate from others
+const COHESION_FACTOR = 0.01 # Factor for cohesion behavior in Boids algorithm
+const ALIGNMENT_FACTOR = 0.05 # Factor for alignment behavior in Boids algorithm
+const SEPARATION_FACTOR = 0.1 # Factor for separation behavior in Boids algorithm
+const GRID_SIZE = 100 # Size of the cells in the spatial grid for optimization
 
+# Exported variables for setting up genetic attributes and carrying capacity
 @export var LIST_OF_GENETIC_ATTRIBUTES: Array[GeneticAttributes]
 @export var CARRYING_CAPACITY := 150
 
 # Population parameters
-var population = []
-var birth_rate = 0.5
-var death_rate = 0.001
+var population = [] # List to hold the population entities
+var birth_rate = 0.5 # Base birth rate for entities
+var death_rate = 0.001 # Base death rate for entities
 
 # Environmental factors (to be integrated with Terrain and Weather Systems)
-var resource_availability = 1.0
-var weather_impact = 1.0
+var resource_availability = 1.0 # Availability of resources in the environment
+var weather_impact = 1.0 # Impact of weather on entities
 
-# Genetic attributes (sample structure)
+# Genetic attributes template for creating new entities
 var genetic_factors = {
 	"fertility_rate": 1.0,
 	"survival_rate": 1.0,
@@ -26,13 +29,18 @@ var genetic_factors = {
 	"aggressiveness": 1.0
 }
 
+# Spatial grid for optimization to reduce the number of interactions checks
+var spatial_grid = {}
+
 # Initialize population
 func _ready():
-	for i in range(CARRYING_CAPACITY * 0.75):  # starting with a population of 3/4 of the max capacity
+	# Start with a population of 3/4 of the maximum carrying capacity
+	for i in range(CARRYING_CAPACITY * 0.75):
 		var gene_id: int = randi_range(0, len(LIST_OF_GENETIC_ATTRIBUTES) - 1)
 		var gene: GeneticAttributes = LIST_OF_GENETIC_ATTRIBUTES[gene_id]
-		gene.sex = randi_range(0, 1)
-		population.append({
+		gene.sex = randi_range(0, 1) # Assign random sex
+		# Create a new entity with random attributes and initial conditions
+		var entity = {
 			"id": gene_id,
 			"age": randi() % gene.span,
 			"attributes": {
@@ -42,27 +50,61 @@ func _ready():
 				"aggressiveness": randf()
 			},
 			"genetics": gene,
-			"position": Vector2(randf() * 1500, randf() * 1000),  # sample position
+			"position": Vector2(randf() * 1500, randf() * 1000), # Sample initial position
 			"velocity": Vector2(randf(), randf()) * gene.size / gene.weight,
 			"sex": gene.sex
-		})
-	set_process(true)
+		}
+		population.append(entity) # Add entity to the population list
+		add_to_grid(entity) # Add entity to the spatial grid
+	set_process(true) # Enable processing
 
+# Main processing function
 func _process(_delta):
-	simulate_asexual_births()
-	simulate_deaths()
-	regulate_population()
-	update_interactions() # competition, predation, reproduction, symbiosis
-	adapt_to_environment()
-	update_positions()
+	clear_grid() # Clear the spatial grid
+	for entity in population:
+		add_to_grid(entity) # Re-add each entity to the spatial grid
+	simulate_asexual_births() # Handle asexual reproduction
+	simulate_deaths() # Handle deaths
+	regulate_population() # Ensure population doesn't exceed carrying capacity
+	update_interactions() # Handle interactions between entities
+	adapt_to_environment() # Adjust attributes based on environmental factors
+	update_positions() # Update positions using the Boids algorithm
 
+# Clear the spatial grid
+func clear_grid():
+	spatial_grid = {}
+
+# Add an entity to the spatial grid
+func add_to_grid(entity):
+	var cell = get_cell(entity["position"])
+	if not cell in spatial_grid:
+		spatial_grid[cell] = []
+	spatial_grid[cell].append(entity)
+
+# Get the grid cell for a given position
+func get_cell(position):
+	return Vector2(floor(position.x / GRID_SIZE), floor(position.y / GRID_SIZE))
+
+# Get neighbors of an entity from the spatial grid
+func get_neighbors(entity):
+	var neighbors = []
+	var cell = get_cell(entity["position"])
+	for x in range(cell.x - 1, cell.x + 2):
+		for y in range(cell.y - 1, cell.y + 2):
+			var neighbor_cell = Vector2(x, y)
+			if neighbor_cell in spatial_grid:
+				neighbors += spatial_grid[neighbor_cell]
+	return neighbors
+
+# Simulate asexual births
 func simulate_asexual_births():
 	var new_population = []
 	for entity in population:
-		if (entity["genetics"] as GeneticAttributes).reproduction_type == 1: # asexual reproduction
+		if (entity["genetics"] as GeneticAttributes).reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.ASEXUAL:
 			if entity["age"] >= reproductive_age(entity) and randf() < birth_rate * entity["attributes"]["fertility_rate"]:
 				var gene: GeneticAttributes = entity["genetics"]
-				new_population.append({
+				# Create new entity with mixed attributes
+				var new_entity = {
 					"id": entity["id"],
 					"age": 0,
 					"attributes": mix_attributes(entity["attributes"]),
@@ -70,25 +112,30 @@ func simulate_asexual_births():
 					"genetics": gene,
 					"velocity": Vector2(randf(), randf()) * gene.size / gene.weight,
 					"sex": gene.sex
-				})
+				}
+				new_population.append(new_entity)
+				add_to_grid(new_entity)
 	population += new_population
 
+# Simulate deaths
 func simulate_deaths():
 	population = population.filter(func(entity):
 		return entity["age"] < entity["genetics"].span and randf() > death_rate * (1.0 - entity["attributes"]["survival_rate"])
 	)
 
+# Regulate population to ensure it doesn't exceed carrying capacity
 func regulate_population():
 	if len(population) > CARRYING_CAPACITY:
 		var overpopulation = len(population) - CARRYING_CAPACITY
 		for i in range(overpopulation):
-			population.pop_back()  # simple removal, can be replaced with a more sophisticated method
+			population.pop_back() # Simple removal of excess population
 
+# Calculate reproductive age based on genetic lifespan
 func reproductive_age(entity):
-	return int(entity["genetics"].span * 0.2)  # example reproductive age is 20% of MAX_AGE
+	return int(entity["genetics"].span * 0.2) # Example: reproductive age is 20% of lifespan
 
+# Mix attributes of parent entities
 func mix_attributes(parent_attributes):
-	# custom genetic mixing (ideally should be done in GeneticAttributes, but I don't want to modify that file too much :p)
 	return {
 		"fertility_rate": (parent_attributes["fertility_rate"] + randf()) / 2.0,
 		"survival_rate": (parent_attributes["survival_rate"] + randf()) / 2.0,
@@ -96,59 +143,67 @@ func mix_attributes(parent_attributes):
 		"aggressiveness": (parent_attributes["aggressiveness"] + randf()) / 2.0
 	}
 
+# Update interactions between entities
 func update_interactions():
 	for entity in population:
-		for other in population:
+		var neighbors = get_neighbors(entity)
+		for other in neighbors:
 			if entity != other:
-				interact(entity, other)
+				handle_reproduction(entity, other)
+				handle_predation(entity, other)
+				handle_competition(entity, other)
+				handle_symbiosis(entity, other)
 
-func interact(entity, other):
-	var distance = entity["position"].distance_to(other["position"])
-	if distance < VIEW_RADIUS:
-		# sexual reproduction
-		if entity["genetics"].reproduction_type == 0 and other["genetics"].reproduction_type == 0 and entity["id"] == other["id"]:
-			if entity["age"] >= reproductive_age(entity) and randf() < birth_rate * entity["attributes"]["fertility_rate"]:
-				if other["age"] >= reproductive_age(other) and randf() < birth_rate * other["attributes"]["fertility_rate"]:
-					if entity["sex"] != other["sex"]:
-						var gene: GeneticAttributes = entity["genetics"].merge(other["genetics"])
-						gene.sex = randi_range(0, 1)
-						population.append({
-							"id": entity["id"],
-							"age": 0,
-							"attributes": mix_attributes(entity["attributes"]),
-							"position": entity["position"],
-							"genetics": gene,
-							"velocity": Vector2(randf(), randf()) * gene.size / gene.weight,
-							"sex": gene.sex
-						})
-		
-		# predation (for entities with different trophic level)
-		if entity["genetics"].trophic_level != other["genetics"].trophic_level:
-			if entity["genetics"].trophic_level > other["genetics"].trophic_level:
-				other["attributes"]["survival_rate"] -= 0.1 # entity hunts other
-			else:
-				entity["attributes"]["survival_rate"] -= 0.1 # other hunts entity
-		
-		# competition (for entities with same trophic level, can consist of different genes to account for both interspecific and intraspecific competition)
+# Handle reproduction between entities
+func handle_reproduction(entity, other):
+	if entity["genetics"].reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.SEXUAL and other["genetics"].reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.SEXUAL and entity["id"] == other["id"]:
+		if entity["age"] >= reproductive_age(entity) and randf() < birth_rate * entity["attributes"]["fertility_rate"]:
+			if other["age"] >= reproductive_age(other) and randf() < birth_rate * other["attributes"]["fertility_rate"]:
+				if entity["sex"] != other["sex"]:
+					var gene: GeneticAttributes = entity["genetics"].merge(other["genetics"])
+					gene.sex = randi_range(0, 1)
+					var new_entity = {
+						"id": entity["id"],
+						"age": 0,
+						"attributes": mix_attributes(entity["attributes"]),
+						"position": entity["position"],
+						"genetics": gene,
+						"velocity": Vector2(randf(), randf()) * gene.size / gene.weight,
+						"sex": gene.sex
+					}
+					population.append(new_entity)
+					add_to_grid(new_entity)
+
+# Handle predation interactions
+func handle_predation(entity, other):
+	if entity["genetics"].trophic_level != other["genetics"].trophic_level:
+		if entity["genetics"].trophic_level > other["genetics"].trophic_level:
+			other["attributes"]["survival_rate"] -= 0.1 # Entity hunts other
 		else:
-			if entity["attributes"]["aggressiveness"] > other["attributes"]["aggressiveness"]:
-				other["attributes"]["survival_rate"] -= 0.1  # simple competition effect
-			else:
-				entity["attributes"]["survival_rate"] -= 0.1
-		
-		# symbiosis (for entities with same trophic level and different gene)
-		if entity["id"] != other["id"] and entity["genetics"].trophic_level == other["genetics"].trophic_level:
-			entity["attributes"]["survival_rate"] += 0.1
-			other["attributes"]["survival_rate"] += 0.1
-		
+			entity["attributes"]["survival_rate"] -= 0.1 # Other hunts entity
 
+# Handle competition interactions
+func handle_competition(entity, other):
+	if entity["genetics"].trophic_level == other["genetics"].trophic_level:
+		if entity["attributes"]["aggressiveness"] > other["attributes"]["aggressiveness"]:
+			other["attributes"]["survival_rate"] -= 0.1 # Simple competition effect
+		else:
+			entity["attributes"]["survival_rate"] -= 0.1
+
+# Handle symbiosis interactions
+func handle_symbiosis(entity, other):
+	if entity["id"] != other["id"] and entity["genetics"].trophic_level == other["genetics"].trophic_level:
+		entity["attributes"]["survival_rate"] += 0.1
+		other["attributes"]["survival_rate"] += 0.1
+
+# Adapt attributes based on environmental factors
 func adapt_to_environment():
 	for entity in population:
-		# Adjust attributes based on environmental factors
 		entity["attributes"]["adaptability"] *= resource_availability
 		entity["attributes"]["survival_rate"] *= weather_impact
 
-func update_positions(): # currently only Boids Algorithm is implemented (which is suitable for movable entities like Animalia but not suitable for static entities like Plantae)
+# Update positions using Boids algorithm
+func update_positions():
 	for entity in population:
 		var acceleration = Vector2()
 		var cohesion = Vector2()
@@ -156,7 +211,8 @@ func update_positions(): # currently only Boids Algorithm is implemented (which 
 		var separation = Vector2()
 		var count = 0
 		
-		for other in population:
+		var neighbors = get_neighbors(entity)
+		for other in neighbors:
 			if entity != other:
 				var distance = entity["position"].distance_to(other["position"])
 				if distance < VIEW_RADIUS:

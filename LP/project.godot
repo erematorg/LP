@@ -13,7 +13,7 @@ config_version=5
 config/name="LP"
 config/description="A systemic 2D platformer in a dynamic living ecosystem"
 config/version="0.1.0"
-run/main_scene="res://assets/scenes/save_example.tscn"
+run/main_scene="res://scenes/save_example.tscn"
 config/features=PackedStringArray("4.2", "Mobile")
 config/icon="res://logo.png"
 
