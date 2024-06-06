@@ -1,0 +1,21 @@
+using Godot;
+using System;
+
+[GlobalClass]
+public partial class Succeeder : BTDecorator, BTNode
+{
+    public override BTResult Tick(Entity entity, Blackboard bb)
+    {
+        BTNode btNode = GetAsBTNode(GetChild(0));
+		BTResult result = btNode.Tick(entity, bb);
+
+		switch(result)
+		{
+			case BTResult.Running:
+				return BTResult.Running;
+
+			default:
+				return BTResult.Success;
+		}
+    }
+}

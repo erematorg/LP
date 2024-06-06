@@ -20,7 +20,7 @@ public abstract partial class BTComposite : Node, BTNode
             return btNode;
         else
         {
-            throw new Exception($"Child {node.Name} is not a BTNode!");
+            throw new Exception($"{node.Name} is not a BTNode!");
         }
     }
 }

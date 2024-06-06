@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dufajimkrr4nd"]
 
-[ext_resource type="PackedScene" uid="uid://bcksovgd8turl" path="res://systems/test_entity.tscn" id="1_s3m0e"]
+[ext_resource type="PackedScene" uid="uid://bcksovgd8turl" path="res://systems/ai/behaviour_tree/test_entity.tscn" id="1_s3m0e"]
 
 [node name="BtTestScene" type="Node2D"]
 
