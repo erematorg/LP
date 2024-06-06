@@ -2,7 +2,7 @@ using Godot;
 using System;
 
 [GlobalClass]
-public partial class Inverter : BTDecorator, BTNode
+public partial class Inverter : BTDecorator, BTNode //Returns the opposite of the child node's result.
 {
     public override BTResult Tick(Entity entity, Blackboard bb)
     {
@@ -20,7 +20,7 @@ public partial class Inverter : BTDecorator, BTNode
 
 			//To keep the compiler happy :) This will (ideally) never be hit.
 			default:
-				return BTResult.Failure;
+				return BTResult.Running;
 		}
     }
 }
