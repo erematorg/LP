@@ -52,8 +52,6 @@ repeatCount = 1
 
 [node name="GetDoorList" type="Node" parent="BehaviourTree/Sequencer/DoOnce_Repeater"]
 script = ExtResource("6_w46sc")
-maxDoors = 1
-propertyChance = 3.61
 
 [node name="RepeatUntilFail" type="Node" parent="BehaviourTree/Sequencer"]
 script = ExtResource("7_yv3ae")
