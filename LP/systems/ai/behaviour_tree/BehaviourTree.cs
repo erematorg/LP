@@ -8,6 +8,8 @@ public partial class BehaviourTree : Node
 	private BTNode childBTNode;
 	private Entity ownerEntity;
 
+	private bool success;
+
 	public override void _Ready()
 	{
 		ownerEntity = GetOwner<Entity>();
@@ -25,6 +27,13 @@ public partial class BehaviourTree : Node
 
 	public override void _Process(double delta)
 	{
-		childBTNode.Tick(ownerEntity, blackboard);
+		if(!success)
+		{
+			var result = childBTNode.Tick(ownerEntity, blackboard);
+			if(result == BTResult.Success)
+			{
+				success = true;
+			}
+		}	
 	}
 }
