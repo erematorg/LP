@@ -14,37 +14,38 @@ public partial class BehaviourTree : Node
 	{
 		ownerEntity = GetOwner<Entity>();
 
-		if(GetChildCount() != 1)
+		if (GetChildCount() != 1)
 		{
 			throw new Exception("BehaviourTree must have exactly one child BTNode!");
 		}
-		if(GetChild(0) is not BTNode btNode)
+		if (GetChild(0) is not BTNode btNode)
 		{
 			throw new Exception("BehaviourTree's child must be a BTNode!");
 		}
 		childBTNode = btNode;
+		treeEnded = false;
 	}
 
 	public override void _Process(double delta)
 	{
-		if(!treeEnded)
+		if (!treeEnded)
 		{
 			var result = childBTNode.Tick(ownerEntity, blackboard);
 			string message = "[font_size=17]";
 
-			if(result == BTResult.Success)
+			if (result == BTResult.Success)
 			{
 				treeEnded = true;
 				Door enteredDoor = blackboard.Get<Door>(BTVariable.EnteredDoor);
-				message += $"[color=green]BehaviourTree has finished executing. {enteredDoor} was successfully entered![/color]"; 
+				message += $"[color=green]BehaviourTree has finished executing. {enteredDoor} was successfully entered![/color]";
 			}
-			else if(result == BTResult.Failure)
+			else if (result == BTResult.Failure)
 			{
 				treeEnded = true;
 				message += "[color=green]BehaviourTree has finished executing. No doors were openable, unlockable or smashable.[/color]";
 			}
 
-			if(treeEnded)
+			if (treeEnded)
 			{
 				message += "[/font_size]";
 				GD.PrintRich(message);
@@ -52,3 +53,4 @@ public partial class BehaviourTree : Node
 		}
 	}
 }
+
