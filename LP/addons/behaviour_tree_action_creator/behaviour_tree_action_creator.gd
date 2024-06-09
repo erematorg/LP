@@ -17,7 +17,7 @@ func _on_create(name: String, script_content: String):
 	var script: CSharpScript = CSharpScript.new()
 	script.resource_name = name
 	script.source_code = script_content
-	var result = ResourceSaver.save(script, "res://systems/behaviour_tree/nodes/leaf/" + name + ".cs")
+	var result = ResourceSaver.save(script, "res://systems/ai/behaviour_tree/nodes/leaf/" + name + ".cs")
 	print(result)
 
 func _exit_tree() -> void:

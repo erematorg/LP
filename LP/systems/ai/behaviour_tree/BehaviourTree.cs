@@ -8,7 +8,7 @@ public partial class BehaviourTree : Node
 	private BTNode childBTNode;
 	private Entity ownerEntity;
 
-	private bool success;
+	private bool treeEnded;
 
 	public override void _Ready()
 	{
@@ -27,13 +27,28 @@ public partial class BehaviourTree : Node
 
 	public override void _Process(double delta)
 	{
-		if(!success)
+		if(!treeEnded)
 		{
 			var result = childBTNode.Tick(ownerEntity, blackboard);
+			string message = "[font_size=17]";
+
 			if(result == BTResult.Success)
 			{
-				success = true;
+				treeEnded = true;
+				Door enteredDoor = blackboard.Get<Door>(BTVariable.EnteredDoor);
+				message += $"[color=green]BehaviourTree has finished executing. {enteredDoor} was successfully entered![/color]"; 
 			}
-		}	
+			else if(result == BTResult.Failure)
+			{
+				treeEnded = true;
+				message += "[color=green]BehaviourTree has finished executing. No doors were openable, unlockable or smashable.[/color]";
+			}
+
+			if(treeEnded)
+			{
+				message += "[/font_size]";
+				GD.PrintRich(message);
+			}
+		}
 	}
 }

@@ -8,9 +8,9 @@ public abstract partial class BTDecorator : Node, BTNode
 
     public override void _Ready()
     {
-        if(GetChildCount() == 1)
+        if(GetChildCount() != 1)
 		{
-			GD.PrintErr($"Decorator {Name} must have only one child node!");
+			GD.PrintErr($"Decorator {Name} must have atleast/only one child node!");
 		}
     }
 

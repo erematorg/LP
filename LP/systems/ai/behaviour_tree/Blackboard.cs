@@ -27,5 +27,8 @@ public class Blackboard
 
 public enum BTVariable
 {
-	MousePosition
+	MousePosition, 
+    DoorList,
+    SelectedDoor,
+    EnteredDoor,
 }
