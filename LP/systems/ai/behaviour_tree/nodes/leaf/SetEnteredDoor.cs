@@ -9,6 +9,6 @@ public partial class SetEnteredDoor : BTAction
 		var selectedDoor = bb.Get<Door>(BTVariable.SelectedDoor);
 		bb.Set(BTVariable.EnteredDoor, selectedDoor); // Set the used door to the selected door
 		GD.Print($"Setting {selectedDoor} as EnteredDoor...");
-		return BTResult.Failure;
+		return BTResult.Success;
 	}
 }
