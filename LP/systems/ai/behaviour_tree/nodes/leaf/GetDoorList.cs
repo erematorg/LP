@@ -30,7 +30,7 @@ public partial class GetDoorList : BTAction
 		(int doorIndex, string property)? result = SetRandomDoorProperty(doorList);
 		if(result == null)
 		{
-			GD.PrintRich($"[font_size=17]Created {doorCount} doors and none of them can be entered.[/font_size]");
+			GD.PrintRich($"[font_size=17]Created {doorCount} doors and [color=red]none of them can be entered.[/color][/font_size]");
 			return BTResult.Success;
 		}
 		else
@@ -57,10 +57,10 @@ public partial class GetDoorList : BTAction
 				return (randomIndex, "[wave amp=50.0 freq=5.0 connected=1]openable[/wave]");
 			case 1:
 				randomDoor.unlockable = true;
-				return (randomIndex, "[pulse freq=1.0 color=#ffffff40 ease=-2.0]unlockable[/pulse]");
+				return (randomIndex, "[pulse freq=1.0 ease=-2.0]unlockable[/pulse]");
 			case 2:
 				randomDoor.smashable = true;
-				return (randomIndex, "[shake rate=20.0 level=5 connected=1]{text}[/shake]smashable[/color]");
+				return (randomIndex, "[shake rate=20.0 level=5 connected=1]smashable[/shake]");
 		}
 		throw new Exception("CodeShouldNotReachHereException");
     }
