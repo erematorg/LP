@@ -1,14 +1,248 @@
-[gd_scene load_steps=3 format=3 uid="uid://byopxfuquatx5"]
+[gd_scene load_steps=4 format=3 uid="uid://byopxfuquatx5"]
 
 [ext_resource type="Script" path="res://systems/weather_system/weather_types/WeatherRain.gd" id="1_oiy6k"]
 [ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="2_371lh"]
+[ext_resource type="Texture2D" uid="uid://p4w50qvvw3ee" path="res://systems/weather_system/grid_limit.png" id="3_dym5r"]
 
 [node name="Rain" type="Node2D"]
+scale = Vector2(0.3, 0.3)
 script = ExtResource("1_oiy6k")
-grid_size = Vector2(3000, 1200)
+grid_size = Vector2(2000, 1000)
 particle_interval_enabled = false
 random_position_enabled = false
 
 [node name="CameraPosition" type="Sprite2D" parent="."]
-modulate = Color(1, 0.859167, 0.35, 1)
+modulate = Color(0.7685, 0, 0.87, 1)
+position = Vector2(97.3333, 94)
+scale = Vector2(4.04167, 3.9375)
 texture = ExtResource("2_371lh")
+
+[node name="GridContainer" type="GridContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+columns = 5
+
+[node name="NinePatchRect" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect2" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect3" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect4" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect5" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect6" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect7" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect8" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect9" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect10" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect11" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect12" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect13" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect14" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect15" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect16" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect17" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect18" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect19" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect20" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect21" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect22" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect23" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect24" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
+
+[node name="NinePatchRect25" type="NinePatchRect" parent="GridContainer"]
+custom_minimum_size = Vector2(2000, 1000)
+layout_mode = 2
+texture = ExtResource("3_dym5r")
+patch_margin_left = 7
+patch_margin_top = 57
+patch_margin_right = 7
+patch_margin_bottom = 57
