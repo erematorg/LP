@@ -1,12 +1,24 @@
-[gd_scene load_steps=5 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=12 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="2_b4jug"]
+[ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherManager.gd" id="3_8s3jg"]
+[ext_resource type="PackedScene" uid="uid://sa0vd70lwphd" path="res://systems/weather_system/weather_types/WeatherSnow.tscn" id="3_a8dt6"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherModule.gd" id="4_64om7"]
+[ext_resource type="PackedScene" uid="uid://xucpgvatghij" path="res://systems/weather_system/weather_types/WeatherWind.tscn" id="4_svtc0"]
+[ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="8_heaeu"]
+[ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rgyb0"]
+size = Vector2(672, 64)
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_2yh4k"]
+polygon = PackedVector2Array(-50, -44, 641, -43, 648, 51, -37, 51, -408, 57, -406, -9, -47, -10)
 
 [node name="WeatherSystem" type="Node2D" groups=["WeatherSystem"]]
 script = ExtResource("1_dtuo3")
+weather_scenes = Array[PackedScene]([null, ExtResource("2_lk5vm"), ExtResource("3_a8dt6"), ExtResource("4_svtc0")])
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -17,3 +29,32 @@ script = ExtResource("3_8s3jg")
 
 [node name="WeatherModule" type="Node2D" parent="."]
 script = ExtResource("4_64om7")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(530, 595)
+
+[node name="Logo" type="Sprite2D" parent="StaticBody2D"]
+position = Vector2(298, -16)
+scale = Vector2(10.875, 1)
+texture = ExtResource("8_heaeu")
+
+[node name="Logo2" type="Sprite2D" parent="StaticBody2D"]
+position = Vector2(-57, 21)
+scale = Vector2(10.875, 1)
+texture = ExtResource("8_heaeu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(287, -13)
+shape = SubResource("RectangleShape2D_rgyb0")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(-68, 25)
+shape = SubResource("RectangleShape2D_rgyb0")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="StaticBody2D"]
+occluder = SubResource("OccluderPolygon2D_2yh4k")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(581, 326)
+script = ExtResource("9_wq5i0")
+movement_speed = 1200.0

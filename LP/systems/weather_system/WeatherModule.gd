@@ -15,7 +15,7 @@ var weather_manager: WeatherManager
 func _ready():
 	camera = get_viewport().get_camera_2d()
 	spawn_timer = particle_spawn_interval
-
+	
 	# Connect to the weather manager signal
 	weather_manager = get_node("/root/WeatherSystem/WeatherManager")
 	weather_manager.connect("weather_parameters_updated", Callable(self, "_on_weather_parameters_updated"))
@@ -23,7 +23,7 @@ func _ready():
 
 func _process(delta: float):
 	spawn_timer -= delta
-	if spawn_timer <= 0:
+	if spawn_timer <= 0 and particles.is_empty():
 		spawn_timer = particle_spawn_interval
 		spawn_particles()
 	update_particles(delta)

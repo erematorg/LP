@@ -28,7 +28,7 @@ signal weather_parameters_updated(humidity: float, moisture: float, heat: float,
 
 # Function to change the weather state
 func change_weather(state: WeatherState):
-	var weather_system = get_parent().get_node("WeatherSystem")
+	var weather_system = get_parent()
 	if weather_system:
 		weather_system.change_weather(state)
 

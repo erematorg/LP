@@ -5,14 +5,19 @@
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ib4re"]
 particle_flag_disable_z = true
 gravity = Vector3(0, 98, 0)
+collision_mode = 1
+collision_friction = 0.0
+collision_bounce = 0.0
 
 [node name="Rain" type="Node2D"]
 script = ExtResource("1_oiy6k")
 
 [node name="GPUParticles2D" type="GPUParticles2D" parent="."]
-amount = 10000
+amount = 1
 process_material = SubResource("ParticleProcessMaterial_ib4re")
 lifetime = 1.5
 speed_scale = 2.0
 explosiveness = 0.5
 randomness = 0.5
+trail_enabled = true
+trail_lifetime = 0.05
