@@ -1,23 +1,14 @@
 [gd_scene load_steps=3 format=3 uid="uid://byopxfuquatx5"]
 
 [ext_resource type="Script" path="res://systems/weather_system/weather_types/WeatherRain.gd" id="1_oiy6k"]
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ib4re"]
-particle_flag_disable_z = true
-gravity = Vector3(0, 98, 0)
-collision_mode = 1
-collision_friction = 0.0
-collision_bounce = 0.0
+[ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="2_371lh"]
 
 [node name="Rain" type="Node2D"]
 script = ExtResource("1_oiy6k")
+grid_size = Vector2(3000, 1200)
+particle_interval_enabled = false
+random_position_enabled = false
 
-[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
-amount = 1
-process_material = SubResource("ParticleProcessMaterial_ib4re")
-lifetime = 1.5
-speed_scale = 2.0
-explosiveness = 0.5
-randomness = 0.5
-trail_enabled = true
-trail_lifetime = 0.05
+[node name="CameraPosition" type="Sprite2D" parent="."]
+modulate = Color(1, 0.859167, 0.35, 1)
+texture = ExtResource("2_371lh")
