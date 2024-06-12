@@ -2,10 +2,6 @@ extends WeatherModule
 class_name WeatherFallingEffect
 ## Class used for wather effects that need to simulate falling particles which shouldn't dissapear
 
-## Grid used to assign different particle emitters to different areas.
-## Should be in world coordinates.
-@export var grid_size : Vector2 = Vector2(4000,4000)
-
 ## How much time should initial gravity be used
 @export var initial_gravity_time:float=3
 ## Should be much higher than gravity, this is used to fill the screen with particles, only used by the time
@@ -13,7 +9,7 @@ class_name WeatherFallingEffect
 @export var initial_gravity : float = 400
 @export var gravity : float = 30
 
-## Assigns a discrete cell to the camera using grid_size, used to know when to spawn more emitters.
+## Assigns a discrete cell to the camera using WeatherGlobals.grid_size, used to know when to spawn more emitters.
 var camera_grid_position : Vector2
 var particles_by_position: Dictionary
 
@@ -22,8 +18,8 @@ func _ready():
 	super._ready()
 
 func _process(delta):
-	camera_grid_position.x = floor(camera.position.x/grid_size.x)
-	camera_grid_position.y = floor(camera.position.y/grid_size.y)
+	camera_grid_position.x = floor(camera.position.x/WeatherGlobals.grid_size.x)
+	camera_grid_position.y = floor(camera.position.y/WeatherGlobals.grid_size.y)
 	fill_needed_spaces()
 
 func fill_needed_spaces():
@@ -62,17 +58,17 @@ func fill_needed_spaces():
 			process_material.collision_mode=ParticleProcessMaterial.COLLISION_RIGID
 			
 			#Set proportions
-			new_emitter.lifetime = grid_size.y/50
-			new_emitter.amount = (800)*(grid_size.x/1080)
+			new_emitter.lifetime = WeatherGlobals.grid_size.y/50
+			new_emitter.amount = (800)*(WeatherGlobals.grid_size.x/1080)
 			new_emitter.visibility_rect.position=Vector2.ZERO
-			process_material.emission_box_extents = Vector3(grid_size.x*0.5,1,0.0)
-			process_material.emission_shape_offset.x=grid_size.x/2
-			new_emitter.visibility_rect.size=Vector2(grid_size.x*3,grid_size.y*10)
+			process_material.emission_box_extents = Vector3(WeatherGlobals.grid_size.x*0.5,1,0.0)
+			process_material.emission_shape_offset.x=WeatherGlobals.grid_size.x/2
+			new_emitter.visibility_rect.size=Vector2(WeatherGlobals.grid_size.x*3,WeatherGlobals.grid_size.y*10)
 			
 			#Taking into account 0 means at the left of the effect
-			new_emitter.visibility_rect.position.x=-grid_size.x
+			new_emitter.visibility_rect.position.x=-WeatherGlobals.grid_size.x
 			_customize_emitter(new_emitter)
-			new_emitter.global_position=Vector2(i)*grid_size
+			new_emitter.global_position=Vector2(i)*WeatherGlobals.grid_size
 			particles_by_position[i]=new_emitter
 			get_tree().create_timer(initial_gravity_time).timeout.connect(adjust_gravity.bind(new_emitter))
 			add_child(new_emitter)
@@ -83,7 +79,7 @@ func adjust_gravity(emitter):
 
 func phase_out_emitter(emitter:GPUParticles2D):
 	emitter.emitting=false
-	await get_tree().create_timer( 15 * (grid_size.y/1080)).timeout
+	await get_tree().create_timer( 15 * (WeatherGlobals.grid_size.y/1080)).timeout
 	emitter.queue_free()
 
 ## Should be overriden, changing the emitter's default values.

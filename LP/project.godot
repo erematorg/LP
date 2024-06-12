@@ -20,6 +20,7 @@ config/icon="res://logo.png"
 [autoload]
 
 SaveSystem="*res://systems/save_system/SaveSystem.gd"
+WeatherGlobals="*res://systems/weather_system/WeatherGlobals.gd"
 
 [dotnet]
 

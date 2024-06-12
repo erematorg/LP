@@ -84,10 +84,9 @@ script = ExtResource("10_5an84")
 
 [node name="Humidity" type="Node" parent="."]
 script = ExtResource("11_nmlqm")
-water_evaporation_per_tick = 4000.0
+water_evaporation_per_tick = 100.0
 
 [node name="Tick" type="Timer" parent="Humidity"]
-wait_time = 0.25
 autostart = true
 
 [connection signal="timeout" from="Humidity/Tick" to="Humidity" method="_on_tick_timeout"]
