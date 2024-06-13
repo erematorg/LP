@@ -55,7 +55,7 @@ func fill_needed_spaces():
 			# At first the gravity is absurd to populate the screen with rain
 			process_material.gravity = Vector3(0, initial_gravity,0)
 			process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-			process_material.collision_mode=ParticleProcessMaterial.COLLISION_RIGID
+			process_material.collision_mode=ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
 			
 			#Set proportions
 			new_emitter.lifetime = WeatherGlobals.grid_size.y/50
