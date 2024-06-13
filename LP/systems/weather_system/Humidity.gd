@@ -1,4 +1,5 @@
 extends Node
+class_name Humidity
 
 @export var water_evaporation_per_tick:float
 ## Default amount of moisture the air can hold, in px squared.

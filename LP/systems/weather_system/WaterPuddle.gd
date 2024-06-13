@@ -5,7 +5,7 @@ var covered_areas :Array[Vector2i]
 
 func _ready():
 	for i in polygon:
-		var area=WeatherUtilities.get_grid_position(i)
+		var area=WeatherUtilities.get_grid_position(i+position)
 		if not covered_areas.has(area):
 			covered_areas.append(area)
 

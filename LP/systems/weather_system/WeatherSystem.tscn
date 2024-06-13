@@ -1,12 +1,12 @@
-[gd_scene load_steps=18 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=19 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
-[ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="2_b4jug"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherManager.gd" id="3_8s3jg"]
 [ext_resource type="PackedScene" uid="uid://sa0vd70lwphd" path="res://systems/weather_system/weather_types/WeatherSnow.tscn" id="3_a8dt6"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherModule.gd" id="4_64om7"]
 [ext_resource type="PackedScene" uid="uid://xucpgvatghij" path="res://systems/weather_system/weather_types/WeatherWind.tscn" id="4_svtc0"]
+[ext_resource type="Script" path="res://systems/weather_system/WeatherInspector.gd" id="5_wpe37"]
 [ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="8_heaeu"]
 [ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
@@ -33,13 +33,76 @@ tile_size = Vector2i(32, 32)
 occlusion_layer_0/light_mask = 1
 sources/1 = SubResource("TileSetAtlasSource_2v2hn")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_es8a2"]
+bg_color = Color(0.6, 0.796078, 0.6, 0.231373)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(7.21961e-06, 0.950801, 0.548179, 1)
+
 [node name="WeatherSystem" type="Node2D" groups=["WeatherSystem"]]
 script = ExtResource("1_dtuo3")
 weather_scenes = Array[PackedScene]([null, ExtResource("2_lk5vm"), ExtResource("3_a8dt6"), ExtResource("4_svtc0")])
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="WeatherControl" parent="CanvasLayer" instance=ExtResource("2_b4jug")]
+[node name="WeatherInspector" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 236.0
+offset_bottom = 121.0
+script = ExtResource("5_wpe37")
+
+[node name="Properties" type="VBoxContainer" parent="CanvasLayer/WeatherInspector"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Moisture" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CanvasLayer/WeatherInspector/Properties/Moisture"]
+layout_mode = 2
+text = "Total moisture: "
+
+[node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Moisture"]
+layout_mode = 2
+step = 0.1
+allow_greater = true
+allow_lesser = true
+editable = false
+suffix = "px²"
+
+[node name="MaxMoisture" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CanvasLayer/WeatherInspector/Properties/MaxMoisture"]
+layout_mode = 2
+text = "max moisture: "
+
+[node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/MaxMoisture"]
+layout_mode = 2
+step = 0.1
+allow_greater = true
+allow_lesser = true
+editable = false
+suffix = "px²"
+
+[node name="Temperature" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CanvasLayer/WeatherInspector/Properties/Temperature"]
+layout_mode = 2
+text = "Temperature:"
+
+[node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Temperature"]
+layout_mode = 2
+step = 0.1
+allow_greater = true
+allow_lesser = true
+editable = false
+suffix = "Cº"
 
 [node name="WeatherManager" type="Node2D" parent="."]
 script = ExtResource("3_8s3jg")
@@ -74,6 +137,7 @@ occluder = SubResource("OccluderPolygon2D_2yh4k")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
+zoom = Vector2(0.1, 0.1)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -94,13 +158,10 @@ polygon = PackedVector2Array(-1600, 645, -1118, 645, -1121, 671, -1154, 672, -11
 script = ExtResource("10_5an84")
 
 [node name="Humidity" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("11_nmlqm")
-water_evaporation_per_tick = 20.0
+water_evaporation_per_tick = 10.0
 max_air_humidity = 50.0
-
-[node name="Tick" type="Timer" parent="Humidity"]
-wait_time = 0.5
-autostart = true
 
 [node name="Temperature" type="Node" parent="."]
 unique_name_in_owner = true
@@ -108,4 +169,14 @@ script = ExtResource("12_73asx")
 default_temperature = 30.0
 altitude_temperature_change = 1.0
 
-[connection signal="timeout" from="Humidity/Tick" to="Humidity" method="_on_tick_timeout"]
+[node name="SelectedArea" type="Panel" parent="."]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
+
+[node name="Tick" type="Timer" parent="."]
+wait_time = 0.5
+autostart = true
+
+[connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]

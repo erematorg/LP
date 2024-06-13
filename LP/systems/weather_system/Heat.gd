@@ -12,5 +12,5 @@ var temperature_per_area:Dictionary
 func get_temperature(area:Vector2i):
 	if not temperature_per_area.has(area):
 		temperature_per_area[area]=default_temperature
-		temperature_per_area[area]-=altitude_temperature_change*area.y
+		temperature_per_area[area]+=altitude_temperature_change*area.y
 	return temperature_per_area[area]

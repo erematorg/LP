@@ -1,3 +1,3 @@
 extends Node
 
-var grid_size=Vector2(4000,4000)
+var grid_size=Vector2(1000,1000)
