@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=18 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="2_b4jug"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
+[ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rgyb0"]
 size = Vector2(672, 64)
@@ -86,12 +87,25 @@ color = Color(0.262745, 0.356863, 1, 1)
 polygon = PackedVector2Array(-1503, 645, -414, 646, -416, 761, -474, 765, -482, 797, -888, 797, -886, 771, -1126, 767, -1122, 797, -1441, 795, -1435, 729, -1475, 737, -1473, 765, -1497, 765)
 script = ExtResource("10_5an84")
 
+[node name="Water2" type="Polygon2D" parent="." groups=["water_puddles"]]
+position = Vector2(2337, -99)
+color = Color(0.262745, 0.356863, 1, 1)
+polygon = PackedVector2Array(-1600, 645, -1118, 645, -1121, 671, -1154, 672, -1154, 738, -1467, 740, -1471, 705, -1565, 704, -1568, 675, -1599, 675)
+script = ExtResource("10_5an84")
+
 [node name="Humidity" type="Node" parent="."]
 script = ExtResource("11_nmlqm")
-water_evaporation_per_tick = 100.0
+water_evaporation_per_tick = 20.0
+max_air_humidity = 50.0
 
 [node name="Tick" type="Timer" parent="Humidity"]
 wait_time = 0.5
 autostart = true
+
+[node name="Temperature" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("12_73asx")
+default_temperature = 30.0
+altitude_temperature_change = 1.0
 
 [connection signal="timeout" from="Humidity/Tick" to="Humidity" method="_on_tick_timeout"]
