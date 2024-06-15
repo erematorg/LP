@@ -212,6 +212,4 @@ cloud_secondary_color = Color(0.545098, 0.545098, 0.545098, 0.701961)
 [node name="AreaVisibility" type="Node" parent="."]
 script = ExtResource("14_pxyjs")
 
-[node name="CloudSpawner" type="Node" parent="."]
-
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
