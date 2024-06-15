@@ -203,5 +203,9 @@ autostart = true
 
 [node name="CloudDrawer" type="Node2D" parent="."]
 script = ExtResource("13_wwyc4")
+circle_radius = 5.0
+circle_sides = 6
+cloud_primary_color = Color(0.913725, 0.913725, 0.913725, 0.247059)
+cloud_secondary_color = Color(0.545098, 0.545098, 0.545098, 0.701961)
 
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
