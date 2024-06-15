@@ -68,7 +68,7 @@ text = "Total moisture: "
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Moisture"]
 layout_mode = 2
-step = 0.1
+step = 0.01
 allow_greater = true
 allow_lesser = true
 editable = false
@@ -137,7 +137,7 @@ occluder = SubResource("OccluderPolygon2D_2yh4k")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.1, 0.1)
+zoom = Vector2(0.2, 0.2)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -160,8 +160,13 @@ script = ExtResource("10_5an84")
 [node name="Humidity" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("11_nmlqm")
-water_evaporation_per_tick = 10.0
+saturated_water_per_area = null
+water_evaporation_per_tick = 1.0
 max_air_humidity = 50.0
+max_humidity_change = 5.0
+humidity_transfer_speed = 0.001
+humidity_elevation_speed = 1.0
+max_moisture_height = -7
 
 [node name="Temperature" type="Node" parent="."]
 unique_name_in_owner = true
