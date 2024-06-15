@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=20 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
 [ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
+[ext_resource type="Script" path="res://systems/weather_system/CloudDrawer.gd" id="13_wwyc4"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rgyb0"]
 size = Vector2(672, 64)
@@ -199,5 +200,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
 autostart = true
+
+[node name="CloudDrawer" type="Node2D" parent="."]
+script = ExtResource("13_wwyc4")
 
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
