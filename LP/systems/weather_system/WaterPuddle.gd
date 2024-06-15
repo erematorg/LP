@@ -25,11 +25,12 @@ func reduce(area:float):
 	# Determine height to remove
 	var width=WeatherUtilities.num_distance(surface_points[0].x,surface_points[1].x)
 	var height_to_remove=area/width
-	if height_to_remove<get_height()+20:
-		var cut_height = surface_points[0].y - height_to_remove
+	var height=get_height()
+	if height_to_remove<height:
+		var cut_height = surface_points[0].y + height_to_remove
 		var x_ordered_polygon: Array = Array(polygon)
 		x_ordered_polygon.sort_custom(is_rightmost_x)
-		var polyline=Geometry2D.offset_polyline([Vector2(x_ordered_polygon[0].x-1,cut_height),Vector2(x_ordered_polygon[polygon.size()-1].x+1,cut_height)],10)
+		var polyline=Geometry2D.offset_polyline([Vector2(x_ordered_polygon[0].x-1,surface_points[0].y),Vector2(x_ordered_polygon[polygon.size()-1].x+1,surface_points[0].y)],height_to_remove)
 		var new_polygons=Geometry2D.clip_polygons(
 			polygon,
 			polyline[0]
@@ -66,7 +67,7 @@ func ensure_flat_surface():
 func get_height():
 	var points=Array(polygon)
 	points.sort_custom(is_higher_y)
-	return WeatherUtilities.num_distance(points[0].y,points[1].y)
+	return WeatherUtilities.num_distance(points[0].y,points[points.size()-1].y)
 
 ## Returns the 2 higher points of the puddle
 func get_surface_points():

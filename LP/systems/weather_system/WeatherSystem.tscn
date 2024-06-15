@@ -59,6 +59,9 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
+[node name="Position" type="Label" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+
 [node name="Moisture" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
 layout_mode = 2
 
@@ -68,7 +71,7 @@ text = "Total moisture: "
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Moisture"]
 layout_mode = 2
-step = 0.01
+step = 0.1
 allow_greater = true
 allow_lesser = true
 editable = false
@@ -82,6 +85,21 @@ layout_mode = 2
 text = "max moisture: "
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/MaxMoisture"]
+layout_mode = 2
+step = 0.1
+allow_greater = true
+allow_lesser = true
+editable = false
+suffix = "px²"
+
+[node name="SaturatedMoisture" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture"]
+layout_mode = 2
+text = "Saturated moisture"
+
+[node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture"]
 layout_mode = 2
 step = 0.1
 allow_greater = true
@@ -160,9 +178,8 @@ script = ExtResource("10_5an84")
 [node name="Humidity" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("11_nmlqm")
-saturated_water_per_area = null
 water_evaporation_per_tick = 1.0
-max_air_humidity = 50.0
+max_air_humidity = 20.0
 max_humidity_change = 5.0
 humidity_transfer_speed = 0.001
 humidity_elevation_speed = 1.0
@@ -181,7 +198,6 @@ offset_bottom = 40.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
-wait_time = 0.5
 autostart = true
 
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
