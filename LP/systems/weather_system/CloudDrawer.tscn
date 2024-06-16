@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://k74yfm72apcb"]
+
+[ext_resource type="Script" path="res://systems/weather_system/CloudDrawer.gd" id="1_qyhpy"]
+
+[node name="CloudDrawer" type="Node2D"]
+script = ExtResource("1_qyhpy")
+circle_radius = 20.0
+circle_sides = 10
+cloud_expansion_radius = 70.0
+cloud_primary_color = Color(1, 1, 1, 0.913725)
+cloud_secondary_color = Color(0.898039, 0.898039, 0.898039, 0.898039)
+max_clouds = 30
+size_change_per_humidity = 4.0

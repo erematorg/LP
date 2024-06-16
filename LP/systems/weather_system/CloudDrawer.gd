@@ -5,51 +5,69 @@ class_name CloudDrawer
 
 @export var circle_radius:float
 @export var circle_sides:int
+@export var cloud_expansion_radius:float
 @export var cloud_primary_color:Color
 @export var cloud_secondary_color:Color
+@export var max_clouds:int
+## The size of cloud parts increases this much for every px squared of humidity
+@export var size_change_per_humidity:float
 
 var area:Vector2i = Vector2i.ZERO
 
-@onready var humidity:Humidity = get_node("%Humidity")
+@onready var humidity:Humidity = WeatherGlobals.humidity
 
-func show_clouds()->void:
-	show_cloud_screen(cloud_primary_color)
-	show_cloud_screen(cloud_secondary_color)
+func _ready():
+	humidity.saturated_water.connect(show_clouds)
 
-func show_cloud_screen(color:Color):
-	var cloud_circles=get_random_circles()
-	var clouds:Array[PackedVector2Array]
-	# Acummulated merging of circles
-	var forming_cloud:PackedVector2Array=cloud_circles[0]
-	for i in cloud_circles:
-		var new_clouds=Geometry2D.merge_polygons(forming_cloud,i)[0]
-		forming_cloud=new_clouds[0]
-		new_clouds.remove_at(0)
-		clouds.append_array(new_clouds)
-	clouds.append(forming_cloud)
-	for cloud in clouds:
+func show_clouds(_area)->void:
+	var amount=round(humidity.get_saturated_water(area)-get_child_count()/2)
+	if amount>0 and get_child_count()<max_clouds:
+		show_cloud_screen(cloud_primary_color,amount)
+		if humidity.get_saturated_water(area)>30:
+			show_cloud_screen(cloud_secondary_color,amount/2)
+	if humidity.get_saturated_water(area)<40 and get_child_count()>=max_clouds:
+		await get_tree().create_tween().tween_property(get_child(0),"modulate:a",0,2).finished
+		get_child(0).queue_free()
+
+func show_cloud_screen(color:Color,amount:int):
+	var i=0
+	while i<amount/10:
 		var new_cloud=Polygon2D.new()
-		new_cloud.polygon=cloud
+		var shape=get_cloud(10)
+		new_cloud.polygon=shape
 		new_cloud.color=color
+		new_cloud.modulate.a=0
+		get_tree().create_tween().tween_property(new_cloud,"modulate:a",1,5)
 		add_child(new_cloud)
+		if randf_range(0,10)>5:
+			var occluder=LightOccluder2D.new()
+			var occluder_polygon=OccluderPolygon2D.new()
+			occluder_polygon.polygon=shape
+			occluder.occluder=occluder_polygon
+			new_cloud.add_child(occluder)
+		i+=1
 
-## returns a list of circles in a different position
-## Which can later be fused to draw clouds
-func get_random_circles() ->Array[PackedVector2Array]:
-	var circles : Array[PackedVector2Array]
-	for i in round(humidity.get_saturated_water(area)/2):
-		var new_circle=get_circle()
-		var circle_position=Vector2(randf_range(0,WeatherGlobals.grid_size.x),randf_range(0,WeatherGlobals.grid_size.y))
-		for index in range(new_circle.size):
-			new_circle[index]+=circle_position
-		circles.append(new_circle)
-	return circles
-
-func get_circle()->PackedVector2Array:
+## Returns a polygon representing a circle
+func get_circle(circle_position:Vector2=Vector2.ZERO)->PackedVector2Array:
 	var angle=0
 	var angle_progression=(2*PI)/circle_sides
 	var circle := PackedVector2Array([])
 	for side in range(circle_sides):
-		circle.append(Vector2.from_angle(angle)*circle_radius)
+		var radius=circle_radius+size_change_per_humidity*clamp(humidity.get_saturated_water(area),0,80)
+		circle.append(Vector2.from_angle(angle)*radius+circle_position)
 		angle+=angle_progression
 	return circle
+
+## Max size indicates the maximum amount of circles to use when building the cloud
+func get_cloud(max_size:int)->PackedVector2Array:
+	var cloud_position=Vector2(randf_range(0,WeatherGlobals.grid_size.x),randf_range(0,WeatherGlobals.grid_size.y))
+	var parts=0
+	var last_cloud:PackedVector2Array
+	while parts<max_size:
+		var fusion=Geometry2D.merge_polygons(last_cloud,get_circle(cloud_position))
+		last_cloud=fusion[0]
+		var offset=Vector2.from_angle(randf_range(0,2*PI))
+		offset.y/=3
+		cloud_position+=offset*(circle_radius+size_change_per_humidity*clamp(humidity.get_saturated_water(area),0,80))/2
+		parts+=1
+	return last_cloud

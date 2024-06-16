@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=19 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -12,27 +12,17 @@
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
 [ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
-[ext_resource type="Script" path="res://systems/weather_system/CloudDrawer.gd" id="13_wwyc4"]
+[ext_resource type="PackedScene" uid="uid://k74yfm72apcb" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_rgyb0"]
-size = Vector2(672, 64)
-
-[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_2yh4k"]
-polygon = PackedVector2Array(-50, -44, 641, -43, 648, 51, -37, 51, -408, 57, -406, -9, -47, -10)
-
-[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_4hp6j"]
-polygon = PackedVector2Array(-16, -4.25, 4.25, -16, 16, -16, 16, 16, -16, 16)
+[ext_resource type="Script" path="res://systems/weather_system/CloudSpawner.gd" id="15_lx00t"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2v2hn"]
 texture = ExtResource("8_heaeu")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
-0:0/0/occlusion_layer_0/polygon = SubResource("OccluderPolygon2D_4hp6j")
 
 [sub_resource type="TileSet" id="TileSet_i3bfe"]
 tile_size = Vector2i(32, 32)
-occlusion_layer_0/light_mask = 1
 sources/1 = SubResource("TileSetAtlasSource_2v2hn")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_es8a2"]
@@ -130,34 +120,10 @@ script = ExtResource("3_8s3jg")
 [node name="WeatherModule" type="Node2D" parent="."]
 script = ExtResource("4_64om7")
 
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
-position = Vector2(530, 595)
-
-[node name="Logo" type="Sprite2D" parent="StaticBody2D"]
-position = Vector2(298, -16)
-scale = Vector2(10.875, 1)
-texture = ExtResource("8_heaeu")
-
-[node name="Logo2" type="Sprite2D" parent="StaticBody2D"]
-position = Vector2(-57, 21)
-scale = Vector2(10.875, 1)
-texture = ExtResource("8_heaeu")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(287, -13)
-shape = SubResource("RectangleShape2D_rgyb0")
-
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(-68, 25)
-shape = SubResource("RectangleShape2D_rgyb0")
-
-[node name="LightOccluder2D" type="LightOccluder2D" parent="StaticBody2D"]
-occluder = SubResource("OccluderPolygon2D_2yh4k")
-
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.2, 0.2)
+zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -202,16 +168,24 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 [node name="Tick" type="Timer" parent="."]
 autostart = true
 
-[node name="CloudDrawer" type="Node2D" parent="."]
-script = ExtResource("13_wwyc4")
-circle_radius = 5.0
-circle_sides = 6
-cloud_primary_color = Color(0.913725, 0.913725, 0.913725, 0.247059)
-cloud_secondary_color = Color(0.545098, 0.545098, 0.545098, 0.701961)
-
 [node name="AreaVisibility" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("14_pxyjs")
 
 [node name="CloudSpawner" type="Node" parent="."]
+script = ExtResource("15_lx00t")
+cloud_drawer = ExtResource("13_f5qil")
 
+[node name="Sun" type="DirectionalLight2D" parent="."]
+position = Vector2(-853, -4326)
+rotation = -0.110427
+scale = Vector2(11.9453, 3437.25)
+color = Color(0.936969, 0.965189, 0.782352, 1)
+energy = 0.5
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 1)
+
+[connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
+[connection signal="area_hidden" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_hidden"]
+[connection signal="area_shown" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_shown"]

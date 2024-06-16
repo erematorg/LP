@@ -4,6 +4,9 @@ class_name Humidity
 ## Called after the humidity calculations of this tick are done.
 signal tick_end
 
+## Emitted when an area gets saturated water (more than it can hold)
+signal saturated_water(area)
+
 @export var saturated_water_per_area: Dictionary
 
 @export var water_evaporation_per_tick:float
@@ -35,6 +38,9 @@ var air_humidity_per_area:Dictionary
 
 @onready var temperature: Temperature = get_node("%Temperature")
 
+func _init():
+	WeatherGlobals.humidity=self
+
 func get_air_humidity(area:Vector2i):
 	if air_humidity_per_area.has(area):
 		return air_humidity_per_area[area]
@@ -57,6 +63,8 @@ func add_to_humidity(area:Vector2i,amount:float):
 	if not saturated_water_per_area.has(area):
 		saturated_water_per_area[area]=0
 	saturated_water_per_area[area]+=saturation
+	if saturation>0:
+		saturated_water.emit(area)
 
 ## From 0 to 1, 1 meaning the air cant hold any more moisture
 func get_relative_humidity(area:Vector2i):

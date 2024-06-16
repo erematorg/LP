@@ -7,6 +7,8 @@ signal area_hidden(area:Vector2i)
 
 var shown_areas:Array[Vector2i]
 
+
+
 func _process(delta):
 	var new_shown_areas=get_visible_areas()
 	for i in shown_areas:
