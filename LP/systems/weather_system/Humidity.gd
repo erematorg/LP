@@ -96,7 +96,7 @@ func distribute_humidity():
 					transfer_speed=humidity_elevation_speed
 				var amount_to_transfer=clamp(transfer_speed,0,air_humidity_per_area[area])
 				add_to_humidity(new_area,amount_to_transfer)
-				air_humidity_per_area[area]-=amount_to_transfer
+				air_humidity_per_area[area] -= amount_to_transfer
 
 func _on_tick_timeout():
 	distribute_humidity()

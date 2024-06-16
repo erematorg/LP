@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=22 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/WeatherModule.gd" id="4_64om7"]
 [ext_resource type="PackedScene" uid="uid://xucpgvatghij" path="res://systems/weather_system/weather_types/WeatherWind.tscn" id="4_svtc0"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherInspector.gd" id="5_wpe37"]
+[ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="6_s4o4s"]
 [ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="8_heaeu"]
 [ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
@@ -15,14 +16,20 @@
 [ext_resource type="PackedScene" uid="uid://k74yfm72apcb" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
 [ext_resource type="Script" path="res://systems/weather_system/CloudSpawner.gd" id="15_lx00t"]
+[ext_resource type="Script" path="res://systems/weather_system/Rain.gd" id="17_lcsua"]
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_0wiyo"]
+polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2v2hn"]
 texture = ExtResource("8_heaeu")
 texture_region_size = Vector2i(32, 32)
 0:0/0 = 0
+0:0/0/occlusion_layer_0/polygon = SubResource("OccluderPolygon2D_0wiyo")
 
 [sub_resource type="TileSet" id="TileSet_i3bfe"]
 tile_size = Vector2i(32, 32)
+occlusion_layer_0/light_mask = 1
 sources/1 = SubResource("TileSetAtlasSource_2v2hn")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_es8a2"]
@@ -41,9 +48,12 @@ weather_scenes = Array[PackedScene]([null, ExtResource("2_lk5vm"), ExtResource("
 
 [node name="WeatherInspector" type="Control" parent="CanvasLayer"]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 236.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -236.0
 offset_bottom = 121.0
+grow_horizontal = 0
 script = ExtResource("5_wpe37")
 
 [node name="Properties" type="VBoxContainer" parent="CanvasLayer/WeatherInspector"]
@@ -62,6 +72,7 @@ layout_mode = 2
 text = "Total moisture: "
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Moisture"]
+custom_minimum_size = Vector2(94.935, 0)
 layout_mode = 2
 step = 0.1
 allow_greater = true
@@ -77,6 +88,7 @@ layout_mode = 2
 text = "max moisture: "
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/MaxMoisture"]
+custom_minimum_size = Vector2(94.935, 0)
 layout_mode = 2
 step = 0.1
 allow_greater = true
@@ -92,6 +104,7 @@ layout_mode = 2
 text = "Saturated moisture"
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture"]
+custom_minimum_size = Vector2(94.935, 0)
 layout_mode = 2
 step = 0.1
 allow_greater = true
@@ -107,12 +120,24 @@ layout_mode = 2
 text = "Temperature:"
 
 [node name="Value" type="SpinBox" parent="CanvasLayer/WeatherInspector/Properties/Temperature"]
+custom_minimum_size = Vector2(94.935, 0)
 layout_mode = 2
 step = 0.1
 allow_greater = true
 allow_lesser = true
 editable = false
 suffix = "Cº"
+
+[node name="IsRaining" type="CheckBox" parent="CanvasLayer/WeatherInspector/Properties"]
+layout_mode = 2
+disabled = true
+text = "Is raining"
+
+[node name="WeatherControl" parent="CanvasLayer" instance=ExtResource("6_s4o4s")]
+offset_left = 4.0
+offset_top = -2.0
+offset_right = 348.0
+offset_bottom = 136.0
 
 [node name="WeatherManager" type="Node2D" parent="."]
 script = ExtResource("3_8s3jg")
@@ -123,7 +148,7 @@ script = ExtResource("4_64om7")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.3, 0.3)
+zoom = Vector2(0.1, 0.1)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -150,7 +175,7 @@ water_evaporation_per_tick = 1.0
 max_air_humidity = 20.0
 max_humidity_change = 5.0
 humidity_transfer_speed = 0.001
-humidity_elevation_speed = 1.0
+humidity_elevation_speed = 0.5
 max_moisture_height = -7
 
 [node name="Temperature" type="Node" parent="."]
@@ -176,6 +201,12 @@ script = ExtResource("14_pxyjs")
 script = ExtResource("15_lx00t")
 cloud_drawer = ExtResource("13_f5qil")
 
+[node name="RainManager" type="Node" parent="."]
+script = ExtResource("17_lcsua")
+start_raining_on_saturation = 26.0
+max_rain_height = -4.0
+moisture_loss = 1.0
+
 [node name="Sun" type="DirectionalLight2D" parent="."]
 position = Vector2(-853, -4326)
 rotation = -0.110427
@@ -185,7 +216,10 @@ energy = 0.5
 shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
 
+[node name="RainEffect" parent="." instance=ExtResource("2_lk5vm")]
+
 [connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
+[connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
 [connection signal="area_hidden" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_hidden"]
 [connection signal="area_shown" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_shown"]

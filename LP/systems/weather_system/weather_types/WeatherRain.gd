@@ -1,4 +1,5 @@
 extends WeatherFallingEffect
+class_name WeatherRain
 
 # Rain-specific parameters
 @export var rain_texture: Texture2D
@@ -12,9 +13,14 @@ func _ready():
 
 
 
-func _customize_emitter(emitter:GPUParticles2D) -> void:
+func _customize_emitter(emitter:GPUParticles2D,_for_position:Vector2i) -> void:
 	var process_material : ParticleProcessMaterial = emitter.process_material
-	process_material.initial_velocity_min=800
+	emitter.collision_base_size
+	process_material.initial_velocity_min=2000
+	get_tree().create_timer(2).timeout.connect(func():
+		process_material.initial_velocity_min=600
+		process_material.initial_velocity_max=800
+		)
 	process_material.alpha_curve=drops_alpha_curve
 	emitter.texture = atlas_texture
 	emitter.randomness = 0
@@ -36,3 +42,11 @@ func _customize_emitter(emitter:GPUParticles2D) -> void:
 func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
 	# Adjust emitter properties based on weather parameters
 	pass
+
+func _get_needed_positions()->Array[Vector2i]:
+	var adjacent_positions :Array[Vector2i]= super._get_needed_positions()
+	var needed_positions: Array[Vector2i]=[]
+	for i in adjacent_positions:
+		if WeatherGlobals.rain_manager.is_raining_on_area(i):
+			needed_positions.append(i)
+	return needed_positions

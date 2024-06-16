@@ -20,20 +20,26 @@ func _ready():
 	humidity.saturated_water.connect(show_clouds)
 
 func show_clouds(_area)->void:
-	var amount=round(humidity.get_saturated_water(area)-get_child_count()/2)
+	var amount=round(humidity.get_saturated_water(area)-get_child_count())
 	if amount>0 and get_child_count()<max_clouds:
 		show_cloud_screen(cloud_primary_color,amount)
 		if humidity.get_saturated_water(area)>30:
 			show_cloud_screen(cloud_secondary_color,amount/2)
-	if humidity.get_saturated_water(area)<40 and get_child_count()>=max_clouds:
+		
+	if (humidity.get_saturated_water(area)<40 and get_child_count()>=max_clouds):
 		await get_tree().create_tween().tween_property(get_child(0),"modulate:a",0,2).finished
 		get_child(0).queue_free()
+	if amount<0:
+		for i in range(amount):
+			get_tree().create_tween().tween_property(get_child(i),"modulate:a",0,2).finished.connect(func():
+				get_child(i).queue_free()
+				)
 
 func show_cloud_screen(color:Color,amount:int):
 	var i=0
-	while i<amount/10:
+	while i<amount/5:
 		var new_cloud=Polygon2D.new()
-		var shape=get_cloud(10)
+		var shape=get_cloud(50)
 		new_cloud.polygon=shape
 		new_cloud.color=color
 		new_cloud.modulate.a=0
@@ -47,13 +53,16 @@ func show_cloud_screen(color:Color,amount:int):
 			new_cloud.add_child(occluder)
 		i+=1
 
+func get_circle_radius()->float:
+	return circle_radius+size_change_per_humidity*clamp(humidity.get_saturated_water(area),0,80)
+
 ## Returns a polygon representing a circle
 func get_circle(circle_position:Vector2=Vector2.ZERO)->PackedVector2Array:
 	var angle=0
 	var angle_progression=(2*PI)/circle_sides
 	var circle := PackedVector2Array([])
 	for side in range(circle_sides):
-		var radius=circle_radius+size_change_per_humidity*clamp(humidity.get_saturated_water(area),0,80)
+		var radius= get_circle_radius()
 		circle.append(Vector2.from_angle(angle)*radius+circle_position)
 		angle+=angle_progression
 	return circle
@@ -68,6 +77,6 @@ func get_cloud(max_size:int)->PackedVector2Array:
 		last_cloud=fusion[0]
 		var offset=Vector2.from_angle(randf_range(0,2*PI))
 		offset.y/=3
-		cloud_position+=offset*(circle_radius+size_change_per_humidity*clamp(humidity.get_saturated_water(area),0,80))/2
+		cloud_position+=offset*get_circle_radius()/2
 		parts+=1
 	return last_cloud

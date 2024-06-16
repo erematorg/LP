@@ -18,6 +18,7 @@ func update_stats():
 	$Properties/MaxMoisture/Value.value = humidity.get_max_humidity(selected_area)
 	$Properties/Temperature/Value.value = temperature.get_temperature(selected_area)
 	$Properties/SaturatedMoisture/Value.value = humidity.get_saturated_water(selected_area)
+	$Properties/IsRaining.button_pressed=WeatherGlobals.rain_manager.is_raining_on_area(selected_area)
 
 func select_area(area:Vector2i):
 	area_indicator.global_position=Vector2(area)*WeatherGlobals.grid_size

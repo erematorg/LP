@@ -7,7 +7,7 @@ func _ready():
 	atlas_texture = snow_texture
 	super._ready()
 
-func _customize_emitter(emitter:GPUParticles2D):
+func _customize_emitter(emitter:GPUParticles2D,_for_position):
 	var process_material: ParticleProcessMaterial=emitter.process_material
 	process_material.scale_min=4
 
