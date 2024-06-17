@@ -42,7 +42,7 @@ func spawn_particles():
 	add_child(particle)
 	particles.append(particle)
 
-func update_particles(delta: float):
+func update_particles(_delta: float):
 	for particle in particles:
 		if particle.position.y > get_viewport().get_visible_rect().size.y:
 			particles.erase(particle)

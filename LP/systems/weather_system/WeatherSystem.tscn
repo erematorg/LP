@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=24 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -17,6 +17,8 @@
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
 [ext_resource type="Script" path="res://systems/weather_system/CloudSpawner.gd" id="15_lx00t"]
 [ext_resource type="Script" path="res://systems/weather_system/Rain.gd" id="17_lcsua"]
+[ext_resource type="Script" path="res://systems/weather_system/HumidityVisualizer.gd" id="18_ljdel"]
+[ext_resource type="PackedScene" uid="uid://c7id5e2cvg7e2" path="res://systems/weather_system/HumidityArrow.tscn" id="18_ln4s2"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_0wiyo"]
 polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
@@ -148,7 +150,7 @@ script = ExtResource("4_64om7")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.1, 0.1)
+zoom = Vector2(0.2, 0.2)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -171,12 +173,12 @@ script = ExtResource("10_5an84")
 [node name="Humidity" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("11_nmlqm")
-water_evaporation_per_tick = 1.0
+water_evaporation_per_tick = 0.1
 max_air_humidity = 20.0
 max_humidity_change = 5.0
 humidity_transfer_speed = 0.001
-humidity_elevation_speed = 0.5
-max_moisture_height = -7
+humidity_elevation_speed = 0.3
+max_moisture_height = -4
 
 [node name="Temperature" type="Node" parent="."]
 unique_name_in_owner = true
@@ -191,6 +193,7 @@ offset_bottom = 40.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
+wait_time = 0.1
 autostart = true
 
 [node name="AreaVisibility" type="Node" parent="."]
@@ -203,9 +206,9 @@ cloud_drawer = ExtResource("13_f5qil")
 
 [node name="RainManager" type="Node" parent="."]
 script = ExtResource("17_lcsua")
-start_raining_on_saturation = 26.0
-max_rain_height = -4.0
-moisture_loss = 1.0
+start_raining_on_saturation = 20.0
+max_rain_height = -4
+moisture_loss = 4.0
 
 [node name="Sun" type="DirectionalLight2D" parent="."]
 position = Vector2(-853, -4326)
@@ -218,6 +221,12 @@ shadow_color = Color(0, 0, 0, 1)
 
 [node name="RainEffect" parent="." instance=ExtResource("2_lk5vm")]
 
+[node name="HumidityVisualizer" type="Node" parent="."]
+script = ExtResource("18_ljdel")
+enabled = true
+arrow = ExtResource("18_ln4s2")
+
+[connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
 [connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
 [connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]

@@ -9,7 +9,7 @@ var shown_areas:Array[Vector2i]
 
 
 
-func _process(delta):
+func _process(_delta):
 	var new_shown_areas=get_visible_areas()
 	for i in shown_areas:
 		if not new_shown_areas.has(i):

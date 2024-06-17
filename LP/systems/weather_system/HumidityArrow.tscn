@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://c7id5e2cvg7e2"]
+
+[node name="ArrowPolygon" type="Polygon2D"]
+polygon = PackedVector2Array(-21, -17, 14, -17, 15, -41, 37, -5, 14, 28, 16, 4, -22, 1)
+
+[node name="Amount" type="Label" parent="."]
+offset_left = -19.0
+offset_top = 26.0
+offset_right = 21.0
+offset_bottom = 49.0
+theme_override_font_sizes/font_size = 32

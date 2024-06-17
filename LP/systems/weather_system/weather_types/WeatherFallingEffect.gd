@@ -9,6 +9,8 @@ class_name WeatherFallingEffect
 @export var initial_gravity : float = 400
 @export var gravity : float = 30
 @export var max_height:int=-4
+## Time between the emitter not being needed and it being deleted
+@export var emitter_finishing_margin:float=10
 
 ## Assigns a discrete cell to the camera using WeatherGlobals.grid_size, used to know when to spawn more emitters.
 var camera_grid_position : Vector2
@@ -18,7 +20,7 @@ func _ready():
 	position=Vector2.ZERO
 	super._ready()
 
-func _process(delta):
+func _process(_delta):
 	camera_grid_position.x = floor(camera.position.x/WeatherGlobals.grid_size.x)
 	camera_grid_position.y = floor(camera.position.y/WeatherGlobals.grid_size.y)
 	fill_needed_spaces()
@@ -27,17 +29,15 @@ func fill_needed_spaces():
 	var needed_positions=_get_needed_positions()
 	for filled_position in particles_by_position.keys():
 		var particle_in_position: GPUParticles2D = particles_by_position[filled_position]
-		if not needed_positions.has(filled_position):
-			if filled_position.y >= camera_grid_position.y:
-				phase_out_emitter(particle_in_position)
+		if needed_positions.has(filled_position):
+			# Emitters shouldnt be on if we can see the rain generate
+			if filled_position.y==camera_grid_position.y:
+				particle_in_position.emitting=false
 			else:
-				particle_in_position.queue_free()
-			particles_by_position.erase(filled_position)
-		# Emitters shouldnt be on if we can see the rain generate
-		if filled_position.y==camera_grid_position.y:
-			particle_in_position.emitting=false
+				particle_in_position.emitting=true
 		else:
-			particle_in_position.emitting=true
+			phase_out_emitter(particle_in_position)
+			particles_by_position.erase(filled_position)
 	
 	for i in needed_positions:
 		if not particles_by_position.has(i):
@@ -68,6 +68,7 @@ func fill_needed_spaces():
 			get_tree().create_timer(initial_gravity_time).timeout.connect(adjust_gravity.bind(new_emitter))
 			add_child(new_emitter)
 
+## Returns a list of vector2i's representing the areas where emitters need to be placed
 func _get_needed_positions()->Array[Vector2i]:
 	var needed_positions: Array[Vector2i] = []
 	if camera_grid_position.y>=max_height:
@@ -97,9 +98,11 @@ func adjust_gravity(emitter):
 
 func phase_out_emitter(emitter:GPUParticles2D):
 	emitter.emitting=false
-	await get_tree().create_timer( 15 * (WeatherGlobals.grid_size.y/1080)).timeout
-	emitter.queue_free()
+	get_tree().create_tween().tween_property(emitter,"modulate:a",0,emitter_finishing_margin-1)
+	get_tree().create_timer(emitter_finishing_margin).timeout.connect(func():
+		emitter.queue_free()
+		)
 
 ## Should be overriden, changing the emitter's default values.
-func _customize_emitter(emitter:GPUParticles2D,_for_position:Vector2i) ->void:
+func _customize_emitter(_emitter:GPUParticles2D,_for_position:Vector2i) ->void:
 	pass

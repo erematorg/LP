@@ -7,6 +7,8 @@ signal tick_end
 ## Emitted when an area gets saturated water (more than it can hold)
 signal saturated_water(area)
 
+signal humidity_transmitted(from:Vector2i,to:Vector2i,amount:float)
+
 @export var saturated_water_per_area: Dictionary
 
 @export var water_evaporation_per_tick:float
@@ -75,7 +77,7 @@ func absorb_water():
 		for area in i.covered_areas:
 			if not air_humidity_per_area.has(area):
 				air_humidity_per_area[area]=0
-			if air_humidity_per_area[area]<max_air_humidity:
+			if air_humidity_per_area[area]<get_max_humidity(area)-water_evaporation_per_tick:
 				add_to_humidity(area,water_evaporation_per_tick)
 				i.reduce(water_evaporation_per_tick)
 
@@ -97,6 +99,7 @@ func distribute_humidity():
 				var amount_to_transfer=clamp(transfer_speed,0,air_humidity_per_area[area])
 				add_to_humidity(new_area,amount_to_transfer)
 				air_humidity_per_area[area] -= amount_to_transfer
+				humidity_transmitted.emit(area,new_area,amount_to_transfer)
 
 func _on_tick_timeout():
 	distribute_humidity()

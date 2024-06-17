@@ -27,7 +27,6 @@ func reduce(area:float):
 	var height_to_remove=area/width
 	var height=get_height()
 	if height_to_remove<height:
-		var cut_height = surface_points[0].y + height_to_remove
 		var x_ordered_polygon: Array = Array(polygon)
 		x_ordered_polygon.sort_custom(is_rightmost_x)
 		var polyline=Geometry2D.offset_polyline([Vector2(x_ordered_polygon[0].x-1,surface_points[0].y),Vector2(x_ordered_polygon[polygon.size()-1].x+1,surface_points[0].y)],height_to_remove)

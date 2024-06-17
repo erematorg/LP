@@ -15,7 +15,6 @@ func _ready():
 
 func _customize_emitter(emitter:GPUParticles2D,_for_position:Vector2i) -> void:
 	var process_material : ParticleProcessMaterial = emitter.process_material
-	emitter.collision_base_size
 	process_material.initial_velocity_min=2000
 	get_tree().create_timer(2).timeout.connect(func():
 		process_material.initial_velocity_min=600

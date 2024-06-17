@@ -11,6 +11,10 @@ class_name CloudDrawer
 @export var max_clouds:int
 ## The size of cloud parts increases this much for every px squared of humidity
 @export var size_change_per_humidity:float
+## The amount of pixels squared of water that a cloud represents
+@export var water_per_cloud:float
+#How many circles make a cloud
+@export var cloud_parts:int
 
 var area:Vector2i = Vector2i.ZERO
 
@@ -20,30 +24,34 @@ func _ready():
 	humidity.saturated_water.connect(show_clouds)
 
 func show_clouds(_area)->void:
-	var amount=round(humidity.get_saturated_water(area)-get_child_count())
-	if amount>0 and get_child_count()<max_clouds:
-		show_cloud_screen(cloud_primary_color,amount)
-		if humidity.get_saturated_water(area)>30:
-			show_cloud_screen(cloud_secondary_color,amount/2)
-		
+	var amount_of_water=round(humidity.get_saturated_water(area)-get_child_count()*water_per_cloud)
+	var clouds_to_create=round(amount_of_water/water_per_cloud)
+	if clouds_to_create>0 and get_child_count()<max_clouds:
+		if humidity.get_saturated_water(area)>15:
+			create_clouds(cloud_secondary_color,clouds_to_create/2)
+			create_clouds(cloud_primary_color,clouds_to_create/2)
+		else:
+			create_clouds(cloud_primary_color,clouds_to_create)
+			
 	if (humidity.get_saturated_water(area)<40 and get_child_count()>=max_clouds):
 		await get_tree().create_tween().tween_property(get_child(0),"modulate:a",0,2).finished
 		get_child(0).queue_free()
-	if amount<0:
-		for i in range(amount):
-			get_tree().create_tween().tween_property(get_child(i),"modulate:a",0,2).finished.connect(func():
-				get_child(i).queue_free()
+	if clouds_to_create<0:
+		for i in range(abs(clouds_to_create)):
+			if get_child_count()>i:
+				get_tree().create_tween().tween_property(get_child(i),"modulate:a",0,1).finished.connect(func():
+					get_child(i).queue_free()
 				)
 
-func show_cloud_screen(color:Color,amount:int):
+func create_clouds(color:Color,amount:int):
 	var i=0
-	while i<amount/5:
+	while i<amount:
 		var new_cloud=Polygon2D.new()
-		var shape=get_cloud(50)
+		var shape=get_cloud(cloud_parts)
 		new_cloud.polygon=shape
 		new_cloud.color=color
 		new_cloud.modulate.a=0
-		get_tree().create_tween().tween_property(new_cloud,"modulate:a",1,5)
+		get_tree().create_tween().tween_property(new_cloud,"modulate:a",0.9,5)
 		add_child(new_cloud)
 		if randf_range(0,10)>5:
 			var occluder=LightOccluder2D.new()
