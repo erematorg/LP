@@ -39,8 +39,9 @@ func show_clouds(_area)->void:
 	if clouds_to_create<0:
 		for i in range(abs(clouds_to_create)):
 			if get_child_count()>i:
-				get_tree().create_tween().tween_property(get_child(i),"modulate:a",0,1).finished.connect(func():
-					get_child(i).queue_free()
+				var cloud_to_delete=get_child(i)
+				get_tree().create_tween().tween_property(cloud_to_delete,"modulate:a",0,1).finished.connect(func():
+					cloud_to_delete.queue_free()
 				)
 
 func create_clouds(color:Color,amount:int):

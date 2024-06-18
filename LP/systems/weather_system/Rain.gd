@@ -13,18 +13,6 @@ var columns_raining:Dictionary
 func _init():
 	WeatherGlobals.rain_manager=self
 
-func _process(delta):
-	for x in columns_raining.keys():
-		var area=Vector2i(x,max_rain_height)
-		humidity.saturated_water_per_area[area]-=moisture_loss*delta
-		columns_raining[x]-=moisture_loss*delta
-		if humidity.saturated_water_per_area[area]<=0:
-			humidity.saturated_water_per_area[area]=0
-			columns_raining.erase(x)
-		elif columns_raining[x]<=0:
-			columns_raining.erase(x)
-		
-		humidity.saturated_water.emit(area)
 
 func _on_humidity_saturated_water(area):
 	var saturated_water:float=humidity.get_saturated_water(area)
@@ -35,3 +23,17 @@ func is_raining_on_area(area)->bool:
 	if area.y>=max_rain_height and columns_raining.has(area.x):
 		return true
 	return false
+
+
+func _on_tick_timeout():
+	for x in columns_raining.keys():
+		var area=Vector2i(x,max_rain_height)
+		humidity.saturated_water_per_area[area]-=moisture_loss
+		columns_raining[x]-=moisture_loss
+		if humidity.saturated_water_per_area[area]<=0:
+			humidity.saturated_water_per_area[area]=0
+			columns_raining.erase(x)
+		elif columns_raining[x]<=0:
+			columns_raining.erase(x)
+		
+		humidity.saturated_water.emit(area)

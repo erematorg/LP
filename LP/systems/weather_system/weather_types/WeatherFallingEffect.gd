@@ -49,7 +49,7 @@ func fill_needed_spaces():
 			# At first the gravity is absurd to populate the screen with rain
 			process_material.gravity = Vector3(0, initial_gravity,0)
 			process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-			if i.y<max_height:
+			if i.y>max_height:
 				process_material.collision_mode=ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
 			
 			#Set proportions
