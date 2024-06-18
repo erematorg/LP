@@ -1,4 +1,5 @@
 extends Node
+class_name AreaVisibility
 ## Helper for other nodes, meant to notify them when a new area is made visible
 ## or hidden without populating the entire world with a visibility notifier.
 
@@ -7,7 +8,8 @@ signal area_hidden(area:Vector2i)
 
 var shown_areas:Array[Vector2i]
 
-
+func _init():
+	WeatherGlobals.area_visibility=self
 
 func _process(_delta):
 	var new_shown_areas=get_visible_areas()

@@ -153,6 +153,7 @@ script = ExtResource("4_64om7")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
+zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -195,7 +196,7 @@ offset_bottom = 40.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
-wait_time = 0.3
+wait_time = 0.1
 autostart = true
 script = ExtResource("14_srnjo")
 
@@ -226,20 +227,21 @@ shadow_color = Color(0, 0, 0, 1)
 
 [node name="HumidityVisualizer" type="Node" parent="."]
 script = ExtResource("18_ljdel")
-enabled = true
 arrow = ExtResource("18_ln4s2")
 
 [node name="Wind" type="Node" parent="."]
 script = ExtResource("20_yy6d8")
-neutral_point_distance = 6
-minimal_wind_unit = 1.0
-wind_per_distance_to_neutral_point = 1.0
-added_multiplier_per_altitude = 0.1
-x_change_per_tick = 0.1
+neutral_point_distance = 8.0
+minimal_wind_unit = 0.8
+wind_per_distance_to_neutral_point = 0.5
+added_multiplier_per_altitude = 0.2
 max_wind = 20.0
+ticks_per_cycle = 40
 
 [node name="WindVisualizer" type="Node" parent="."]
 script = ExtResource("22_1h03f")
+enabled = true
+arrow = ExtResource("18_ln4s2")
 
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
 [connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
@@ -247,5 +249,6 @@ script = ExtResource("22_1h03f")
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Tick" method="_on_timeout"]
 [connection signal="timeout" from="Tick" to="RainManager" method="_on_tick_timeout"]
+[connection signal="timeout" from="Tick" to="WindVisualizer" method="_on_tick_timeout"]
 [connection signal="area_hidden" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_hidden"]
 [connection signal="area_shown" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_shown"]

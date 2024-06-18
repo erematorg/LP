@@ -19,5 +19,6 @@ func _on_humidity_humidity_transmitted(from, to, amount):
 		new_arrow.rotation=PI/2
 	add_child(new_arrow)
 	new_arrow.get_node("Amount").text=str(amount)
+	new_arrow.get_node("Arrow").color=Color.SKY_BLUE
 	await get_tree().create_tween().tween_property(new_arrow,"modulate:a",0,1).finished
 	new_arrow.queue_free()
