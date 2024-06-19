@@ -15,12 +15,10 @@ func _on_tick_timeout():
 		indicator.position=WeatherUtilities.get_real_position(area)
 		indicator.position+=WeatherGlobals.grid_size/2
 		var arrow=indicator.get_node("Arrow")
-		if wind.length()!=0:
-			arrow.scale=Vector2(wind.length(),1)
+		if wind!=0:
+			arrow.scale=Vector2(wind,1)
 		else:
 			arrow.color=Color.INDIAN_RED
-		arrow.rotation=wind.angle()
-		indicator.get_node("Amount").rotation=-indicator.rotation
 		indicator.get_node("Amount").text=str(wind)
 		add_child(indicator)
 		

@@ -8,8 +8,8 @@ func _process(delta):
 	if not enabled:
 		return
 	
-	var wind: Vector2=wind_manager.get_wind_on_area(get_parent().area)
-	get_parent().position+=wind*(delta/WeatherGlobals.tick.wait_time)
+	var wind: float=wind_manager.get_wind_on_area(get_parent().area)
+	get_parent().position+=Vector2(wind,0)*(delta/WeatherGlobals.tick.wait_time)
 	
 	# Check in case if we moved out of the area.
 	var new_area:Vector2i = WeatherUtilities.get_grid_position(get_parent().position+WeatherGlobals.grid_size/2)

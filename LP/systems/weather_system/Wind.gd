@@ -17,7 +17,7 @@ class_name Wind
 func _init():
 	WeatherGlobals.wind=self
 
-func get_wind_on_area(area:Vector2i)->Vector2:
+func get_wind_on_area(area:Vector2i)->float:
 	area=Vector2(area)
 	var x_change=floor(WeatherGlobals.tick.total_ticks/ticks_per_x_change)
 	area.x+=x_change
@@ -25,22 +25,22 @@ func get_wind_on_area(area:Vector2i)->Vector2:
 	var neutral_point_index=floor(area.x/neutral_point_distance)
 	var neutral_point=neutral_point_index*neutral_point_distance
 	var stage=area.x-neutral_point
-	var wind:=Vector2.ZERO
+	var wind:=0
 	if stage<neutral_point_distance/2:
 		var distance_to_next_neutral_point=neutral_point_distance-stage
-		wind.x=minimal_wind_unit+distance_to_next_neutral_point*wind_per_distance_to_neutral_point
+		wind=minimal_wind_unit+distance_to_next_neutral_point*wind_per_distance_to_neutral_point
 	elif stage>=neutral_point_distance/2:
-		wind.x=-(minimal_wind_unit+stage*wind_per_distance_to_neutral_point)
+		wind=-(minimal_wind_unit+stage*wind_per_distance_to_neutral_point)
 	var total_multiplier=added_multiplier_per_altitude*area.y
-	var added_wind_for_altitude=total_multiplier*wind.x
-	if wind.x>0:
-		added_wind_for_altitude=clamp(added_wind_for_altitude,-10,wind.x)
+	var added_wind_for_altitude=total_multiplier*wind
+	if wind>0:
+		added_wind_for_altitude=clamp(added_wind_for_altitude,-10,wind)
 	else:
-		added_wind_for_altitude=clamp(added_wind_for_altitude,wind.x,10)
+		added_wind_for_altitude=clamp(added_wind_for_altitude,wind,10)
 		
-	wind.x-=added_wind_for_altitude
+	wind-=added_wind_for_altitude
 	var time_multiplier:float=get_time_multiplier()
-	wind.x*=time_multiplier
+	wind*=time_multiplier
 	return wind
 
 func get_time_multiplier()->float:
