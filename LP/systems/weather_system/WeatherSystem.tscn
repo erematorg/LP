@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=28 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
 [ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
+[ext_resource type="Script" path="res://systems/weather_system/HumidityWind.gd" id="13_1vs7y"]
 [ext_resource type="PackedScene" uid="uid://k74yfm72apcb" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
 [ext_resource type="Script" path="res://systems/weather_system/Tick.gd" id="14_srnjo"]
@@ -183,6 +184,9 @@ humidity_transfer_speed = 0.001
 humidity_elevation_speed = 0.4
 max_moisture_height = -4
 
+[node name="HumidityWind" type="Node" parent="Humidity"]
+script = ExtResource("13_1vs7y")
+
 [node name="Temperature" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("12_73asx")
@@ -212,7 +216,7 @@ cloud_drawer = ExtResource("13_f5qil")
 script = ExtResource("17_lcsua")
 start_raining_on_saturation = 20.0
 max_rain_height = -4
-moisture_loss = 0.5
+moisture_loss = 0.3
 
 [node name="Sun" type="DirectionalLight2D" parent="."]
 position = Vector2(-853, -4326)
@@ -242,7 +246,7 @@ ticks_per_x_change = 1000.0
 [node name="WindVisualizer" type="Node" parent="."]
 script = ExtResource("22_1h03f")
 enabled = true
-arrow = ExtResource("18_ln4s2")
+indicator_template = ExtResource("18_ln4s2")
 
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
 [connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
@@ -251,5 +255,6 @@ arrow = ExtResource("18_ln4s2")
 [connection signal="timeout" from="Tick" to="Tick" method="_on_timeout"]
 [connection signal="timeout" from="Tick" to="RainManager" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="WindVisualizer" method="_on_tick_timeout"]
+[connection signal="timeout" from="Tick" to="Humidity/HumidityWind" method="_on_tick_timeout"]
 [connection signal="area_hidden" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_hidden"]
 [connection signal="area_shown" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_shown"]

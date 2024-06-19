@@ -61,12 +61,23 @@ func get_max_humidity(area:Vector2i):
 func add_to_humidity(area:Vector2i,amount:float):
 	var addition=clamp(amount,0,get_max_humidity(area)-get_air_humidity(area))
 	var saturation=amount-addition
+	if not air_humidity_per_area.has(area):
+		air_humidity_per_area[area]=0
 	air_humidity_per_area[area]+=addition
 	if not saturated_water_per_area.has(area):
 		saturated_water_per_area[area]=0
 	saturated_water_per_area[area]+=saturation
 	if saturation>0:
 		saturated_water.emit(area)
+
+## Removes the sugested amount of humidity, and returns the actual removed amount, which may be different
+## in case there wasnt enough humidity
+func decrease_humidity(area:Vector2i,amount:float)->float:
+	var saturated_to_remove=clamp(amount,0,get_saturated_water(area))
+	saturated_water_per_area[area]-=saturated_to_remove
+	var normal_to_remove=clamp(amount-saturated_to_remove,0,get_air_humidity(area))
+	air_humidity_per_area[area]-=normal_to_remove
+	return normal_to_remove+saturated_to_remove
 
 ## From 0 to 1, 1 meaning the air cant hold any more moisture
 func get_relative_humidity(area:Vector2i):
