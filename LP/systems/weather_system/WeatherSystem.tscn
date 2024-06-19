@@ -236,7 +236,8 @@ minimal_wind_unit = 0.8
 wind_per_distance_to_neutral_point = 0.5
 added_multiplier_per_altitude = 0.2
 max_wind = 20.0
-ticks_per_cycle = 40
+ticks_per_cycle = 200
+ticks_per_x_change = 4000.0
 
 [node name="WindVisualizer" type="Node" parent="."]
 script = ExtResource("22_1h03f")

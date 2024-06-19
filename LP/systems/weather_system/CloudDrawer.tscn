@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://k74yfm72apcb"]
+[gd_scene load_steps=3 format=3 uid="uid://k74yfm72apcb"]
 
 [ext_resource type="Script" path="res://systems/weather_system/CloudDrawer.gd" id="1_qyhpy"]
+[ext_resource type="Script" path="res://systems/weather_system/Movement.gd" id="2_b4d5l"]
 
 [node name="CloudDrawer" type="Node2D"]
 script = ExtResource("1_qyhpy")
@@ -13,3 +14,12 @@ max_clouds = 30
 size_change_per_humidity = 4.0
 water_per_cloud = 5.0
 cloud_parts = 40
+
+[node name="Movement" type="Node" parent="."]
+script = ExtResource("2_b4d5l")
+enabled = true
+
+[node name="Clouds" type="Node2D" parent="."]
+
+[node name="Indicator" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-45, 23, 77, 23, 86, -7, 71, -17, 56, -11, 35, -24, 28, -40, 5, -45, -3, -28, -23, -45, -37, -43, -46, -16)

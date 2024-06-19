@@ -1,5 +1,6 @@
 extends Node
 class_name Wind
+
 ## Distance between points with 0 wind.
 @export var neutral_point_distance:float
 ## Minimal amount of wind when not 0, scaled when an area is further away of a neutral point
@@ -11,12 +12,15 @@ class_name Wind
 @export var added_multiplier_per_altitude:float
 @export var max_wind:float
 @export var ticks_per_cycle:int
+@export var ticks_per_x_change:float
 
 func _init():
 	WeatherGlobals.wind=self
 
 func get_wind_on_area(area:Vector2i)->Vector2:
 	area=Vector2(area)
+	var x_change=floor(WeatherGlobals.tick.total_ticks/ticks_per_x_change)
+	area.x+=x_change
 	## The step of a transition between neutral points in which the area it's in.
 	var neutral_point_index=floor(area.x/neutral_point_distance)
 	var neutral_point=neutral_point_index*neutral_point_distance

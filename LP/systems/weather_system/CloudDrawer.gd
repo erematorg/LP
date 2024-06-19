@@ -24,23 +24,24 @@ func _ready():
 	humidity.saturated_water.connect(show_clouds)
 
 func show_clouds(_area)->void:
-	var amount_of_water=round(humidity.get_saturated_water(area)-get_child_count()*water_per_cloud)
+	var amount_of_water=round(humidity.get_saturated_water(area)-$Clouds.get_child_count()*water_per_cloud)
 	var clouds_to_create=round(amount_of_water/water_per_cloud)
-	if clouds_to_create>0 and get_child_count()<max_clouds:
+	if clouds_to_create>0 and $Clouds.get_child_count()<max_clouds:
 		if humidity.get_saturated_water(area)>15:
 			create_clouds(cloud_secondary_color,clouds_to_create/2)
 			create_clouds(cloud_primary_color,clouds_to_create/2)
 		else:
 			create_clouds(cloud_primary_color,clouds_to_create)
 			
-	if (humidity.get_saturated_water(area)<40 and get_child_count()>=max_clouds):
-		await get_tree().create_tween().tween_property(get_child(0),"modulate:a",0,2).finished
-		get_child(0).queue_free()
+	if (humidity.get_saturated_water(area)<40 and $Clouds.get_child_count()>=max_clouds):
+		await get_tree().create_tween().tween_property($Clouds.get_child(0),"modulate:a",0,2).finished
+		$Clouds.get_child(0).queue_free()
 	if clouds_to_create<0:
 		for i in range(abs(clouds_to_create)):
-			if get_child_count()>i:
-				var cloud_to_delete=get_child(i)
-				get_tree().create_tween().tween_property(cloud_to_delete,"modulate:a",0,1).finished.connect(func():
+			if $Clouds.get_child_count()>i:
+				var cloud_to_delete=$Clouds.get_child(i)
+				var tweener:PropertyTweener=get_tree().create_tween().tween_property(cloud_to_delete,"modulate:a",0,1)
+				tweener.finished.connect(func():
 					cloud_to_delete.queue_free()
 				)
 
@@ -53,7 +54,7 @@ func create_clouds(color:Color,amount:int):
 		new_cloud.color=color
 		new_cloud.modulate.a=0
 		get_tree().create_tween().tween_property(new_cloud,"modulate:a",0.9,5)
-		add_child(new_cloud)
+		$Clouds.add_child(new_cloud)
 		if randf_range(0,10)>5:
 			var occluder=LightOccluder2D.new()
 			var occluder_polygon=OccluderPolygon2D.new()

@@ -1,4 +1,5 @@
 extends Node
+class_name CloudSpawner
 ## Crates cloud drawers
 @export var cloud_drawer:PackedScene
 
