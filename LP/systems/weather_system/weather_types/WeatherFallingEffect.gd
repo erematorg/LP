@@ -71,32 +71,16 @@ func fill_needed_spaces():
 
 func update_direction_with_wind():
 	for area in particles_by_position.keys():
-		var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(area)/10
+		var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(area)/50
 		var direction_with_wind=Vector2.DOWN.rotated(rotation_for_wind)
 		particles_by_position[area].process_material.direction=Vector3(direction_with_wind.x,direction_with_wind.y,0)
 
 ## Returns a list of vector2i's representing the areas where emitters need to be placed
 func _get_needed_positions()->Array[Vector2i]:
-	var needed_positions: Array[Vector2i] = []
-	if camera_grid_position.y>=max_height:
-		needed_positions.append_array([
-		Vector2i(camera_grid_position+Vector2(0,0)),
-		Vector2i(camera_grid_position+Vector2(1,0)),
-		Vector2i(camera_grid_position+Vector2(-1,0)),
-			
-		])
-	if camera_grid_position.y>max_height:
-		needed_positions.append_array([
-			Vector2i(camera_grid_position+Vector2(1,-1)),
-			Vector2i(camera_grid_position+Vector2(-1,-1)),
-			Vector2i(camera_grid_position+Vector2(0,-1)),
-		])
-	if camera_grid_position.y>max_height+1:
-		needed_positions.append_array([
-			Vector2i(camera_grid_position+Vector2(1,-2)),
-			Vector2i(camera_grid_position+Vector2(-1,-2)),
-			Vector2i(camera_grid_position+Vector2(0,-2)),
-		])
+	var needed_positions: Array[Vector2i] = WeatherGlobals.area_visibility.shown_areas
+	for area in needed_positions.duplicate():
+		if area.y<max_height:
+			needed_positions.erase(area)
 	return needed_positions
 	
 func adjust_gravity(emitter):

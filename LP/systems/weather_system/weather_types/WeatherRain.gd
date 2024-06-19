@@ -1,14 +1,10 @@
 extends WeatherFallingEffect
 class_name WeatherRain
 
-# Rain-specific parameters
-@export var rain_texture: Texture2D
-
 @export var drops_alpha_curve : CurveTexture
 @export var debug_hints_enabled:bool = false
 
 func _ready():
-	atlas_texture = rain_texture
 	super._ready()
 
 
@@ -37,10 +33,6 @@ func _customize_emitter(emitter:GPUParticles2D,_for_position:Vector2i) -> void:
 		emitter.add_child(debug_sprite)
 		debug_sprite.scale=Vector2(4,4)
 
-
-func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
-	# Adjust emitter properties based on weather parameters
-	pass
 
 func _get_needed_positions()->Array[Vector2i]:
 	var adjacent_positions :Array[Vector2i]= super._get_needed_positions()
