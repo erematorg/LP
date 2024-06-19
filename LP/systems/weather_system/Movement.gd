@@ -14,7 +14,6 @@ func _process(delta):
 	# Check in case if we moved out of the area.
 	var new_area:Vector2i = WeatherUtilities.get_grid_position(get_parent().position+WeatherGlobals.grid_size/2)
 	if new_area!=get_parent().area:
-		cloud_spawner.cloud_drawers.erase(get_parent().area)
-		cloud_spawner.cloud_drawers[new_area]=get_parent()
+		cloud_spawner.remove_drawer(get_parent(),get_parent().area)
+		cloud_spawner.add_drawer(get_parent(),new_area)
 		get_parent().area=new_area
-		print("Area changed!")
