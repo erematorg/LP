@@ -154,7 +154,7 @@ script = ExtResource("4_64om7")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.3, 0.3)
+zoom = Vector2(0.2, 0.2)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 

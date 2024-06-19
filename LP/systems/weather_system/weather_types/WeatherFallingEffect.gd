@@ -17,6 +17,7 @@ var camera_grid_position : Vector2
 var particles_by_position: Dictionary
 
 func _ready():
+	WeatherGlobals.tick.timeout.connect(update_direction_with_wind)
 	position=Vector2.ZERO
 	super._ready()
 
@@ -45,7 +46,7 @@ func fill_needed_spaces():
 			var process_material = ParticleProcessMaterial.new()
 			new_emitter.process_material=process_material
 			process_material.spread=2
-			process_material.direction = Vector3(0, 1,0)
+			process_material.direction=Vector3.DOWN
 			# At first the gravity is absurd to populate the screen with rain
 			process_material.gravity = Vector3(0, initial_gravity,0)
 			process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
@@ -67,6 +68,12 @@ func fill_needed_spaces():
 			particles_by_position[i]=new_emitter
 			get_tree().create_timer(initial_gravity_time).timeout.connect(adjust_gravity.bind(new_emitter))
 			add_child(new_emitter)
+
+func update_direction_with_wind():
+	for area in particles_by_position.keys():
+		var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(area)/10
+		var direction_with_wind=Vector2.DOWN.rotated(rotation_for_wind)
+		particles_by_position[area].process_material.direction=Vector3(direction_with_wind.x,direction_with_wind.y,0)
 
 ## Returns a list of vector2i's representing the areas where emitters need to be placed
 func _get_needed_positions()->Array[Vector2i]:
