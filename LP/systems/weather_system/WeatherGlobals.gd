@@ -6,3 +6,4 @@ var rain_manager:RainManager
 var tick:Tick
 var area_visibility:AreaVisibility
 var wind:Wind
+var temperature:Temperature

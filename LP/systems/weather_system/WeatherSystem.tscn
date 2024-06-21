@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=27 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -7,20 +7,19 @@
 [ext_resource type="Script" path="res://systems/weather_system/WeatherModule.gd" id="4_64om7"]
 [ext_resource type="PackedScene" uid="uid://xucpgvatghij" path="res://systems/weather_system/weather_types/WeatherWind.tscn" id="4_svtc0"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherInspector.gd" id="5_wpe37"]
-[ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="6_s4o4s"]
 [ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="8_heaeu"]
 [ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
 [ext_resource type="Script" path="res://systems/weather_system/WaterPuddle.gd" id="10_5an84"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
 [ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
 [ext_resource type="Script" path="res://systems/weather_system/HumidityWind.gd" id="13_1vs7y"]
-[ext_resource type="PackedScene" uid="uid://dx6ig5hpdiqd" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
+[ext_resource type="PackedScene" uid="uid://k74yfm72apcb" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
 [ext_resource type="Script" path="res://systems/weather_system/Tick.gd" id="14_srnjo"]
 [ext_resource type="Script" path="res://systems/weather_system/CloudSpawner.gd" id="15_lx00t"]
 [ext_resource type="Script" path="res://systems/weather_system/Rain.gd" id="17_lcsua"]
 [ext_resource type="Script" path="res://systems/weather_system/HumidityVisualizer.gd" id="18_ljdel"]
-[ext_resource type="PackedScene" uid="uid://cledqtguorcku" path="res://systems/weather_system/HumidityArrow.tscn" id="18_ln4s2"]
+[ext_resource type="PackedScene" uid="uid://c7id5e2cvg7e2" path="res://systems/weather_system/HumidityArrow.tscn" id="18_ln4s2"]
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="20_yy6d8"]
 [ext_resource type="Script" path="res://systems/weather_system/WindVisualizer.gd" id="22_1h03f"]
 
@@ -115,7 +114,6 @@ layout_mode = 2
 step = 0.1
 allow_greater = true
 allow_lesser = true
-editable = false
 suffix = "px²"
 
 [node name="Temperature" type="HBoxContainer" parent="CanvasLayer/WeatherInspector/Properties"]
@@ -139,12 +137,6 @@ layout_mode = 2
 disabled = true
 text = "Is raining"
 
-[node name="WeatherControl" parent="CanvasLayer" instance=ExtResource("6_s4o4s")]
-offset_left = 4.0
-offset_top = -2.0
-offset_right = 348.0
-offset_bottom = 136.0
-
 [node name="WeatherManager" type="Node2D" parent="."]
 script = ExtResource("3_8s3jg")
 
@@ -154,7 +146,6 @@ script = ExtResource("4_64om7")
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(577, 333)
-zoom = Vector2(0.2, 0.2)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -214,8 +205,9 @@ cloud_drawer = ExtResource("13_f5qil")
 
 [node name="RainManager" type="Node" parent="."]
 script = ExtResource("17_lcsua")
-start_raining_on_saturation = 8.0
+start_raining_on_saturation = 15.0
 max_rain_height = -4
+moisture_loss = 0.8
 
 [node name="Sun" type="DirectionalLight2D" parent="."]
 position = Vector2(-853, -4326)
@@ -228,6 +220,9 @@ shadow_color = Color(0, 0, 0, 1)
 
 [node name="RainEffect" parent="." instance=ExtResource("2_lk5vm")]
 drops_alpha_curve = null
+initial_speed = 1500.0
+normal_speed_min = 800.0
+normal_speed_max = 900.0
 particle_interval_enabled = true
 random_position_enabled = true
 
@@ -250,6 +245,12 @@ script = ExtResource("22_1h03f")
 enabled = true
 indicator_template = ExtResource("18_ln4s2")
 
+[node name="SnowEffect" parent="." instance=ExtResource("3_a8dt6")]
+initial_speed = 1000.0
+normal_speed_min = 500.0
+normal_speed_max = 600.0
+
+[connection signal="value_changed" from="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture/Value" to="CanvasLayer/WeatherInspector" method="_on_value_value_changed"]
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
 [connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
 [connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]

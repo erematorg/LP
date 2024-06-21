@@ -76,6 +76,8 @@ func decrease_humidity(area:Vector2i,amount:float)->float:
 	var saturated_to_remove=clamp(amount,0,get_saturated_water(area))
 	saturated_water_per_area[area]-=saturated_to_remove
 	var normal_to_remove=clamp(amount-saturated_to_remove,0,get_air_humidity(area))
+	if not air_humidity_per_area.has(area):
+		air_humidity_per_area[area]=0
 	air_humidity_per_area[area]-=normal_to_remove
 	return normal_to_remove+saturated_to_remove
 

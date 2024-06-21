@@ -9,6 +9,9 @@ class_name Temperature
 @export var altitude_temperature_change:float
 var temperature_per_area:Dictionary
 
+func _init():
+	WeatherGlobals.temperature=self
+
 func get_temperature(area:Vector2i):
 	if not temperature_per_area.has(area):
 		temperature_per_area[area]=default_temperature

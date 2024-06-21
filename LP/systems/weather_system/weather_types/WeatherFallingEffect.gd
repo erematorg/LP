@@ -12,6 +12,10 @@ class_name WeatherFallingEffect
 ## Time between the emitter not being needed and it being deleted
 @export var emitter_finishing_margin:float=10
 
+@export var initial_speed:float
+@export var normal_speed_min:float
+@export var normal_speed_max:float
+
 ## Assigns a discrete cell to the camera using WeatherGlobals.grid_size, used to know when to spawn more emitters.
 var camera_grid_position : Vector2
 var particles_by_position: Dictionary
@@ -52,6 +56,7 @@ func fill_needed_spaces():
 			process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 			if i.y>max_height:
 				process_material.collision_mode=ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
+			process_material.direction=get_rain_direction(i)
 			
 			#Set proportions
 			new_emitter.lifetime = WeatherGlobals.grid_size.y/50
@@ -61,6 +66,11 @@ func fill_needed_spaces():
 			process_material.emission_shape_offset.x=WeatherGlobals.grid_size.x/2
 			new_emitter.visibility_rect.size=Vector2(WeatherGlobals.grid_size.x*3,WeatherGlobals.grid_size.y*10)
 			
+			process_material.initial_velocity_min=initial_speed
+			get_tree().create_timer(2).timeout.connect(func():
+				process_material.initial_velocity_min=normal_speed_min
+				process_material.initial_velocity_max=normal_speed_max
+			)
 			#Taking into account 0 means at the left of the effect
 			new_emitter.visibility_rect.position.x=-WeatherGlobals.grid_size.x
 			_customize_emitter(new_emitter,i)
@@ -71,9 +81,12 @@ func fill_needed_spaces():
 
 func update_direction_with_wind():
 	for area in particles_by_position.keys():
+		particles_by_position[area].process_material.direction=get_rain_direction(area)
+func get_rain_direction(area:Vector2i)->Vector3:
 		var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(area)/50
 		var direction_with_wind=Vector2.DOWN.rotated(rotation_for_wind)
-		particles_by_position[area].process_material.direction=Vector3(direction_with_wind.x,direction_with_wind.y,0)
+		return Vector3(direction_with_wind.x,direction_with_wind.y,0)
+	
 
 ## Returns a list of vector2i's representing the areas where emitters need to be placed
 func _get_needed_positions()->Array[Vector2i]:

@@ -28,7 +28,7 @@ func is_raining_on_area(area)->bool:
 func _on_tick_timeout():
 	for x in columns_raining.keys():
 		var area=Vector2i(x,max_rain_height)
-		humidity.saturated_water_per_area[area]-=moisture_loss
+		humidity.decrease_humidity(area,moisture_loss)
 		columns_raining[x]-=moisture_loss
 		if humidity.saturated_water_per_area[area]<=0:
 			humidity.saturated_water_per_area[area]=0
