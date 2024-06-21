@@ -13,7 +13,7 @@ config_version=5
 config/name="LP"
 config/description="A systemic 2D platformer in a dynamic living ecosystem"
 config/version="0.1.0"
-run/main_scene="res://systems/ai/behaviour_tree/bt_test_scene.tscn"
+run/main_scene="res://systems/weather_system/WeatherSystem.tscn"
 config/features=PackedStringArray("4.2", "C#", "Mobile")
 config/icon="res://logo.png"
 

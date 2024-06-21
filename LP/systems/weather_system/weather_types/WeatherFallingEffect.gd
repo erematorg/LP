@@ -60,7 +60,7 @@ func fill_needed_spaces():
 			
 			#Set proportions
 			new_emitter.lifetime = WeatherGlobals.grid_size.y/50
-			new_emitter.amount = (800)*(WeatherGlobals.grid_size.x/1080)
+			new_emitter.amount = (1000)*(WeatherGlobals.grid_size.x/1080)
 			new_emitter.visibility_rect.position=Vector2.ZERO
 			process_material.emission_box_extents = Vector3(WeatherGlobals.grid_size.x*0.5,1,0.0)
 			process_material.emission_shape_offset.x=WeatherGlobals.grid_size.x/2

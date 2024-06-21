@@ -10,7 +10,7 @@ func _on_area_visibility_area_shown(area):
 	check_to_spawn(area)
 
 func check_to_spawn(area:Vector2i):
-	if WeatherGlobals.humidity.get_saturated_water(area)>4 and get_node("%AreaVisibility").shown_areas.has(area):
+	if WeatherGlobals.humidity.get_saturated_water(area)>4 and WeatherGlobals.area_visibility.shown_areas.has(area):
 		if not cloud_drawers.has(area):
 			spawn_cloud_on_area(area)
 

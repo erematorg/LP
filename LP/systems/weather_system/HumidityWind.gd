@@ -13,5 +13,5 @@ func _on_tick_timeout():
 			new_area=area+Vector2i(-1,0)
 		if wind>0:
 			new_area=area+Vector2i(1,0)
-		var to_transfer=get_parent().decrease_humidity(area,abs(wind)/10)
+		var to_transfer=get_parent().decrease_humidity(area,abs(wind)/30)
 		get_parent().add_to_humidity(new_area,to_transfer)
