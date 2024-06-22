@@ -1,6 +1,15 @@
-extends WeatherModule
+extends Node2D
 class_name WeatherFallingEffect
 ## Class used for wather effects that need to simulate falling particles which shouldn't dissapear
+
+## Each emitter is assigned a width of the screen defined by this variable.
+@export var water_column_size:float
+
+
+## Emitters appear this much higher than the top of the screen
+@export var emitter_top_margin:float
+
+@export var particle_template:PackedScene
 
 ## How much time should initial gravity be used
 @export var initial_gravity_time:float=3
@@ -16,96 +25,93 @@ class_name WeatherFallingEffect
 @export var normal_speed_min:float
 @export var normal_speed_max:float
 
-## Assigns a discrete cell to the camera using WeatherGlobals.grid_size, used to know when to spawn more emitters.
-var camera_grid_position : Vector2
+## Assigns a discrete cell to the camera using grid_size, used to know when to spawn more emitters.
+var camera_grid_position : Vector2i
 var particles_by_position: Dictionary
+var grid_size:Vector2
+var needed_positions : Array[Vector2i]
 
+@onready var view_size=get_viewport_rect().size
 func _ready():
-	WeatherGlobals.tick.timeout.connect(update_direction_with_wind)
 	position=Vector2.ZERO
-	super._ready()
+	get_viewport().size_changed.connect(update_grid_size)
+	update_grid_size()
 
-func _process(_delta):
-	camera_grid_position.x = floor(camera.position.x/WeatherGlobals.grid_size.x)
-	camera_grid_position.y = floor(camera.position.y/WeatherGlobals.grid_size.y)
-	fill_needed_spaces()
+func update_grid_size():
+	view_size=get_viewport_rect().size
+	var new_grid_size=Vector2(water_column_size,view_size.y)
+	if new_grid_size!=grid_size:
+		grid_size=new_grid_size
 
-func fill_needed_spaces():
-	var needed_positions=_get_needed_positions()
-	for filled_position in particles_by_position.keys():
-		var particle_in_position: GPUParticles2D = particles_by_position[filled_position]
-		if needed_positions.has(filled_position):
-			# Emitters shouldnt be on if we can see the rain generate
-			if filled_position.y==camera_grid_position.y:
-				particle_in_position.emitting=false
-			else:
-				particle_in_position.emitting=true
-		else:
-			phase_out_emitter(particle_in_position)
-			particles_by_position.erase(filled_position)
-	
-	for i in needed_positions:
-		if not particles_by_position.has(i):
-			var new_emitter = GPUParticles2D.new()
-			var process_material = ParticleProcessMaterial.new()
-			new_emitter.process_material=process_material
-			process_material.spread=2
-			process_material.direction=Vector3.DOWN
-			# At first the gravity is absurd to populate the screen with rain
-			process_material.gravity = Vector3(0, initial_gravity,0)
-			process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-			if i.y>max_height:
-				process_material.collision_mode=ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
-			process_material.direction=get_rain_direction(i)
-			
-			#Set proportions
-			new_emitter.lifetime = WeatherGlobals.grid_size.y/50
-			new_emitter.amount = (1000)*(WeatherGlobals.grid_size.x/1080)
-			new_emitter.visibility_rect.position=Vector2.ZERO
-			process_material.emission_box_extents = Vector3(WeatherGlobals.grid_size.x*0.5,1,0.0)
-			process_material.emission_shape_offset.x=WeatherGlobals.grid_size.x/2
-			new_emitter.visibility_rect.size=Vector2(WeatherGlobals.grid_size.x*3,WeatherGlobals.grid_size.y*10)
-			
-			process_material.initial_velocity_min=initial_speed
-			get_tree().create_timer(2).timeout.connect(func():
-				process_material.initial_velocity_min=normal_speed_min
-				process_material.initial_velocity_max=normal_speed_max
-			)
-			#Taking into account 0 means at the left of the effect
-			new_emitter.visibility_rect.position.x=-WeatherGlobals.grid_size.x
-			_customize_emitter(new_emitter,i)
-			new_emitter.global_position=Vector2(i)*WeatherGlobals.grid_size
-			particles_by_position[i]=new_emitter
-			get_tree().create_timer(initial_gravity_time).timeout.connect(adjust_gravity.bind(new_emitter))
-			add_child(new_emitter)
-
-func update_direction_with_wind():
+func _process(delta):
+	camera_grid_position=(get_viewport().get_camera_2d().position/grid_size).floor()
+	needed_positions=_get_needed_positions()
+	for area in needed_positions:
+		if not particles_by_position.has(area):
+			add_emitter(area)
 	for area in particles_by_position.keys():
-		particles_by_position[area].process_material.direction=get_rain_direction(area)
-func get_rain_direction(area:Vector2i)->Vector3:
-		var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(area)/50
-		var direction_with_wind=Vector2.DOWN.rotated(rotation_for_wind)
-		return Vector3(direction_with_wind.x,direction_with_wind.y,0)
+		if not needed_positions.has(area):
+			if is_instance_valid(particles_by_position[area]):
+				phase_out_emitter(particles_by_position[area],area)
+
+func get_camera_grid_position()->Vector2i:
+	return Vector2i((get_viewport().get_camera_2d().position/grid_size).floor())
+
+## on_grid_position is in the rain grid.
+func add_emitter(on_grid_position:Vector2i):
+	var x = on_grid_position.x*grid_size.x + water_column_size/2
+	var particle_scene:Node2D = particle_template.instantiate()
+	particle_scene.position.x=x
+	particle_scene.position.y=on_grid_position.y*grid_size.y - emitter_top_margin
 	
+	
+	add_child(particle_scene)
+	var emitter:GPUParticles2D = particle_scene.get_node("Emitter")
+	var particles:ParticleProcessMaterial=emitter.process_material
+	var speed_min=particles.initial_velocity_min
+	var spawn_visibility_notifier:VisibleOnScreenNotifier2D = particle_scene.get_node("SpawnVisibilityNotifier")
+	emitter.visibility_rect.position.y=0
+	
+	emitter.visibility_rect.position.x=-view_size.x
+	emitter.visibility_rect.size.x=view_size.x*3
+	spawn_visibility_notifier.screen_entered.connect(phase_out_emitter.bind(particle_scene,on_grid_position))
+	emitter.visibility_rect.size.y=grid_size.y*3
+	emitter.lifetime=grid_size.y*3/speed_min
+	
+	particles_by_position[on_grid_position]=particle_scene
+
+
+func phase_out_emitter(container:Node2D,area:Vector2i):
+	var deleted=particles_by_position.erase(area)
+	var emitter:GPUParticles2D=container.get_node("Emitter")
+	emitter.emitting=false
+	get_tree().create_tween().tween_property(emitter,"modulate:a",0,emitter.lifetime)
+	await get_tree().create_timer(emitter.lifetime).timeout
+	if is_instance_valid(container):
+		container.queue_free()
+
 
 ## Returns a list of vector2i's representing the areas where emitters need to be placed
 func _get_needed_positions()->Array[Vector2i]:
-	var needed_positions: Array[Vector2i] = WeatherGlobals.area_visibility.shown_areas
-	for area in needed_positions.duplicate():
-		if area.y<max_height:
-			needed_positions.erase(area)
+	var needed_positions: Array[Vector2i] = []
+	var start_x=get_camera_grid_position().x-(view_size/grid_size).floor().x
+	var end_x=get_camera_grid_position().x+(view_size/grid_size).floor().x*2
+	for x in range(start_x-1,end_x+2):
+		var current_position=Vector2i(x,get_camera_grid_position().y)
+		var global_grid_position=WeatherUtilities.get_grid_position(Vector2(current_position)*grid_size)
+		if _is_area_needed(global_grid_position):
+			needed_positions.append(current_position)
+			needed_positions.append(current_position+Vector2i.UP)
 	return needed_positions
-	
+
+## Should return true if the effect should happen in this area. area is in the global grid.
+func _is_area_needed(area:Vector2i)->bool:
+	return true
+
 func adjust_gravity(emitter):
 	if not is_instance_valid(emitter):return
 	emitter.process_material.gravity=Vector3(0,30,0)
 
-func phase_out_emitter(emitter:GPUParticles2D):
-	emitter.emitting=false
-	get_tree().create_tween().tween_property(emitter,"modulate:a",0,emitter_finishing_margin-1)
-	get_tree().create_timer(emitter_finishing_margin).timeout.connect(func():
-		emitter.queue_free()
-		)
 
 ## Should be overriden, changing the emitter's default values.
 func _customize_emitter(_emitter:GPUParticles2D,_for_position:Vector2i) ->void:

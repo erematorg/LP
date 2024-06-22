@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://ce7alvcq870md"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jd237"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(100, 1, 1)
+direction = Vector3(0, 1, 0)
+spread = 0.0
+initial_velocity_min = 400.0
+initial_velocity_max = 600.0
+gravity = Vector3(0, 0, 0)
+collision_mode = 2
+
+[node name="EmitterContainer" type="Node2D"]
+
+[node name="Emitter" type="GPUParticles2D" parent="."]
+position = Vector2(100, 0)
+amount = 20
+process_material = SubResource("ParticleProcessMaterial_jd237")
+lifetime = 3.0
+visibility_rect = Rect2(0, -100, 200, 200)
+trail_enabled = true
+trail_lifetime = 0.05
+
+[node name="SpawnVisibilityNotifier" type="VisibleOnScreenNotifier2D" parent="."]
+position = Vector2(0, -39)
+rect = Rect2(0, 0, 200, 40)
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-30, 19, -9, 39, 13, 28, -10, -33, -29, 10)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=29 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/Rain.gd" id="17_lcsua"]
 [ext_resource type="Script" path="res://systems/weather_system/HumidityVisualizer.gd" id="18_ljdel"]
 [ext_resource type="PackedScene" uid="uid://c7id5e2cvg7e2" path="res://systems/weather_system/HumidityArrow.tscn" id="18_ln4s2"]
+[ext_resource type="PackedScene" uid="uid://ce7alvcq870md" path="res://systems/weather_system/RainEmitter.tscn" id="19_wanv1"]
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="20_yy6d8"]
 [ext_resource type="Script" path="res://systems/weather_system/WindVisualizer.gd" id="22_1h03f"]
 [ext_resource type="Script" path="res://systems/weather_system/Lightning.gd" id="23_ggcu5"]
@@ -146,7 +147,8 @@ script = ExtResource("4_64om7")
 
 [node name="MainCamera" type="Camera2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(577, 333)
+position = Vector2(-1, 3)
+anchor_mode = 0
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -219,11 +221,12 @@ shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
 
 [node name="RainEffect" parent="." instance=ExtResource("2_lk5vm")]
+water_column_size = 200.0
+emitter_top_margin = 10.0
+particle_template = ExtResource("19_wanv1")
 initial_speed = 1500.0
 normal_speed_min = 800.0
 normal_speed_max = 900.0
-particle_interval_enabled = true
-random_position_enabled = true
 
 [node name="HumidityVisualizer" type="Node" parent="."]
 script = ExtResource("18_ljdel")

@@ -13,8 +13,6 @@ curve = SubResource("Curve_plko6")
 [node name="Rain" type="Node2D"]
 script = ExtResource("1_oiy6k")
 drops_alpha_curve = SubResource("CurveTexture_unr42")
-particle_interval_enabled = false
-random_position_enabled = false
 
 [node name="CameraPosition" type="Sprite2D" parent="."]
 visible = false
