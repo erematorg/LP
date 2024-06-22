@@ -219,7 +219,6 @@ shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
 
 [node name="RainEffect" parent="." instance=ExtResource("2_lk5vm")]
-drops_alpha_curve = null
 initial_speed = 1500.0
 normal_speed_min = 800.0
 normal_speed_max = 900.0

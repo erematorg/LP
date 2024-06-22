@@ -22,4 +22,5 @@ enabled = true
 [node name="Clouds" type="Node2D" parent="."]
 
 [node name="Indicator" type="Polygon2D" parent="."]
+visible = false
 polygon = PackedVector2Array(-45, 23, 77, 23, 86, -7, 71, -17, 56, -11, 35, -24, 28, -40, 5, -45, -3, -28, -23, -45, -37, -43, -46, -16)
