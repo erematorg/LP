@@ -153,6 +153,7 @@ script = ExtResource("4_64om7")
 unique_name_in_owner = true
 position = Vector2(-1, 3)
 anchor_mode = 0
+zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -245,12 +246,14 @@ indicator_template = ExtResource("18_ln4s2")
 
 [node name="Lightning" type="Node" parent="."]
 script = ExtResource("23_ggcu5")
-lightning_steps = 8
-lightning_stroke_length = 460.0
+lightning_steps = 3
+lightning_stroke_length = 600.0
 minimum_lightning_saturation = 12.0
+maximum_ray_length = 2000.0
 lightning_chance_per_tick = 20.0
+initial_line_deviation = 200.0
 check_moisture_on = -4
-branching_chance = 10.0
+branching_chance = 20.0
 
 [connection signal="value_changed" from="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture/Value" to="CanvasLayer/WeatherInspector" method="_on_value_value_changed"]
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]

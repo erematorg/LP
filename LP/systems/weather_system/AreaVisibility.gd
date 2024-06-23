@@ -8,6 +8,7 @@ signal area_hidden(area:Vector2i)
 
 ## Shown areas, with 1 extra area on each side for margin
 var shown_areas:Array[Vector2i]
+
 ## Areas which are necessarily visible on screen. No margin.
 var shown_areas_strict:Array[Vector2i]
 var visible_columns:Array[int]

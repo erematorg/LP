@@ -4,7 +4,7 @@ class_name Puddle
 ## Sadly we can't use preload for this, as it would cause a circular reference
 var water_puddle:PackedScene=load("res://systems/weather_system/WatterPuddle.tscn")
 var covered_areas :Array[Vector2i]
-var colission:=ConvexPolygonShape2D.new()
+var colission:=ConcavePolygonShape2D.new()
 
 
 func _ready():
@@ -13,7 +13,7 @@ func _ready():
 		if not covered_areas.has(area):
 			covered_areas.append(area)
 	$Body/Shape.shape=colission
-	colission.points=polygon
+	update_colission()
 	
 
 ## Amount should be in px squared.
@@ -58,9 +58,16 @@ func reduce(area:float):
 			get_parent().add_child(new_body)
 			new_body.call_deferred("add_to_group","water_puddles")
 			index+=1
-		colission.points=polygon
+			update_colission()
 	else:
 		queue_free()
+
+func update_colission():
+	var colission_polygon=polygon.duplicate()
+	if colission_polygon.size() % 2 != 0:
+		colission_polygon.append(polygon[polygon.size()-1])
+	colission.segments=colission_polygon
+	
 
 ##Ensure the top 2 points are in the same height
 func ensure_flat_surface():
