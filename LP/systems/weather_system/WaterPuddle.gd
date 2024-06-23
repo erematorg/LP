@@ -1,13 +1,20 @@
 extends Polygon2D
 class_name Puddle
 
+## Sadly we can't use preload for this, as it would cause a circular reference
+var water_puddle:PackedScene=load("res://systems/weather_system/WatterPuddle.tscn")
 var covered_areas :Array[Vector2i]
+var colission:=ConvexPolygonShape2D.new()
+
 
 func _ready():
 	for i in polygon:
 		var area=WeatherUtilities.get_grid_position(i+position)
 		if not covered_areas.has(area):
 			covered_areas.append(area)
+	$Body/Shape.shape=colission
+	colission.points=polygon
+	
 
 ## Amount should be in px squared.
 func reduce(area:float):
@@ -42,7 +49,7 @@ func reduce(area:float):
 		polygon=new_polygons[0]
 		var index=1
 		while index<new_polygons.size():
-			var new_body=Puddle.new()
+			var new_body: Puddle = water_puddle.instantiate()
 			var new_polygon=new_polygons[index]
 			for i in range(new_polygon.size()):
 				new_polygon[i] = new_polygon[i]+position
@@ -51,6 +58,7 @@ func reduce(area:float):
 			get_parent().add_child(new_body)
 			new_body.call_deferred("add_to_group","water_puddles")
 			index+=1
+		colission.points=polygon
 	else:
 		queue_free()
 
