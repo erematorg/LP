@@ -9,7 +9,6 @@ signal saturated_water(area)
 
 signal humidity_transmitted(from:Vector2i,to:Vector2i,amount:float)
 
-@export var saturated_water_per_area: Dictionary
 
 @export var water_evaporation_per_tick:float
 ## Default amount of moisture the air can hold, in px squared.
@@ -37,6 +36,7 @@ signal humidity_transmitted(from:Vector2i,to:Vector2i,amount:float)
 @export var max_moisture_height:int
 
 var air_humidity_per_area:Dictionary
+var saturated_water_per_area: Dictionary
 
 @onready var temperature: Temperature = get_node("%Temperature")
 
@@ -56,7 +56,9 @@ func get_saturated_water(area:Vector2i):
 
 
 func get_max_humidity(area:Vector2i):
-	return max_air_humidity+(max_humidity_change*(temperature.get_temperature(area)-temperature.default_temperature))
+	return clamp(max_air_humidity+(max_humidity_change*(temperature.get_temperature(area)-temperature.default_temperature)),
+			0,
+			200)
 
 func add_to_humidity(area:Vector2i,amount:float):
 	var addition=clamp(amount,0,get_max_humidity(area)-get_air_humidity(area))
@@ -96,13 +98,8 @@ func absorb_water():
 
 func distribute_humidity():
 	for area in air_humidity_per_area.keys():
-		var areas_to_distribute_to=[
-		]
 		if area.y>max_moisture_height:
-			areas_to_distribute_to.append_array([
-			area+Vector2i(0,-1),
-			])
-		for new_area in areas_to_distribute_to:
+			var new_area=area+Vector2i(0,-1)
 			if not air_humidity_per_area.has(new_area):
 				air_humidity_per_area[new_area]=0
 			if air_humidity_per_area[new_area]<air_humidity_per_area[area]:

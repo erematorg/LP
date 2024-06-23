@@ -31,14 +31,19 @@ var particles_by_position: Dictionary
 var grid_size:Vector2
 var needed_positions : Array[Vector2i]
 
-@onready var view_size=get_viewport_rect().size
+@onready var view_size=get_viewport_rect().size/get_viewport().get_camera_2d().zoom
 func _ready():
 	position=Vector2.ZERO
 	get_viewport().size_changed.connect(update_grid_size)
 	update_grid_size()
+	WeatherGlobals.tick.timeout.connect(tick)
+
+func tick():
+	for area in particles_by_position.keys():
+		particles_by_position[area].get_node("Emitter").process_material.direction=get_rain_direction()
 
 func update_grid_size():
-	view_size=get_viewport_rect().size
+	view_size=get_viewport_rect().size/get_viewport().get_camera_2d().zoom
 	var new_grid_size=Vector2(water_column_size,view_size.y)
 	if new_grid_size!=grid_size:
 		grid_size=new_grid_size
@@ -104,15 +109,11 @@ func _get_needed_positions()->Array[Vector2i]:
 			needed_positions.append(current_position+Vector2i.UP)
 	return needed_positions
 
+func get_rain_direction()->Vector3:
+	var rotation_for_wind=-WeatherGlobals.wind.get_wind_on_area(WeatherUtilities.get_grid_position(get_viewport().get_camera_2d().get_screen_center_position()))/50
+	var direction_with_wind=Vector2.DOWN.rotated(rotation_for_wind)
+	return Vector3(direction_with_wind.x,direction_with_wind.y,0)
+
 ## Should return true if the effect should happen in this area. area is in the global grid.
 func _is_area_needed(area:Vector2i)->bool:
 	return true
-
-func adjust_gravity(emitter):
-	if not is_instance_valid(emitter):return
-	emitter.process_material.gravity=Vector3(0,30,0)
-
-
-## Should be overriden, changing the emitter's default values.
-func _customize_emitter(_emitter:GPUParticles2D,_for_position:Vector2i) ->void:
-	pass

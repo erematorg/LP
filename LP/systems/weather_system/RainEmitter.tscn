@@ -27,4 +27,5 @@ position = Vector2(0, -39)
 rect = Rect2(0, 0, 200, 40)
 
 [node name="Polygon2D" type="Polygon2D" parent="."]
+visible = false
 polygon = PackedVector2Array(-30, 19, -9, 39, 13, 28, -10, -33, -29, 10)
