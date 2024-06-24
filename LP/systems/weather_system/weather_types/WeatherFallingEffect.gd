@@ -104,7 +104,7 @@ func phase_out_emitter(container:Node2D,area:Vector2i):
 		container.queue_free()
 
 
-## Returns a list of vector2i's representing the areas where emitters need to be placed
+## Returns a list of vector2i's representing the areas where emitters need to be placed. Areas in local grid.
 func _get_needed_positions()->Array[Vector2i]:
 	var needed_positions: Array[Vector2i] = []
 	var start_x=get_camera_grid_position().x-(view_size/grid_size).floor().x

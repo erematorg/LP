@@ -34,7 +34,10 @@ func _on_area_visibility_area_hidden(area):
 
 ## deletes the drawer from the list, but doesn't free it.
 func remove_drawer(drawer:CloudDrawer,area:Vector2i):
-	cloud_drawers[area].erase(drawer)
+	if cloud_drawers.has(area):
+		cloud_drawers[area].erase(drawer)
+	else:
+		printerr("Tried to remove a non-registered cloud drawer, something must have gone wrong.")
 	if cloud_drawers[area].is_empty():
 		cloud_drawers.erase(area)
 

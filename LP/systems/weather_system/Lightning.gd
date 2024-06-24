@@ -3,29 +3,39 @@ extends Node
 signal lightning_spawned
 
 @export var lightning_steps:int
-@export var lightning_stroke_length:float
+@export var branch_stroke_length:float
+@export var initial_stroke_length:float
 
 ## Minimum amount of saturated water to spawn lightning
 @export var minimum_lightning_saturation:float
+
+@export var lightning_duration:float
 
 @export var maximum_ray_length:float
 
 ## from 0 to 100 how much chance should each tick have to spawn a lightning
 @export var lightning_chance_per_tick:float
 
-@export var initial_line_deviation:float
+@export var initial_line_irregularities:float
+
+@export var branch_irregularities:float
 
 ## Altitude in which to check if there's enough moisture for lightning to ocurr
 @export var check_moisture_on:int
 
 ## From 0 to 100 how likely is a stroke to be divided into 2
 @export var branching_chance:float
+@export var secondary_branching_chance:float
+
+@export var show_direct_lines:bool
+
+var last_direct_lines:Array[Array]
 
 ## A line between the starting point and the ground, with some curves.
 func get_lightning_initial_line(starting_point:Vector2)->Array[Vector2]:
 	var points:Array[Vector2]=[starting_point]
 	var falling_direction=Vector2.DOWN.rotated(randf_range(-PI/4,PI/4))
-	var ending_point=falling_direction*maximum_ray_length
+	var ending_point=starting_point+falling_direction*maximum_ray_length
 	
 	# We cast a ray towards ending point to check where the ray would hit.
 	var space_state=get_parent().get_world_2d().direct_space_state
@@ -36,36 +46,35 @@ func get_lightning_initial_line(starting_point:Vector2)->Array[Vector2]:
 		ending_point=result["position"]
 	
 	# We start drawing the way to the ending point in segments.
-	var distance=lightning_stroke_length
+	var distance=initial_stroke_length
 	var direction=starting_point.direction_to(ending_point)
 	while distance<ending_point.distance_to(starting_point):
-		var new_point=points[points.size()-1]+direction*lightning_stroke_length
+		var new_point=points[points.size()-1]+direction*initial_stroke_length
 		points.append(new_point)
-		distance+=lightning_stroke_length
+		distance+=initial_stroke_length
 	
 	points.append(ending_point)
 	
 	# Now we have a line from start to end in segments, lets add random curves to it along the way.
 	var idx=1
 	while idx<points.size()-1:
-		points[idx]+=Vector2.LEFT.rotated(randf_range(-PI,PI))*randf_range(0,initial_line_deviation)
+		points[idx]+=Vector2.LEFT.rotated(randf_range(-PI,PI))*randf_range(0,initial_line_irregularities)
 		idx+=1
 	
 	return points
 
 ## Generates an array of lines (arrays of points) representing a lightning. if starting pos is Vector2.ZERO
 ## the position is automatically generated.
-func generate_lightning(starting_pos:Vector2=Vector2.ZERO,stroke_size:float=lightning_stroke_length,index=0)->Array[Array]:
-
+func generate_lightning(starting_pos:Vector2=Vector2.ZERO)->Array[Array]:
 	# Define where the lightning starts
 	if starting_pos==Vector2.ZERO:
 		var camera_position=get_viewport().get_camera_2d().position
 		var view_size=Vector2(get_viewport().size)/get_viewport().get_camera_2d().zoom
 		starting_pos.x=randf_range(
-				camera_position.x+view_size.x/2,
-				camera_position.x-view_size.x/2
+				camera_position.x,
+				camera_position.x+view_size.x
 		)
-		starting_pos.y=(camera_position.y-view_size.y/2)-100
+		starting_pos.y=camera_position.y-100
 	
 	var initial_line=get_lightning_initial_line(starting_pos)
 	var ray_direction=starting_pos.direction_to(initial_line[initial_line.size()-1])
@@ -76,40 +85,99 @@ func generate_lightning(starting_pos:Vector2=Vector2.ZERO,stroke_size:float=ligh
 		if randf_range(0,100)<branching_chance:
 			var general_direction:Vector2
 			if randf()<0.5:
-				general_direction=ray_direction.rotated(PI/2)
+				general_direction=Vector2.DOWN.rotated(randf_range(0.1,PI/4))
 			else:
-				general_direction=ray_direction.rotated(-PI/2)
-			branches.append_array(get_branch(point,2,general_direction))
+				general_direction=Vector2.DOWN.rotated(randf_range(-PI/4,-0.05))
+			
+			branches.append_array(get_branch(point,1,general_direction))
 	
 	return branches
 
-func get_branch(from:Vector2,index:int,general_direction:Vector2)->Array[Array]:
-	var current_branch:Array[Vector2]=[from]
+func get_branch(starting_point:Vector2,index:int,general_direction:Vector2)->Array[Array]:
+	var current_branch:Array[Vector2]=[starting_point]
 	var branches:Array[Array]=[current_branch]
-	var current_stroke_size=lightning_stroke_length/index
+	var current_stroke_size=branch_stroke_length/index
+
 	
-	for i in range(lightning_steps):
-		var next_point=current_branch[current_branch.size()-1]+general_direction.rotated(randf_range(-PI/1.8,PI/1.8))*current_stroke_size
-		current_branch.append(next_point)
-	if index<10:
-		branches.append_array(get_branch(current_branch.pick_random(),index+1,general_direction))
+	var direction=general_direction.rotated(randf_range(-PI/3,PI/3))
+	
+	if direction.y<0:
+		direction.y/=3
+	direction=direction.normalized()
+	
+	var initial_length=lightning_steps*current_stroke_size
+	var ending_point=starting_point+direction*initial_length
+	
+	# We cast a ray towards ending point to check where the ray would hit.
+	var space_state=get_parent().get_world_2d().direct_space_state
+	var query=PhysicsRayQueryParameters2D.create(starting_point,ending_point)
+	var result=space_state.intersect_ray(query)
+	if not result.is_empty():
+		# If the ray did hit something, change the ending point.
+		ending_point=result["position"]
+	
+	last_direct_lines.append([starting_point,ending_point])
+	
+	
+	# We start drawing the way to the ending point in segments.
+	for i in range(lightning_steps-2):
+		var new_point=current_branch[current_branch.size()-1]+direction*current_stroke_size
+		if new_point.distance_to(ending_point)>current_stroke_size:
+			current_branch.append(new_point)
+		else:
+			break
+	
+	current_branch.append(ending_point)
+	
+	# Now we have a line from start to end in segments, lets add random curves to it along the way.
+	var idx=1
+	while idx<current_branch.size()-1:
+		current_branch[idx]+=Vector2.LEFT.rotated(randf_range(-PI,PI))*randf_range(0,branch_irregularities/index+1)
+		idx+=1
+	
+	if index<5:
+		for point in current_branch:
+			if randf_range(0,100)<secondary_branching_chance/index:
+				branches.append_array(get_branch(point,index+1,direction))
+		
+	
 	return branches
 
 func spawn_lightning():
+	last_direct_lines.clear()
 	var branches=generate_lightning()
+	var width=12
 	for branch in branches:
 		var line=Line2D.new()
 		line.points=branch
 		add_child(line)
-		get_tree().create_tween().tween_property(line,"modulate:a",0,1).finished.connect(func():
+		line.width=width
+		if width>4:
+			width-=1
+		get_tree().create_tween().tween_property(line,"modulate:a",0,lightning_duration).finished.connect(func():
 			line.queue_free()
 			)
+	
+	if show_direct_lines:
+		for direct in last_direct_lines:
+			var line=Line2D.new()
+			line.points=direct
+			line.default_color=Color.VIOLET
+			line.width=3
+			add_child(line)
+			get_tree().create_tween().tween_property(line,"modulate:a",0,lightning_duration).finished.connect(func():
+				line.queue_free()
+				)
 
 
 func _on_tick_timeout():
-	for x in WeatherGlobals.area_visibility.visible_columns:
-		var area_to_check_humidity=Vector2i(x,check_moisture_on)
-		if (WeatherGlobals.rain_manager.is_raining_on_area(Vector2i(x,check_moisture_on+1)) and 
+	if randf_range(0,100)<lightning_chance_per_tick:
+		var can_ocurr=false
+		for x in WeatherGlobals.area_visibility.visible_columns:
+			var area_to_check_humidity=Vector2i(x,check_moisture_on)
+			if (WeatherGlobals.rain_manager.is_raining_on_area(Vector2i(x,check_moisture_on+1)) and 
 				WeatherGlobals.humidity.get_saturated_water(area_to_check_humidity)>=minimum_lightning_saturation):
-			if randf_range(0,100)<lightning_chance_per_tick:
-				spawn_lightning()
+					can_ocurr=true
+		if can_ocurr:
+			spawn_lightning()
+	

@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/Movement.gd" id="2_b4d5l"]
 
 [node name="CloudDrawer" type="Node2D"]
+visible = false
 script = ExtResource("1_qyhpy")
 circle_radius = 300.0
 circle_sides = 10
