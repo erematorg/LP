@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://b2fvcjnxijvyo"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_32n7c"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_lme8p"]
+noise = SubResource("FastNoiseLite_32n7c")
+
+[node name="CloudNoiseDrawer" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("NoiseTexture2D_lme8p")

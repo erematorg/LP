@@ -2,6 +2,7 @@ extends Node
 class_name CloudSpawner
 ## Crates cloud drawers
 @export var cloud_drawer:PackedScene
+@export var noise:NoiseTexture2D
 
 ## Holds as keys areas, and as values lists of cloud drawers.
 var cloud_drawers: Dictionary = {}
