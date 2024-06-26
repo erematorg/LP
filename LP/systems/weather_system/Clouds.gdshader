@@ -29,6 +29,10 @@ void fragment() {
 	vec2 advancement_in_grid = position_between_grid/grid_size;
 	COLOR=texture(noise,UV);
 	float humidity=get_humidity_on_grid_position(grid_position);
-	COLOR.r=advancement_in_grid.y;
+	if (advancement_in_grid.y>0.5){
+		float down_humidity = get_humidity_on_grid_position(grid_position+ivec2(0,1));
+		float advancement_multiplier=(advancement_in_grid.y-0.5)/0.5;
+		humidity+=(down_humidity-humidity)*advancement_multiplier;
+	}
 	COLOR.a=humidity;
 }
