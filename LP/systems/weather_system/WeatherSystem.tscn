@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=35 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" uid="uid://xucpgvatghij" path="res://systems/weather_system/weather_types/WeatherWind.tscn" id="4_svtc0"]
 [ext_resource type="Script" path="res://systems/weather_system/WeatherInspector.gd" id="5_wpe37"]
 [ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="8_heaeu"]
+[ext_resource type="Script" path="res://systems/weather_system/NoiseCloud.gd" id="9_7u740"]
+[ext_resource type="Shader" path="res://systems/weather_system/Clouds.gdshader" id="9_ddmx8"]
 [ext_resource type="Script" path="res://systems/weather_system/camera.gd" id="9_wq5i0"]
 [ext_resource type="PackedScene" uid="uid://bsgoe8vp6aaww" path="res://systems/weather_system/WatterPuddle.tscn" id="10_lku5k"]
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
@@ -24,6 +26,29 @@
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="20_yy6d8"]
 [ext_resource type="Script" path="res://systems/weather_system/WindVisualizer.gd" id="22_1h03f"]
 [ext_resource type="Script" path="res://systems/weather_system/Lightning.gd" id="23_ggcu5"]
+
+[sub_resource type="Gradient" id="Gradient_oosc8"]
+offsets = PackedFloat32Array(0, 0.144578, 1)
+colors = PackedColorArray(0, 0, 0, 0, 0.145098, 0.145098, 0.145098, 0.0352941, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wpbsa"]
+noise_type = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_0um1g"]
+width = 2000
+height = 2000
+color_ramp = SubResource("Gradient_oosc8")
+noise = SubResource("FastNoiseLite_wpbsa")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pl58n"]
+shader = ExtResource("9_ddmx8")
+shader_parameter/position = null
+shader_parameter/max_humidity = 12.0
+shader_parameter/humidities = PackedFloat32Array(12, 12, 12)
+shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 0, 0, 8, 8)
+shader_parameter/grid_size = Vector2(30, 30)
+shader_parameter/total_size = Vector2(512, 512)
+shader_parameter/noise = SubResource("NoiseTexture2D_0um1g")
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_0wiyo"]
 polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
@@ -157,6 +182,14 @@ zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
+[node name="NoiseCloud" type="Sprite2D" parent="MainCamera"]
+material = SubResource("ShaderMaterial_pl58n")
+position = Vector2(1, -3)
+scale = Vector2(7.653, 8)
+texture = ExtResource("8_heaeu")
+centered = false
+script = ExtResource("9_7u740")
+
 [node name="Land" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_i3bfe")
 format = 2
@@ -188,8 +221,10 @@ altitude_temperature_change = 1.0
 
 [node name="SelectedArea" type="Panel" parent="."]
 unique_name_in_owner = true
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = -55.0
+offset_top = 13.0
+offset_right = -15.0
+offset_bottom = 53.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
