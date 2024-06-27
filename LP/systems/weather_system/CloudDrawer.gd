@@ -33,7 +33,7 @@ func show_clouds(_area)->void:
 		else:
 			create_clouds(cloud_primary_color,clouds_to_create)
 			
-	if (humidity.get_saturated_water(area)<40 and $Clouds.get_child_count()>=max_clouds):
+	if (humidity.get_saturated_water(area)<40 and $Clouds.get_child_count()>max_clouds):
 		await get_tree().create_tween().tween_property($Clouds.get_child(0),"modulate:a",0,2).finished
 		$Clouds.get_child(0).queue_free()
 	if clouds_to_create<0:

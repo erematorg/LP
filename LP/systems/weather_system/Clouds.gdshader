@@ -22,17 +22,31 @@ float get_humidity_on_grid_position(ivec2 grid_position){
 	return 0.0;
 }
 
+vec2 get_real_pos_of_grid(ivec2 grid_position){
+	return grid_size*vec2(grid_position);
+}
+
+float get_input_to_position(ivec2 input_grid,vec2 to_position){
+	vec2 relative_pos_of_grid=get_real_pos_of_grid(input_grid)+grid_size/2.0;
+	float distance_to_point=distance(relative_pos_of_grid,to_position);
+	float multiplier=clamp(0.8-distance_to_point/grid_size.x,0.0,1.0);
+	return get_humidity_on_grid_position(input_grid)*multiplier;
+}
+
 void fragment() {
-	vec2 real_relative_position=UV * total_size;
-	ivec2 grid_position=ivec2(floor(real_relative_position/grid_size));
-	vec2 position_between_grid = real_relative_position-grid_size*vec2(grid_position);
-	vec2 advancement_in_grid = position_between_grid/grid_size;
+	vec2 real_position=UV * total_size + position;
+	ivec2 grid_position=ivec2(floor(real_position/grid_size));
 	COLOR=texture(noise,UV);
-	float humidity=get_humidity_on_grid_position(grid_position);
-	if (advancement_in_grid.y>0.5){
-		float down_humidity = get_humidity_on_grid_position(grid_position+ivec2(0,1));
-		float advancement_multiplier=(advancement_in_grid.y-0.5)/0.5;
-		humidity+=(down_humidity-humidity)*advancement_multiplier;
-	}
+	float humidity=0.0;
+	humidity+=get_input_to_position(grid_position,real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(1,0),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(-1,0),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(0,-1),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(0,1),real_position);
+	//corners
+	humidity+=get_input_to_position(grid_position+ivec2(1,1),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(-1,1),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(1,-1),real_position);
+	humidity+=get_input_to_position(grid_position+ivec2(-1,-1),real_position);
 	COLOR.a=humidity;
 }

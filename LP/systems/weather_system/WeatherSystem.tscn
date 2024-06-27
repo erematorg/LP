@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=34 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -15,10 +15,8 @@
 [ext_resource type="Script" path="res://systems/weather_system/Humidity.gd" id="11_nmlqm"]
 [ext_resource type="Script" path="res://systems/weather_system/Heat.gd" id="12_73asx"]
 [ext_resource type="Script" path="res://systems/weather_system/HumidityWind.gd" id="13_1vs7y"]
-[ext_resource type="PackedScene" uid="uid://k74yfm72apcb" path="res://systems/weather_system/CloudDrawer.tscn" id="13_f5qil"]
 [ext_resource type="Script" path="res://systems/weather_system/AreaVisibility.gd" id="14_pxyjs"]
 [ext_resource type="Script" path="res://systems/weather_system/Tick.gd" id="14_srnjo"]
-[ext_resource type="Script" path="res://systems/weather_system/CloudSpawner.gd" id="15_lx00t"]
 [ext_resource type="Script" path="res://systems/weather_system/Rain.gd" id="17_lcsua"]
 [ext_resource type="Script" path="res://systems/weather_system/HumidityVisualizer.gd" id="18_ljdel"]
 [ext_resource type="PackedScene" uid="uid://c7id5e2cvg7e2" path="res://systems/weather_system/HumidityArrow.tscn" id="18_ln4s2"]
@@ -42,10 +40,10 @@ noise = SubResource("FastNoiseLite_wpbsa")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pl58n"]
 shader = ExtResource("9_ddmx8")
-shader_parameter/position = null
+shader_parameter/position = Vector2(0, 0)
 shader_parameter/max_humidity = 12.0
-shader_parameter/humidities = PackedFloat32Array(12, 12, 12)
-shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 0, 0, 8, 8)
+shader_parameter/humidities = PackedFloat32Array(12, 12, 12, 0)
+shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 8, 8, 8, 9, 1, 1)
 shader_parameter/grid_size = Vector2(30, 30)
 shader_parameter/total_size = Vector2(512, 512)
 shader_parameter/noise = SubResource("NoiseTexture2D_0um1g")
@@ -191,12 +189,14 @@ movement_speed = 1200.0
 
 [node name="NoiseCloud" type="Sprite2D" parent="MainCamera"]
 material = SubResource("ShaderMaterial_pl58n")
+position = Vector2(-1, -3)
 scale = Vector2(8, 8)
 texture = ExtResource("8_heaeu")
 centered = false
 script = ExtResource("9_7u740")
 
 [node name="GridContainer" type="GridContainer" parent="MainCamera"]
+visible = false
 offset_right = 40.0
 offset_bottom = 40.0
 theme_override_constants/h_separation = 0
@@ -802,12 +802,9 @@ script = ExtResource("14_srnjo")
 [node name="AreaVisibility" type="Node" parent="."]
 script = ExtResource("14_pxyjs")
 
-[node name="CloudSpawner" type="Node" parent="."]
-script = ExtResource("15_lx00t")
-cloud_drawer = ExtResource("13_f5qil")
-
 [node name="RainManager" type="Node" parent="."]
 script = ExtResource("17_lcsua")
+start_raining_on_saturation = 10.0
 max_rain_height = -4
 moisture_loss = 0.5
 
@@ -863,7 +860,6 @@ secondary_branching_chance = 20.0
 
 [connection signal="value_changed" from="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture/Value" to="CanvasLayer/WeatherInspector" method="_on_value_value_changed"]
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
-[connection signal="saturated_water" from="Humidity" to="CloudSpawner" method="_on_humidity_saturated_water"]
 [connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Humidity/HumidityWind" method="_on_tick_timeout"]
@@ -872,5 +868,3 @@ secondary_branching_chance = 20.0
 [connection signal="timeout" from="Tick" to="RainEffect" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="WindVisualizer" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Lightning" method="_on_tick_timeout"]
-[connection signal="area_hidden" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_hidden"]
-[connection signal="area_shown" from="AreaVisibility" to="CloudSpawner" method="_on_area_visibility_area_shown"]
