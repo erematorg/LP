@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://d0ffghpeftx5b"]
+[gd_scene load_steps=35 format=3 uid="uid://d0ffghpeftx5b"]
 
 [ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
 [ext_resource type="PackedScene" uid="uid://byopxfuquatx5" path="res://systems/weather_system/weather_types/WeatherRain.tscn" id="2_lk5vm"]
@@ -24,6 +24,7 @@
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="20_yy6d8"]
 [ext_resource type="Script" path="res://systems/weather_system/WindVisualizer.gd" id="22_1h03f"]
 [ext_resource type="Script" path="res://systems/weather_system/Lightning.gd" id="23_ggcu5"]
+[ext_resource type="PackedScene" uid="uid://bor26art4sd0" path="res://systems/weather_system/SnowEmitter.tscn" id="24_wfrbc"]
 
 [sub_resource type="Gradient" id="Gradient_oosc8"]
 offsets = PackedFloat32Array(0, 0.144578, 1)
@@ -847,6 +848,10 @@ enabled = true
 indicator_template = ExtResource("18_ln4s2")
 
 [node name="SnowEffect" parent="." instance=ExtResource("3_a8dt6")]
+water_column_size = 100.0
+emitter_top_margin = 10.0
+particle_template = ExtResource("24_wfrbc")
+origin_height = -4
 
 [node name="Lightning" type="Node" parent="."]
 script = ExtResource("23_ggcu5")
