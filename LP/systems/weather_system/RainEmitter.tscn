@@ -1,4 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://ce7alvcq870md"]
+[gd_scene load_steps=4 format=3 uid="uid://ce7alvcq870md"]
+
+[ext_resource type="Script" path="res://systems/weather_system/RainEmitter.gd" id="1_e0btl"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jd237"]
 particle_flag_disable_z = true
@@ -21,6 +23,7 @@ gravity = Vector3(0, 98, 0)
 collision_mode = 2
 
 [node name="EmitterContainer" type="Node2D"]
+script = ExtResource("1_e0btl")
 
 [node name="Emitter" type="GPUParticles2D" parent="."]
 position = Vector2(100, 0)
@@ -36,7 +39,6 @@ position = Vector2(0, -39)
 rect = Rect2(0, 0, 200, 40)
 
 [node name="Polygon2D" type="Polygon2D" parent="."]
-visible = false
 polygon = PackedVector2Array(-30, 19, -9, 39, 13, 28, -10, -33, -29, 10)
 
 [node name="Splash" type="GPUParticles2D" parent="."]

@@ -808,7 +808,6 @@ script = ExtResource("14_pxyjs")
 
 [node name="RainManager" type="Node" parent="."]
 script = ExtResource("17_lcsua")
-start_raining_on_saturation = 10.0
 max_rain_height = -4
 moisture_loss = 0.5
 
@@ -825,6 +824,7 @@ shadow_color = Color(0, 0, 0, 1)
 water_column_size = 200.0
 emitter_top_margin = 10.0
 particle_template = ExtResource("19_wanv1")
+origin_height = -4
 
 [node name="HumidityVisualizer" type="Node" parent="."]
 script = ExtResource("18_ljdel")
