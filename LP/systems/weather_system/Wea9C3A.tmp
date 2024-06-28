@@ -33,16 +33,15 @@ colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.0352941, 1, 1, 1, 1)
 noise_type = 3
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_0um1g"]
-width = 500
-height = 500
-seamless = true
+width = 1200
+height = 1200
 color_ramp = SubResource("Gradient_oosc8")
 noise = SubResource("FastNoiseLite_wpbsa")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pl58n"]
 shader = ExtResource("9_ddmx8")
 shader_parameter/position = Vector2(0, 0)
-shader_parameter/max_humidity = 11.0
+shader_parameter/max_humidity = 12.0
 shader_parameter/humidities = PackedFloat32Array(12, 12, 12, 0)
 shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 8, 8, 8, 9, 1, 1)
 shader_parameter/grid_size = Vector2(80, 80)
@@ -184,7 +183,7 @@ script = ExtResource("4_64om7")
 unique_name_in_owner = true
 position = Vector2(-1, 3)
 anchor_mode = 0
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -798,7 +797,6 @@ offset_bottom = 53.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
-wait_time = 0.4
 autostart = true
 script = ExtResource("14_srnjo")
 
@@ -841,6 +839,7 @@ ticks_per_x_change = 1000.0
 
 [node name="WindVisualizer" type="Node" parent="."]
 script = ExtResource("22_1h03f")
+enabled = true
 indicator_template = ExtResource("18_ln4s2")
 
 [node name="SnowEffect" parent="." instance=ExtResource("3_a8dt6")]
@@ -862,9 +861,7 @@ secondary_branching_chance = 20.0
 
 [connection signal="value_changed" from="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture/Value" to="CanvasLayer/WeatherInspector" method="_on_value_value_changed"]
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
-[connection signal="saturated_water" from="Humidity" to="MainCamera/NoiseCloud" method="_on_humidity_saturated_water"]
 [connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]
-[connection signal="timeout" from="Tick" to="MainCamera/NoiseCloud" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Humidity/HumidityWind" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Tick" method="_on_timeout"]
@@ -872,5 +869,3 @@ secondary_branching_chance = 20.0
 [connection signal="timeout" from="Tick" to="RainEffect" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="WindVisualizer" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Lightning" method="_on_tick_timeout"]
-[connection signal="area_hidden" from="AreaVisibility" to="MainCamera/NoiseCloud" method="_on_area_visibility_area_hidden"]
-[connection signal="area_shown" from="AreaVisibility" to="MainCamera/NoiseCloud" method="_on_area_visibility_area_shown"]

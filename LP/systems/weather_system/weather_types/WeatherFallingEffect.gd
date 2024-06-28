@@ -30,6 +30,9 @@ func tick():
 		particles_by_position[area].get_node("Emitter").process_material.direction=get_rain_direction()
 
 func update_grid_size():
+	for i in get_children():
+		i.queue_free()
+	particles_by_position.clear()
 	view_size=get_viewport_rect().size/get_viewport().get_camera_2d().zoom
 	var new_grid_size=Vector2(water_column_size,view_size.y)
 	if new_grid_size!=grid_size:
@@ -80,6 +83,7 @@ func add_emitter(on_grid_position:Vector2i):
 		particle_scene.get_node("Ray").points=line_points
 	else:
 		particle_scene.get_node("Splash").emitting=false
+		emitter.lifetime=grid_size.y/speed_min
 	
 	particles_by_position[on_grid_position]=particle_scene
 

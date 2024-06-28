@@ -3,8 +3,8 @@ shader_type canvas_item;
 // list of humidities for the areas visible on screen
 uniform vec2 position;
 uniform float max_humidity;
-uniform float[100] humidities;
-uniform vec2[100] humidity_grid_positions;
+uniform float[35] humidities;
+uniform vec2[35] humidity_grid_positions;
 uniform vec2 grid_size;
 uniform vec2 total_size;
 uniform sampler2D noise;
@@ -36,7 +36,11 @@ float get_input_to_position(ivec2 input_grid,vec2 to_position){
 void fragment() {
 	vec2 real_position=UV * total_size + position;
 	ivec2 grid_position=ivec2(floor(real_position/grid_size));
-	COLOR=texture(noise,UV);
+	// determine which part of the noise to read
+	vec2 position_in_UV = UV + position/total_size;
+	vec2 normalized_position= position_in_UV-floor(position_in_UV);
+	COLOR=texture(noise,normalized_position);
+	
 	float humidity=0.0;
 	humidity+=get_input_to_position(grid_position,real_position);
 	humidity+=get_input_to_position(grid_position+ivec2(1,0),real_position);
@@ -48,5 +52,5 @@ void fragment() {
 	humidity+=get_input_to_position(grid_position+ivec2(-1,1),real_position);
 	humidity+=get_input_to_position(grid_position+ivec2(1,-1),real_position);
 	humidity+=get_input_to_position(grid_position+ivec2(-1,-1),real_position);
-	COLOR.a=humidity;
+	COLOR.a*=humidity;
 }
