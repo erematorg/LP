@@ -1,17 +1,27 @@
 extends Node
 class_name Wind
+## Manages wind stats, does not depend on anything but [annotation Tick.total_ticks]
 
 ## Distance between points with 0 wind.
 @export var neutral_point_distance:float
+
 ## Minimal amount of wind when not 0, scaled when an area is further away of a neutral point
 ## or on higher altitudes. in px/tick
 @export var minimal_wind_unit:float
+
 ## How much the amount of wind gets affected by the distance to a neutral point.
 @export var wind_per_distance_to_neutral_point:float
+
 ## For each point of altitude, the wind gets added this percentage. 0.1 is 10%.
 @export var added_multiplier_per_altitude:float
+
 @export var max_wind:float
+
+## Amount of ticks in which the wind direction is the same.
 @export var ticks_per_cycle:int
+
+## With time, the function scrolls to the right. This is the amount of time it takes
+## to move 1 area.
 @export var ticks_per_x_change:float
 
 func _init():

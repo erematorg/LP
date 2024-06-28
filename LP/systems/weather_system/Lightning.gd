@@ -52,7 +52,8 @@ func _on_tick_timeout():
 					can_ocurr=true
 		if can_ocurr:
 			spawn_lightning()
-	
+
+## Creates a single lightning and it's branches.
 func spawn_lightning():
 	last_direct_lines.clear()
 	var branches=generate_lightning()
@@ -126,7 +127,6 @@ func generate_lightning(starting_pos:Vector2=Vector2.ZERO)->Array[Array]:
 		starting_pos.y=camera_position.y-100
 	
 	var initial_line=get_lightning_initial_line(starting_pos)
-	var ray_direction=starting_pos.direction_to(initial_line[initial_line.size()-1])
 	
 	var branches:Array[Array]=[initial_line]
 	
@@ -142,6 +142,7 @@ func generate_lightning(starting_pos:Vector2=Vector2.ZERO)->Array[Array]:
 	
 	return branches
 
+## Gets a branch and it's own branches, as arrays of arrays containing points.
 func get_branch(starting_point:Vector2,index:int,general_direction:Vector2)->Array[Array]:
 	var current_branch:Array[Vector2]=[starting_point]
 	var branches:Array[Array]=[current_branch]

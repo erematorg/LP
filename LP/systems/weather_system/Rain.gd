@@ -1,5 +1,7 @@
 extends Node
 class_name RainManager
+## Tells RainEffect in what areas should rain, and manages the 
+## humidity loss. Depends mainly on [annotation Humidity.get_saturated_water]
 
 @export var start_raining_on_saturation:float
 @export var max_rain_height:int
