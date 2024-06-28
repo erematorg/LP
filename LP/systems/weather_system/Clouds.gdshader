@@ -8,6 +8,7 @@ uniform vec2[35] humidity_grid_positions;
 uniform vec2 grid_size;
 uniform vec2 total_size;
 uniform sampler2D noise;
+uniform float texture_offset;
 
 void vertex() {
 	// Called for every vertex the material is visible
@@ -37,7 +38,7 @@ void fragment() {
 	vec2 real_position=UV * total_size + position;
 	ivec2 grid_position=ivec2(floor(real_position/grid_size));
 	// determine which part of the noise to read
-	vec2 position_in_UV = UV + position/total_size;
+	vec2 position_in_UV = UV + (position+vec2(texture_offset,0))/total_size;
 	vec2 normalized_position= position_in_UV-floor(position_in_UV);
 	COLOR=texture(noise,normalized_position);
 	

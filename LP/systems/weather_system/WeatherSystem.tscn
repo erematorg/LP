@@ -47,6 +47,7 @@ shader_parameter/humidities = PackedFloat32Array(12, 12, 12, 0)
 shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 8, 8, 8, 9, 1, 1)
 shader_parameter/grid_size = Vector2(80, 80)
 shader_parameter/total_size = Vector2(512, 512)
+shader_parameter/texture_offset = 0.0
 shader_parameter/noise = SubResource("NoiseTexture2D_0um1g")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nq84l"]
@@ -841,6 +842,7 @@ ticks_per_x_change = 1000.0
 
 [node name="WindVisualizer" type="Node" parent="."]
 script = ExtResource("22_1h03f")
+enabled = true
 indicator_template = ExtResource("18_ln4s2")
 
 [node name="SnowEffect" parent="." instance=ExtResource("3_a8dt6")]

@@ -3,6 +3,7 @@ extends Sprite2D
 var shader:ShaderMaterial=material
 var noise:FastNoiseLite=shader.get_shader_parameter("noise").noise
 var humidities:={}
+var x_offset:float
 
 @onready var humidity := WeatherGlobals.humidity
 
@@ -11,8 +12,14 @@ func _ready():
 	shader.set_shader_parameter("grid_size",WeatherGlobals.grid_size)
 	get_viewport().size_changed.connect(update_size)
 
-func _process(_delta):
+func _process(delta):
 	shader.set_shader_parameter("position",global_position)
+	if humidities.is_empty():
+		x_offset=0
+	else:
+		var wind=WeatherGlobals.wind.get_wind_on_area(WeatherUtilities.get_grid_position(get_parent().get_screen_center_position()))
+		x_offset-=wind*(delta/WeatherGlobals.tick.wait_time)
+	shader.set_shader_parameter("texture_offset",x_offset)
 
 func update_size():
 	var view_size=get_viewport_rect().size/get_parent().zoom
