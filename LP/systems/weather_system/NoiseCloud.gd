@@ -1,4 +1,5 @@
 extends Sprite2D
+class_name NoiseCloud
 
 var shader:ShaderMaterial=material
 var noise:FastNoiseLite=shader.get_shader_parameter("noise").noise

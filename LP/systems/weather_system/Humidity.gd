@@ -36,6 +36,8 @@ signal humidity_transmitted(from:Vector2i,to:Vector2i,amount:float)
 @export var max_moisture_height:int
 
 var air_humidity_per_area:Dictionary
+
+## Has areas as keys, and the amount of saturated water as value. Represented as clouds by [annotation NoiseCloud]
 var saturated_water_per_area: Dictionary
 
 @onready var temperature: Temperature = get_node("%Temperature")

@@ -63,7 +63,8 @@ func _process(delta):
 		var start_x=get_camera_grid_position().x-(view_size/grid_size).floor().x
 		var end_x=get_camera_grid_position().x+(view_size/grid_size).floor().x*2
 		for x in range(start_x-1,end_x+2):
-			needed_origin_emitters.append(Vector2i(x*grid_size.x,origin_height*WeatherGlobals.grid_size.y))
+			if _is_area_needed(Vector2i(floor(x*grid_size.x/WeatherGlobals.grid_size.x),origin_height)):
+				needed_origin_emitters.append(Vector2i(x*grid_size.x,origin_height*WeatherGlobals.grid_size.y))
 	for i in origin_emitters.keys():
 		if not needed_origin_emitters.has(i):
 			origin_emitters.erase(i)
