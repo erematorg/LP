@@ -145,8 +145,6 @@ func get_drop_colission_point(on_position:Vector2,reach:float):
 		return result["position"]
 
 func phase_out_emitter(container:Node2D,area:Vector2i):
-	if area.y==origin_height:
-		breakpoint
 	var deleted=particles_by_position.erase(area)
 	var emitter:GPUParticles2D=container.get_node("Emitter")
 	emitter.emitting=false
