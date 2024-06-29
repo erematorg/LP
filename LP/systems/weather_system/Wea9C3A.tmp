@@ -24,7 +24,6 @@
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="20_yy6d8"]
 [ext_resource type="Script" path="res://systems/weather_system/WindVisualizer.gd" id="22_1h03f"]
 [ext_resource type="Script" path="res://systems/weather_system/Lightning.gd" id="23_ggcu5"]
-[ext_resource type="PackedScene" uid="uid://bor26art4sd0" path="res://systems/weather_system/SnowEmitter.tscn" id="24_wfrbc"]
 
 [sub_resource type="Gradient" id="Gradient_oosc8"]
 offsets = PackedFloat32Array(0, 0.144578, 1)
@@ -34,22 +33,27 @@ colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.0352941, 1, 1, 1, 1)
 noise_type = 3
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_0um1g"]
-width = 500
-height = 500
-seamless = true
+width = 1200
+height = 1200
 color_ramp = SubResource("Gradient_oosc8")
 noise = SubResource("FastNoiseLite_wpbsa")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pl58n"]
 shader = ExtResource("9_ddmx8")
 shader_parameter/position = Vector2(0, 0)
-shader_parameter/max_humidity = 11.0
+shader_parameter/max_humidity = 12.0
 shader_parameter/humidities = PackedFloat32Array(12, 12, 12, 0)
 shader_parameter/humidity_grid_positions = PackedVector2Array(2, 2, 8, 8, 8, 9, 1, 1)
 shader_parameter/grid_size = Vector2(80, 80)
 shader_parameter/total_size = Vector2(512, 512)
-shader_parameter/texture_offset = 0.0
 shader_parameter/noise = SubResource("NoiseTexture2D_0um1g")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nq84l"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_0wiyo"]
 polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
@@ -179,7 +183,7 @@ script = ExtResource("4_64om7")
 unique_name_in_owner = true
 position = Vector2(-1, 3)
 anchor_mode = 0
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(0.3, 0.3)
 script = ExtResource("9_wq5i0")
 movement_speed = 1200.0
 
@@ -191,6 +195,569 @@ scale = Vector2(8, 8)
 texture = ExtResource("8_heaeu")
 centered = false
 script = ExtResource("9_7u740")
+
+[node name="GridContainer" type="GridContainer" parent="MainCamera"]
+visible = false
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 11
+
+[node name="Panel" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel2" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel3" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel4" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel5" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel6" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel7" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel8" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel9" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel10" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel11" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel12" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel13" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel14" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel15" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel67" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel68" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel69" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel70" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel71" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel72" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel73" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel74" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel75" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel76" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel77" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel78" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel79" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel80" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel81" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel82" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel83" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel84" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel85" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel86" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel87" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel88" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel89" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel90" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel91" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel92" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel93" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel94" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel95" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel96" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel97" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel98" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel99" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel100" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel101" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel102" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel103" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel104" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel105" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel106" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel107" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel108" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel109" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel110" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel111" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel16" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel17" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel18" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel19" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel20" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel21" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel22" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel23" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel24" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel25" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel26" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel27" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel28" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel29" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel30" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel31" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel32" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel33" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel34" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel35" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel36" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel37" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel38" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel39" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel40" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel41" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel42" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel43" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel44" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel45" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel46" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel47" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel48" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel49" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel50" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel51" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel52" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel53" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel54" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel55" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel56" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel57" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel58" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel59" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel60" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel61" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel62" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel63" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel64" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel65" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
+
+[node name="Panel66" type="Panel" parent="MainCamera/GridContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nq84l")
 
 [node name="Land" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_i3bfe")
@@ -230,7 +797,6 @@ offset_bottom = 53.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_es8a2")
 
 [node name="Tick" type="Timer" parent="."]
-wait_time = 0.4
 autostart = true
 script = ExtResource("14_srnjo")
 
@@ -256,7 +822,6 @@ shadow_color = Color(0, 0, 0, 1)
 water_column_size = 200.0
 emitter_top_margin = 10.0
 particle_template = ExtResource("19_wanv1")
-origin_height = -4
 
 [node name="HumidityVisualizer" type="Node" parent="."]
 script = ExtResource("18_ljdel")
@@ -278,20 +843,16 @@ enabled = true
 indicator_template = ExtResource("18_ln4s2")
 
 [node name="SnowEffect" parent="." instance=ExtResource("3_a8dt6")]
-water_column_size = 100.0
-emitter_top_margin = 10.0
-particle_template = ExtResource("24_wfrbc")
-origin_height = -4
 
 [node name="Lightning" type="Node" parent="."]
 script = ExtResource("23_ggcu5")
-lightning_steps = 8
+lightning_steps = 10
 branch_stroke_length = 200.0
 initial_stroke_length = 200.0
-minimum_lightning_saturation = 8.0
+minimum_lightning_saturation = 12.0
 lightning_duration = 1.0
 maximum_ray_length = 5000.0
-lightning_chance_per_tick = 50.0
+lightning_chance_per_tick = 80.0
 initial_line_irregularities = 120.0
 branch_irregularities = 120.0
 check_moisture_on = -4
@@ -300,9 +861,7 @@ secondary_branching_chance = 20.0
 
 [connection signal="value_changed" from="CanvasLayer/WeatherInspector/Properties/SaturatedMoisture/Value" to="CanvasLayer/WeatherInspector" method="_on_value_value_changed"]
 [connection signal="humidity_transmitted" from="Humidity" to="HumidityVisualizer" method="_on_humidity_humidity_transmitted"]
-[connection signal="saturated_water" from="Humidity" to="MainCamera/NoiseCloud" method="_on_humidity_saturated_water"]
 [connection signal="saturated_water" from="Humidity" to="RainManager" method="_on_humidity_saturated_water"]
-[connection signal="timeout" from="Tick" to="MainCamera/NoiseCloud" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Humidity" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Humidity/HumidityWind" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Tick" method="_on_timeout"]
@@ -310,5 +869,3 @@ secondary_branching_chance = 20.0
 [connection signal="timeout" from="Tick" to="RainEffect" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="WindVisualizer" method="_on_tick_timeout"]
 [connection signal="timeout" from="Tick" to="Lightning" method="_on_tick_timeout"]
-[connection signal="area_hidden" from="AreaVisibility" to="MainCamera/NoiseCloud" method="_on_area_visibility_area_hidden"]
-[connection signal="area_shown" from="AreaVisibility" to="MainCamera/NoiseCloud" method="_on_area_visibility_area_shown"]

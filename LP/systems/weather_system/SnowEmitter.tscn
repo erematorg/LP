@@ -1,0 +1,38 @@
+[gd_scene load_steps=4 format=3 uid="uid://bor26art4sd0"]
+
+[ext_resource type="PackedScene" uid="uid://ce7alvcq870md" path="res://systems/weather_system/RainEmitter.tscn" id="1_0unjf"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1v886"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(100, 1, 1)
+direction = Vector3(0, 1, 0)
+spread = 0.0
+initial_velocity_min = 200.0
+initial_velocity_max = 250.0
+gravity = Vector3(0, 0, 0)
+scale_min = 3.0
+scale_max = 3.0
+collision_mode = 2
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_lvib5"]
+particle_flag_disable_z = true
+direction = Vector3(0, -1, 0)
+spread = 60.0
+initial_velocity_min = 50.0
+initial_velocity_max = 60.0
+gravity = Vector3(0, 98, 0)
+scale_min = 3.0
+scale_max = 3.0
+collision_mode = 2
+
+[node name="EmitterContainer" instance=ExtResource("1_0unjf")]
+
+[node name="Emitter" parent="." index="0"]
+process_material = SubResource("ParticleProcessMaterial_1v886")
+trail_enabled = false
+
+[node name="Splash" parent="." index="3"]
+visible = false
+amount = 2
+process_material = SubResource("ParticleProcessMaterial_lvib5")

@@ -1,18 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://sa0vd70lwphd"]
+[gd_scene load_steps=2 format=3 uid="uid://sa0vd70lwphd"]
 
 [ext_resource type="Script" path="res://systems/weather_system/weather_types/WeatherSnow.gd" id="1_fqyw1"]
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ala1m"]
-particle_flag_disable_z = true
-gravity = Vector3(0, 98, 0)
-
 [node name="SnowWeather" type="Node2D"]
 script = ExtResource("1_fqyw1")
-
-[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
-amount = 500
-process_material = SubResource("ParticleProcessMaterial_ala1m")
-lifetime = 3.0
-speed_scale = 0.5
-explosiveness = 0.3
-randomness = 0.5
+initial_gravity_time = 1.0
+initial_gravity = 700.0
+gravity = 20.0
