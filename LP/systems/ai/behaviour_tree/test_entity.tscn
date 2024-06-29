@@ -1,0 +1,102 @@
+[gd_scene load_steps=22 format=3 uid="uid://bcksovgd8turl"]
+
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/Entity.cs" id="1_ulcsw"]
+[ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="2_5cvti"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/BehaviourTree.cs" id="3_rungv"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/composite/Sequencer.cs" id="4_welfe"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/PrintSeperator.cs" id="5_88tse"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/decorator/Repeater.cs" id="5_aee1d"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/GetDoorList.cs" id="6_w46sc"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/decorator/RepeatUntilFail.cs" id="7_yv3ae"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/PopDoorFromList.cs" id="8_byicf"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/decorator/Inverter.cs" id="9_0to3b"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/WalkToDoor.cs" id="10_uijqf"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/composite/Selector.cs" id="11_ylfn5"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/OpenDoor.cs" id="12_mft1e"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/UnlockDoor.cs" id="13_wd15g"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/SmashDoor.cs" id="14_44d3x"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/WalkThroughDoor.cs" id="15_n630b"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/decorator/Succeeder.cs" id="16_5xgsc"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/CloseDoor.cs" id="17_kyhuu"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/SetEnteredDoor.cs" id="18_c87bs"]
+[ext_resource type="Script" path="res://systems/ai/behaviour_tree/nodes/leaf/IsEnteredDoorNull.cs" id="19_emteg"]
+
+[sub_resource type="GDScript" id="GDScript_2ojle"]
+script/source = "extends Sprite2D
+
+var a: int
+
+func _ready() -> void:
+	pass"
+
+[node name="TestEntity" type="Node2D"]
+script = ExtResource("1_ulcsw")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_5cvti")
+script = SubResource("GDScript_2ojle")
+
+[node name="BehaviourTree" type="Node" parent="."]
+script = ExtResource("3_rungv")
+
+[node name="Sequencer" type="Node" parent="BehaviourTree"]
+script = ExtResource("4_welfe")
+
+[node name="PrintSeperator" type="Node" parent="BehaviourTree/Sequencer"]
+script = ExtResource("5_88tse")
+
+[node name="DoOnce_Repeater" type="Node" parent="BehaviourTree/Sequencer"]
+script = ExtResource("5_aee1d")
+repeatCount = 1
+
+[node name="GetDoorList" type="Node" parent="BehaviourTree/Sequencer/DoOnce_Repeater"]
+script = ExtResource("6_w46sc")
+
+[node name="RepeatUntilFail" type="Node" parent="BehaviourTree/Sequencer"]
+script = ExtResource("7_yv3ae")
+
+[node name="Sequencer" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail"]
+script = ExtResource("4_welfe")
+
+[node name="PopDoorFromList" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer"]
+script = ExtResource("8_byicf")
+
+[node name="Inverter" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer"]
+script = ExtResource("9_0to3b")
+
+[node name="Sequencer" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter"]
+script = ExtResource("4_welfe")
+
+[node name="WalkToDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer"]
+script = ExtResource("10_uijqf")
+
+[node name="TryToGainAccessToRoom_Selector" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer"]
+script = ExtResource("11_ylfn5")
+
+[node name="OpenDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer/TryToGainAccessToRoom_Selector"]
+script = ExtResource("12_mft1e")
+
+[node name="UnlockDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer/TryToGainAccessToRoom_Selector"]
+script = ExtResource("13_wd15g")
+
+[node name="SmashDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer/TryToGainAccessToRoom_Selector"]
+script = ExtResource("14_44d3x")
+
+[node name="WalkThroughDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer"]
+script = ExtResource("15_n630b")
+
+[node name="Succeeder" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer"]
+script = ExtResource("16_5xgsc")
+
+[node name="CloseDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer/Succeeder"]
+script = ExtResource("17_kyhuu")
+
+[node name="SetEnteredDoor" type="Node" parent="BehaviourTree/Sequencer/RepeatUntilFail/Sequencer/Inverter/Sequencer"]
+script = ExtResource("18_c87bs")
+
+[node name="Inverter" type="Node" parent="BehaviourTree/Sequencer"]
+script = ExtResource("9_0to3b")
+
+[node name="IsEnteredDoorNull" type="Node" parent="BehaviourTree/Sequencer/Inverter"]
+script = ExtResource("19_emteg")

@@ -1,0 +1,74 @@
+[gd_scene load_steps=5 format=3 uid="uid://b2c8wkbrb8ft7"]
+
+[ext_resource type="Script" path="res://systems/dna_system/GeneticAttributes.gd" id="1_ygrx0"]
+
+[sub_resource type="GDScript" id="GDScript_ycrdk"]
+script/source = "extends Node2D
+
+@export var element: GeneticAttributes
+"
+
+[sub_resource type="Gradient" id="Gradient_eyn83"]
+
+[sub_resource type="Resource" id="Resource_j48dp"]
+script = ExtResource("1_ygrx0")
+reproduction_filter_female = {
+"apply_preset": false,
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"weight": false
+}
+reproduction_filter_male = {
+"apply_preset": false,
+"color": false,
+"default_filter_female_preset": false,
+"default_filter_male_preset": false,
+"default_random_weights_preset": false,
+"preset": false,
+"random_weights": false,
+"reproduction_filter_female": false,
+"reproduction_filter_male": false,
+"reproduction_type": false,
+"sex": false,
+"size": false,
+"span": false,
+"weight": false
+}
+random_weights = {
+"apply_preset": Vector2(-0.1, 0.1),
+"color": SubResource("Gradient_eyn83"),
+"default_filter_female_preset": Vector2(-0.1, 0.1),
+"default_filter_male_preset": Vector2(-0.1, 0.1),
+"default_random_weights_preset": Vector2(-0.1, 0.1),
+"reproduction_type": Vector2(-0.1, 0.1),
+"sex": Vector2(-0.1, 0.1),
+"size": Vector2(-0.1, 0.1),
+"span": Vector2(-0.1, 0.1),
+"weight": Vector2(-0.1, 0.1)
+}
+default_filter_female_preset = false
+default_filter_male_preset = false
+default_random_weights_preset = false
+queue_apply_preset = false
+queue_randomize = false
+size = 32.0
+weight = 8.0
+color = Color(1, 1, 1, 1)
+span = 1
+reproduction_type = 0
+sex = 1
+trophic_level = 1
+
+[node name="Debug" type="Node2D"]
+script = SubResource("GDScript_ycrdk")
+element = SubResource("Resource_j48dp")
