@@ -71,6 +71,9 @@ func load_game(file_name := save_name) -> bool:
 	var json := JSON.new()
 	
 	var content = file.get_as_text()
+	if content.is_empty():
+		printerr("Empty save file")
+		return false
 	var data: Dictionary = JSON.parse_string(content)
 	
 	file.close()

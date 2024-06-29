@@ -1,18 +1,22 @@
-[gd_scene load_steps=3 format=3 uid="uid://byopxfuquatx5"]
+[gd_scene load_steps=5 format=3 uid="uid://byopxfuquatx5"]
 
 [ext_resource type="Script" path="res://systems/weather_system/weather_types/WeatherRain.gd" id="1_oiy6k"]
+[ext_resource type="Texture2D" uid="uid://dyg23c5msxf5c" path="res://logo.png" id="2_371lh"]
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ib4re"]
-particle_flag_disable_z = true
-gravity = Vector3(0, 98, 0)
+[sub_resource type="Curve" id="Curve_plko6"]
+_data = [Vector2(0.00562852, 1), 0.0, 0.0, 0, 0, Vector2(0.804878, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_unr42"]
+curve = SubResource("Curve_plko6")
 
 [node name="Rain" type="Node2D"]
 script = ExtResource("1_oiy6k")
+drops_alpha_curve = SubResource("CurveTexture_unr42")
 
-[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
-amount = 10000
-process_material = SubResource("ParticleProcessMaterial_ib4re")
-lifetime = 1.5
-speed_scale = 2.0
-explosiveness = 0.5
-randomness = 0.5
+[node name="CameraPosition" type="Sprite2D" parent="."]
+visible = false
+modulate = Color(0.7685, 0, 0.87, 1)
+position = Vector2(97.3333, 94)
+scale = Vector2(4.04167, 3.9375)
+texture = ExtResource("2_371lh")

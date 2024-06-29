@@ -19,7 +19,3 @@ func create_particle() -> Node2D:
 	particle.explosiveness = 0.2
 	add_child(particle)
 	return particle
-
-func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
-	# Adjust particle properties based on weather parameters
-	pass
