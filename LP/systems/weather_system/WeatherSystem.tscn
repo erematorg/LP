@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://d0ffghpeftx5b"]
+
+[ext_resource type="Script" path="res://systems/weather_system/WeatherSystem.gd" id="1_dtuo3"]
+[ext_resource type="PackedScene" uid="uid://cybfmuy1v407k" path="res://systems/weather_system/WeatherUI.tscn" id="2_b4jug"]
+[ext_resource type="Script" path="res://systems/weather_system/WeatherManager.gd" id="3_8s3jg"]
+[ext_resource type="Script" path="res://systems/weather_system/WeatherModule.gd" id="4_64om7"]
+
+[node name="WeatherSystem" type="Node2D" groups=["WeatherSystem"]]
+script = ExtResource("1_dtuo3")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="WeatherControl" parent="CanvasLayer" instance=ExtResource("2_b4jug")]
+
+[node name="WeatherManager" type="Node2D" parent="."]
+script = ExtResource("3_8s3jg")
+
+[node name="WeatherModule" type="Node2D" parent="."]
+script = ExtResource("4_64om7")
