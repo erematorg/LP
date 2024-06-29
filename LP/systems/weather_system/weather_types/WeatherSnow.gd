@@ -1,6 +1,5 @@
 extends WeatherFallingEffect
 
-
 @onready var visibility:=WeatherGlobals.area_visibility
 
 func _ready():

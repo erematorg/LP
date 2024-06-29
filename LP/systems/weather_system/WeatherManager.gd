@@ -31,4 +31,3 @@ func change_weather(state: WeatherState):
 	var weather_system = get_parent()
 	if weather_system:
 		weather_system.change_weather(state)
-

@@ -10,3 +10,4 @@ func _ready():
 ## Checks if it should rain, and if it's not freezing.
 func _is_area_needed(area:Vector2i):
 	return WeatherGlobals.rain_manager.is_raining_on_area(area) and WeatherGlobals.temperature.get_temperature(area)>=0
+
