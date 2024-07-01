@@ -15,6 +15,7 @@ var current_weather_state: WeatherState = WeatherState.NONE
 var current_weather_system: Node2D = null
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
+
 func _ready():
 	change_weather(initial_weather_state)
 

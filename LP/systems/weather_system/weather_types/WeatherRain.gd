@@ -1,25 +1,13 @@
-extends WeatherModule
+extends WeatherFallingEffect
+class_name WeatherRain
 
-# Rain-specific parameters
-@export var rain_texture: Texture2D
+@export var drops_alpha_curve : CurveTexture
+@export var debug_hints_enabled:bool = false
 
 func _ready():
-	atlas_texture = rain_texture
 	super._ready()
 
-func create_particle() -> Node2D:
-	var particle = GPUParticles2D.new()
-	particle.texture = atlas_texture
-	particle.amount = 1000
-	particle.lifetime = 1.5
-	particle.speed_scale = 2.0
-	particle.direction = Vector2(0, 1)
-	particle.gravity = Vector2(0, 800)
-	particle.randomness = 0.5
-	particle.explosiveness = 0.5
-	add_child(particle)
-	return particle
+## Checks if it should rain, and if it's not freezing.
+func _is_area_needed(area:Vector2i):
+	return WeatherGlobals.rain_manager.is_raining_on_area(area) and WeatherGlobals.temperature.get_temperature(area)>=0
 
-func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
-	# Adjust particle properties based on weather parameters
-	pass
