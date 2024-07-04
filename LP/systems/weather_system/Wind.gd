@@ -29,13 +29,13 @@ func _init():
 
 func get_wind_on_area(area:Vector2i)->float:
 	area=Vector2(area)
-	var x_change=floor(WeatherGlobals.tick.total_ticks/ticks_per_x_change)
+	var x_change=floor(float(WeatherGlobals.tick.total_ticks)/ticks_per_x_change)
 	area.x+=x_change
 	## The step of a transition between neutral points in which the area it's in.
-	var neutral_point_index=floor(area.x/neutral_point_distance)
+	var neutral_point_index=floor(float(area.x)/neutral_point_distance)
 	var neutral_point=neutral_point_index*neutral_point_distance
 	var stage=area.x-neutral_point
-	var wind:=0
+	var wind:=0.0
 	if stage<neutral_point_distance/2:
 		var distance_to_next_neutral_point=neutral_point_distance-stage
 		wind=minimal_wind_unit+distance_to_next_neutral_point*wind_per_distance_to_neutral_point
@@ -44,9 +44,9 @@ func get_wind_on_area(area:Vector2i)->float:
 	var total_multiplier=added_multiplier_per_altitude*area.y
 	var added_wind_for_altitude=total_multiplier*wind
 	if wind>0:
-		added_wind_for_altitude=clamp(added_wind_for_altitude,-10,wind)
+		added_wind_for_altitude=clamp(added_wind_for_altitude,-10.0,wind)
 	else:
-		added_wind_for_altitude=clamp(added_wind_for_altitude,wind,10)
+		added_wind_for_altitude=clamp(added_wind_for_altitude,wind,10.0)
 		
 	wind-=added_wind_for_altitude
 	var time_multiplier:float=get_time_multiplier()
@@ -54,6 +54,5 @@ func get_wind_on_area(area:Vector2i)->float:
 	return wind
 
 func get_time_multiplier()->float:
-	var cycle=floor(WeatherGlobals.tick.total_ticks/ticks_per_cycle)
-	return sin(WeatherGlobals.tick.total_ticks*(PI/ticks_per_cycle))
-
+	var _cycle=floor(float(WeatherGlobals.tick.total_ticks)/ticks_per_cycle)
+	return sin(float(WeatherGlobals.tick.total_ticks)*(PI/ticks_per_cycle))
