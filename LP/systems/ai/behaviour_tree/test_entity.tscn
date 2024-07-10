@@ -27,7 +27,8 @@ script/source = "extends Sprite2D
 var a: int
 
 func _ready() -> void:
-	pass"
+	pass
+"
 
 [node name="TestEntity" type="Node2D"]
 script = ExtResource("1_ulcsw")

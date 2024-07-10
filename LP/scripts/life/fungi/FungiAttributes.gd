@@ -1,4 +1,4 @@
-@tool class_name FungiAttributes extends GeneticAttributes
+@tool class_name FungiAttributes extends Attributes
 
 ## Determines the rate at which the fungi release spores, impacting their reproduction strategy.
 @export var spore_release_rate: float
