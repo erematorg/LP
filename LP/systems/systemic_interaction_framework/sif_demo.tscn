@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://ep1jol62u1lk"]
+
+[ext_resource type="Script" path="res://systems/systemic_interaction_framework/EntityLoader.gd" id="1_5bmom"]
+[ext_resource type="Script" path="res://systems/systemic_interaction_framework/InteractionManager.gd" id="2_fbhjq"]
+
+[sub_resource type="GDScript" id="GDScript_71tqy"]
+resource_name = "sif_demo"
+script/source = "extends Node
+
+func _ready():
+	var interaction_manager = InteractionManager.new()
+	add_child(interaction_manager)
+	
+	var entity_loader = EntityLoader.new()
+	add_child(entity_loader)
+	entity_loader.load_entities()
+"
+
+[node name="SIFDemo" type="Node2D"]
+script = SubResource("GDScript_71tqy")
+
+[node name="InteractionManager" type="Node2D" parent="."]
+script = ExtResource("2_fbhjq")
+
+[node name="EntityLoader" type="Node2D" parent="."]
+script = ExtResource("1_5bmom")

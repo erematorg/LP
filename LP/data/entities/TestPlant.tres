@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PlantaeAttributes" load_steps=2 format=3 uid="uid://4tg2mcj3js6k"]
+
+[ext_resource type="Script" path="res://scripts/life/plantae/PlantaeAttributes.gd" id="1_h0eqi"]
+
+[resource]
+script = ExtResource("1_h0eqi")
+height = 1.0
+flower_color = Color(1, 1, 1, 1)
+leaf_count = 0
+reproduction_filter_female = {}
+reproduction_filter_male = {}
+random_weights = {}
+default_filter_female_preset = false
+default_filter_male_preset = false
+default_random_weights_preset = false
+queue_apply_preset = false
+queue_randomize = false
+size = 1.0
+weight = 1.0
+color = Color(0, 0, 0, 1)
+span = 1
+reproduction_type = 0
+sex = 0
+trophic_level = 1

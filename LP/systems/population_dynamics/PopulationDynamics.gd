@@ -9,7 +9,7 @@ const SEPARATION_FACTOR = 0.1 # Factor for separation behavior in Boids algorith
 const GRID_SIZE = 100 # Size of the cells in the spatial grid for optimization
 
 # Exported variables for setting up genetic attributes and carrying capacity
-@export var LIST_OF_GENETIC_ATTRIBUTES: Array[GeneticAttributes]
+@export var LIST_OF_GENETIC_ATTRIBUTES: Array[Attributes]
 @export var CARRYING_CAPACITY := 150
 
 # Population parameters
@@ -37,7 +37,7 @@ func _ready():
 	# Start with a population of 3/4 of the maximum carrying capacity
 	for i in range(CARRYING_CAPACITY * 0.75):
 		var gene_id: int = randi_range(0, len(LIST_OF_GENETIC_ATTRIBUTES) - 1)
-		var gene: GeneticAttributes = LIST_OF_GENETIC_ATTRIBUTES[gene_id]
+		var gene: Attributes = LIST_OF_GENETIC_ATTRIBUTES[gene_id]
 		gene.sex = randi_range(0, 1) # Assign random sex
 		# Create a new entity with random attributes and initial conditions
 		var entity = {
@@ -100,9 +100,9 @@ func get_neighbors(entity):
 func simulate_asexual_births():
 	var new_population = []
 	for entity in population:
-		if (entity["genetics"] as GeneticAttributes).reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.ASEXUAL:
+		if (entity["genetics"] as Attributes).reproduction_type == Attributes.REPRODUCTION_TYPES.ASEXUAL:
 			if entity["age"] >= reproductive_age(entity) and randf() < birth_rate * entity["attributes"]["fertility_rate"]:
-				var gene: GeneticAttributes = entity["genetics"]
+				var gene: Attributes = entity["genetics"]
 				# Create new entity with mixed attributes
 				var new_entity = {
 					"id": entity["id"],
@@ -156,11 +156,11 @@ func update_interactions():
 
 # Handle reproduction between entities
 func handle_reproduction(entity, other):
-	if entity["genetics"].reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.SEXUAL and other["genetics"].reproduction_type == GeneticAttributes.REPRODUCTION_TYPES.SEXUAL and entity["id"] == other["id"]:
+	if entity["genetics"].reproduction_type == Attributes.REPRODUCTION_TYPES.SEXUAL and other["genetics"].reproduction_type == Attributes.REPRODUCTION_TYPES.SEXUAL and entity["id"] == other["id"]:
 		if entity["age"] >= reproductive_age(entity) and randf() < birth_rate * entity["attributes"]["fertility_rate"]:
 			if other["age"] >= reproductive_age(other) and randf() < birth_rate * other["attributes"]["fertility_rate"]:
 				if entity["sex"] != other["sex"]:
-					var gene: GeneticAttributes = entity["genetics"].merge(other["genetics"])
+					var gene: Attributes = entity["genetics"].merge(other["genetics"])
 					gene.sex = randi_range(0, 1)
 					var new_entity = {
 						"id": entity["id"],

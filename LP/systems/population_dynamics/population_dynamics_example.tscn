@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://systems/population_dynamics/PopulationDynamics.gd" id="1_aqjmg"]
 [ext_resource type="Script" path="res://systems/population_dynamics/PopulationVisualizer.gd" id="2_1y125"]
-[ext_resource type="Script" path="res://systems/dna_system/GeneticAttributes.gd" id="2_t2imi"]
+[ext_resource type="Script" path="res://systems/systemic_interaction_framework/Attributes.gd" id="2_t2imi"]
 
 [sub_resource type="Gradient" id="Gradient_ii4cx"]
 

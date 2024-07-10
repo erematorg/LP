@@ -1,13 +1,9 @@
-@tool class_name AnimaliaAttributes extends GeneticAttributes
+extends Attributes
+class_name AnimaliaAttributes
 
-enum FOOD_TYPES {
-	CARNIVOROUS,
-	HERBIVOROUS,
-}
+@export var leg_count: int = 4
+@export var has_wings: bool = false
+@export var movement_type: String = "walk"
 
-## Should use FOOD_TYPES but gdscript
-@export_flags("CARNIVOROUS","HERBIVOROUS") var food_types: int
-
-@export var leg_count := 1
-@export var has_wings := false
-@export var movement_type := 1
+func _init():
+	pass
