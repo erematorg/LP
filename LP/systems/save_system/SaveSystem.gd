@@ -21,6 +21,9 @@ var time := 0.0
 ## Stores the data loaded from the save file.
 var loaded_data: Dictionary = {}
 
+## Counter to limit save_game output
+var save_game_call_count := 0
+
 ## Called when the node enters the scene tree for the first time.
 func _ready():
 	print("SaveSystem: _ready() called")
@@ -176,7 +179,9 @@ func save_exists(file_name: String) -> bool:
 
 ## Attempts to save the game.
 func save_game(file_name := save_name) -> bool:
-	print("save_game() called with file_name: ", file_name)
+	save_game_call_count += 1
+	if save_game_call_count % 10 == 0:
+		print("save_game() called with file_name: ", file_name)
 	save_name = file_name
 	saving_started.emit()
 
@@ -184,7 +189,8 @@ func save_game(file_name := save_name) -> bool:
 	var file = FileAccess.open(get_save_name(), FileAccess.WRITE)
 	if file == null:
 		save_error = "Failed to create save file. Error: " + str(FileAccess.get_open_error())
-		print("save_game: ", save_error)
+		if save_game_call_count % 10 == 0:
+			print("save_game: ", save_error)
 		saving_failed.emit()
 		return false
 
@@ -196,7 +202,8 @@ func save_game(file_name := save_name) -> bool:
 	var save_data = JSON.stringify(info)
 	if save_data.is_empty():
 		save_error = "Failed to convert save data to JSON."
-		print("save_game: ", save_error)
+		if save_game_call_count % 10 == 0:
+			print("save_game: ", save_error)
 		saving_failed.emit()
 		return false
 
