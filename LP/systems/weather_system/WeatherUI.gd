@@ -14,14 +14,17 @@ func _ready():
 	if m_WeatherManager == null:
 		print("WeatherManager node not found")
 		return
-	
-	# Update slider values initially
+
+	update_sliders()
+	populate_weather_type_dropdown()
+
+func update_sliders():
 	UpdateSliderValue(m_HumidityContainer, int(m_WeatherManager.humidity))
 	UpdateSliderValue(m_MoistureContainer, int(m_WeatherManager.moisture))
 	UpdateSliderValue(m_HeatContainer, int(m_WeatherManager.heat))
 	UpdateSliderValue(m_WindContainer, int(m_WeatherManager.wind))
 
-	# Populate weather type dropdown
+func populate_weather_type_dropdown():
 	m_WeatherTypeDropdown.add_item("None", m_WeatherManager.WeatherState.NONE)
 	m_WeatherTypeDropdown.add_item("Rain", m_WeatherManager.WeatherState.RAIN)
 	m_WeatherTypeDropdown.add_item("Snow", m_WeatherManager.WeatherState.SNOW)

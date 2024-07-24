@@ -1,5 +1,7 @@
 extends Node
 
+class_name WindVisualizer
+
 @export var enabled:bool
 @export var indicator_template:PackedScene
 

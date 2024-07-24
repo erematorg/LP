@@ -1,4 +1,5 @@
 extends WeatherModule
+class_name WeatherWind
 
 # Wind-specific parameters
 @export var wind_texture: Texture2D
@@ -7,6 +8,7 @@ func _ready():
 	atlas_texture = wind_texture
 	super._ready()
 
+## Creates a particle for wind effect
 func create_particle() -> Node2D:
 	var particle = GPUParticles2D.new()
 	particle.texture = atlas_texture
