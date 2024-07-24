@@ -5,8 +5,8 @@ extends Node2D
 @export var particle_limit: int = 100
 @export var spawn_area_padding: Vector2 = Vector2(15, 100)
 @export var atlas_texture: Texture2D
-@export var particle_interval_enabled:bool=true
-@export var random_position_enabled:bool=true
+@export var particle_interval_enabled: bool = true
+@export var random_position_enabled: bool = true
 
 var spawn_timer: float = 0
 var particles: Array[Node2D] = []
@@ -17,17 +17,16 @@ var weather_manager: WeatherManager
 func _ready():
 	camera = get_viewport().get_camera_2d()
 	spawn_timer = particle_spawn_interval
-	
+
 	# Connect to the weather manager signal
 	weather_manager = get_node("/root/WeatherSystem/WeatherManager")
 	weather_manager.connect("weather_parameters_updated", Callable(self, "_on_weather_parameters_updated"))
 	_on_weather_parameters_updated(weather_manager.humidity, weather_manager.moisture, weather_manager.heat, weather_manager.wind)
-	
 
 func _process(delta: float):
 	if particle_interval_enabled:
 		spawn_timer -= delta
-		if spawn_timer <= 0 and particles.is_empty():
+		if spawn_timer <= 0 and particles.size() < particle_limit:
 			spawn_timer = particle_spawn_interval
 			spawn_particles()
 	update_particles(delta)
@@ -42,7 +41,7 @@ func spawn_particles():
 	add_child(particle)
 	particles.append(particle)
 
-func update_particles(_delta: float):
+func update_particles(delta: float):
 	for particle in particles:
 		if particle.position.y > get_viewport().get_visible_rect().size.y:
 			particles.erase(particle)
@@ -50,6 +49,7 @@ func update_particles(_delta: float):
 
 func create_particle() -> Node2D:
 	var particle = GPUParticles2D.new()
+	particle.process_material = atlas_texture # Assuming atlas_texture is a ParticleProcessMaterial
 	return particle
 
 func generate_random_pos() -> Vector2:
@@ -61,4 +61,3 @@ func generate_random_pos() -> Vector2:
 func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
 	# Override in specific weather modules to adjust particle behavior based on weather parameters
 	pass
-

@@ -17,10 +17,10 @@ var wind: float = 0.0
 
 # Function to update weather parameters (called by UI or other systems)
 func update_weather_parameters(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
-	humidity = new_humidity
-	moisture = new_moisture
-	heat = new_heat
-	wind = new_wind
+	humidity = clamp(new_humidity, 0.0, 100.0)
+	moisture = clamp(new_moisture, 0.0, 100.0)
+	heat = clamp(new_heat, -100.0, 100.0)
+	wind = clamp(new_wind, 0.0, 100.0)
 	emit_signal("weather_parameters_updated", humidity, moisture, heat, wind)
 
 # Signal to notify weather modules of parameter changes
@@ -28,6 +28,6 @@ signal weather_parameters_updated(humidity: float, moisture: float, heat: float,
 
 # Function to change the weather state
 func change_weather(state: WeatherState):
-	var weather_system = get_parent()
-	if weather_system:
-		weather_system.change_weather(state)
+	emit_signal("weather_state_changed", state)
+
+signal weather_state_changed(state: WeatherState)
