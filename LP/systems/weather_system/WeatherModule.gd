@@ -58,6 +58,6 @@ func generate_random_pos() -> Vector2:
 	return Vector2(x_pos, y_pos)
 
 # Function to update weather parameters (called by WeatherManager)
-func _on_weather_parameters_updated(new_humidity: float, new_moisture: float, new_heat: float, new_wind: float):
+func _on_weather_parameters_updated(_new_humidity: float, _new_moisture: float, _new_heat: float, _new_wind: float):
 	# Override in specific weather modules to adjust particle behavior based on weather parameters
 	pass
