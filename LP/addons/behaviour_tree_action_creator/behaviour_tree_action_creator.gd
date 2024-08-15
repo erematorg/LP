@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-const NEW_BT_ACTION_SCENE = preload("res://addons/behaviour_tree_action_creator/new_bt_action_scene.tscn")
+const NEW_BT_ACTION_SCENE = preload("res://addons/behaviour_tree_action_creator/NewBTActionScene.tscn")
 var inst
 
 var script_content = ""
