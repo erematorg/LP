@@ -6,4 +6,4 @@ extends Node2D
 func _ready():
 	# Initialize the scene and set up the L-System manager and renderer
 	l_system_manager.add_l_system()
-	print("MainScene ready")
+	print("L System Scene ready")
