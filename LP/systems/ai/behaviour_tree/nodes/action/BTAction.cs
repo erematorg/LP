@@ -12,5 +12,5 @@ public abstract partial class BTAction : Node, BTNode
 		}
 	}
 
-    public abstract BTResult Tick(Entity entity, Blackboard bb);
+	public abstract BTResult Tick(Entity entity, Blackboard bb);
 }

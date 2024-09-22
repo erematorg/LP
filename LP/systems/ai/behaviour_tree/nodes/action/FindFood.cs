@@ -5,9 +5,9 @@ public partial class FindFood : BTAction
 {
 	int tempCounter = 100;
 
-    public override BTResult Tick(Entity entity, Blackboard bb)
-    {
-        GD.Print("Looking for food... " + tempCounter);
+	public override BTResult Tick(Entity entity, Blackboard bb)
+	{
+		GD.Print("Looking for food... " + tempCounter);
 		if(tempCounter <= 0)
 		{
 			return BTResult.Success;
@@ -15,5 +15,5 @@ public partial class FindFood : BTAction
 		tempCounter--;
 
 		return BTResult.Running;
-    }
+	}
 }

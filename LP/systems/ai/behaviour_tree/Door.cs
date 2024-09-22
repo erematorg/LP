@@ -11,8 +11,8 @@ public class Door
 
 	public bool smashed; 
 
-    public override string ToString()
-    {
-        return "Door" + index;
-    }
+	public override string ToString()
+	{
+		return "Door" + index;
+	}
 }
