@@ -16,17 +16,17 @@ public partial class Repeater : BTDecorator, BTNode //Will return running until 
 		}
 	}
 
-    public override BTResult Tick(Entity entity, Blackboard bb)
-    {
+	public override BTResult Tick(Entity entity, Blackboard bb)
+	{
 		if(repeatCount != -1 && currentIteration >= repeatCount)
 		{
 			return BTResult.Success;
 		}
-        BTNode btNode = GetAsBTNode(GetChild(0));
+		BTNode btNode = GetAsBTNode(GetChild(0));
 
 		btNode.Tick(entity, bb); //We don't care about the result of the child node, we just want to process it.
 		currentIteration++;
 
 		return BTResult.Running;
-    }
+	}
 }

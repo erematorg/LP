@@ -4,9 +4,9 @@ using System;
 [GlobalClass]
 public partial class Inverter : BTDecorator, BTNode //Returns the opposite of the child node's result.
 {
-    public override BTResult Tick(Entity entity, Blackboard bb)
-    {
-        BTNode btNode = GetAsBTNode(GetChild(0));
+	public override BTResult Tick(Entity entity, Blackboard bb)
+	{
+		BTNode btNode = GetAsBTNode(GetChild(0));
 		BTResult result = btNode.Tick(entity, bb);
 
 		switch(result)
@@ -22,5 +22,5 @@ public partial class Inverter : BTDecorator, BTNode //Returns the opposite of th
 			default:
 				return BTResult.Running;
 		}
-    }
+	}
 }

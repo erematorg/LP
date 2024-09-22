@@ -41,13 +41,13 @@ public partial class GetDoorList : BTAction
 		
 	}
 
-    private (int, string)? SetRandomDoorProperty(List<Door> doorList)
-    {
+	private (int, string)? SetRandomDoorProperty(List<Door> doorList)
+	{
 		bool shouldSetProperty = GD.Randf() < propertyChance; //chance that a door will have a property
 		if(!shouldSetProperty) return null;
 
-        int randomIndex = GD.RandRange(0, doorCount - 1);
-        Door randomDoor = doorList[randomIndex];
+		int randomIndex = GD.RandRange(0, doorCount - 1);
+		Door randomDoor = doorList[randomIndex];
 		int randomProperty = GD.RandRange(0, 2);
 
 		switch(randomProperty)
@@ -63,5 +63,5 @@ public partial class GetDoorList : BTAction
 				return (randomIndex, "[shake rate=20.0 level=5 connected=1]smashable[/shake]");
 		}
 		throw new Exception("CodeShouldNotReachHereException");
-    }
+	}
 }

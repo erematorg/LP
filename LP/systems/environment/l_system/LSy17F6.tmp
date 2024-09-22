@@ -1,11 +1,15 @@
-[gd_scene load_steps=6 format=3 uid="uid://do344646t4uck"]
+[gd_scene load_steps=7 format=3 uid="uid://do344646t4uck"]
 
 [ext_resource type="Script" path="res://systems/environment/l_system/LSystemTest.gd" id="1_0t4ip"]
 [ext_resource type="Script" path="res://systems/environment/l_system/LSystemManager.gd" id="1_rjhsu"]
 [ext_resource type="Script" path="res://systems/environment/l_system/LSystemRenderer.gd" id="2_1fm8o"]
 [ext_resource type="Script" path="res://systems/weather_system/Wind.gd" id="4_mw3ab"]
 
+[sub_resource type="PlaneMesh" id="PlaneMesh_jlct1"]
+size = Vector2(1, 1)
+
 [sub_resource type="MultiMesh" id="MultiMesh_qf5kj"]
+mesh = SubResource("PlaneMesh_jlct1")
 
 [node name="LSystemDemoScene" type="Node2D"]
 script = ExtResource("1_0t4ip")
@@ -17,6 +21,7 @@ script = ExtResource("1_rjhsu")
 script = ExtResource("2_1fm8o")
 
 [node name="MultiMeshInstance2D" type="MultiMeshInstance2D" parent="LSystemRenderer"]
+visible = false
 multimesh = SubResource("MultiMesh_qf5kj")
 
 [node name="Wind" type="Node" parent="."]

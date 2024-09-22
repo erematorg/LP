@@ -2,26 +2,60 @@ using Godot;
 using System;
 
 [GlobalClass]
-public abstract partial class BTDecorator : Node, BTNode
+public partial class BTDecorator : Node, BTNode
 {
-    public abstract BTResult Tick(Entity entity, Blackboard bb);
+	// Flags for different decorator behaviors
+	[Export] public bool InvertResult = false;
+	[Export] public bool RepeatUntilFail = false;
+	[Export] public int RepeatCount = -1; // -1 means infinite repeat
 
-    public override void _Ready()
-    {
-        if(GetChildCount() != 1)
+	private int currentIteration = 0;
+
+	// Mark Tick as virtual so child classes can override it
+	public virtual BTResult Tick(Entity entity, Blackboard bb)
+	{
+		BTNode childNode = GetAsBTNode(GetChild(0));
+		BTResult result = childNode.Tick(entity, bb);
+
+		// Invert the result if required
+		if (InvertResult)
 		{
-			GD.PrintErr($"Decorator {Name} must have atleast/only one child node!");
+			result = Invert(result);
 		}
-    }
 
-	//duplicate method from BTComposite. Might need to have a common parent class. Limited duplication so I'm leaving it here for now. 
+		// Handle repeat logic
+		if (RepeatUntilFail && result != BTResult.Failure)
+		{
+			return BTResult.Running;
+		}
+
+		if (RepeatCount != -1 && currentIteration >= RepeatCount)
+		{
+			return BTResult.Success;
+		}
+
+		currentIteration++;
+		return result;
+	}
+
+	private BTResult Invert(BTResult result)
+	{
+		switch (result)
+		{
+			case BTResult.Success:
+				return BTResult.Failure;
+			case BTResult.Failure:
+				return BTResult.Success;
+			default:
+				return result;
+		}
+	}
+
 	public BTNode GetAsBTNode(Node node)
-    {
-        if(node is BTNode btNode)
-            return btNode;
-        else
-        {
-            throw new Exception($"{node.Name} is not a BTNode!");
-        }
-    }
+	{
+		if (node is BTNode btNode)
+			return btNode;
+		else
+			throw new Exception($"{node.Name} is not a BTNode!");
+	}
 }
