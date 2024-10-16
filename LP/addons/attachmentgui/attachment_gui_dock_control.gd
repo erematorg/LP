@@ -18,7 +18,7 @@ func _on_new_button_pressed() -> void:
 
 
 func _on_edit_button_pressed() -> void:
-	pass # Replace with function body.
+	attachment_gui.edit_scene(current_creature_scene, path_label.text)
 
 
 func _on_file_dialog_file_selected(path: String) -> void:
@@ -28,5 +28,6 @@ func _on_file_dialog_file_selected(path: String) -> void:
 	# Create a new PackedScene to hold the creature
 	current_creature_scene = PackedScene.new()
 	current_creature_scene.pack(creature_instance)
-	attachment_gui.edit_scene(current_creature_scene, path)
+	#attachment_gui.edit_scene(current_creature_scene, path)
+	edit_button.disabled = false
 	print("New creature scene created!")
