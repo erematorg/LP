@@ -1,14 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://cnyo8q1t475w6"]
+[gd_scene load_steps=3 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/button01.png" id="1_rb5mb"]
+[ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
 
-[node name="AttachmentGuiDock" type="Control"]
+[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "file_dialog", "path_label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_rn36r")
+new_button = NodePath("Panel/NewButton")
+edit_button = NodePath("Panel/EditButton")
+file_dialog = NodePath("FileDialog")
+path_label = NodePath("Label")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -18,23 +24,23 @@ anchor_bottom = 0.031
 offset_right = -1.0
 offset_bottom = 259.912
 
-[node name="Button" type="Button" parent="Panel"]
+[node name="NewButton" type="Button" parent="Panel"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -27.5
-offset_top = -21.5
-offset_right = 27.5
-offset_bottom = 21.5
+offset_left = -64.5
+offset_top = -65.0
+offset_right = 71.5
+offset_bottom = -22.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "New Creature"
 icon = ExtResource("1_rb5mb")
 
-[node name="Button2" type="Button" parent="Panel"]
+[node name="EditButton" type="Button" parent="Panel"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -49,3 +55,25 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Edit Creature"
 icon = ExtResource("1_rb5mb")
+
+[node name="FileDialog" type="FileDialog" parent="."]
+size = Vector2i(303, 630)
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.061
+anchor_right = 1.0
+anchor_bottom = 0.0613333
+offset_left = 556.0
+offset_top = -11.528
+offset_right = -555.0
+offset_bottom = 11.256
+grow_horizontal = 2
+grow_vertical = 2
+text = "path:"
+metadata/_edit_use_anchors_ = true
+
+[connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
+[connection signal="pressed" from="Panel/EditButton" to="." method="_on_edit_button_pressed"]
+[connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
