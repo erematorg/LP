@@ -1,6 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://cvlpcsid8g4vw"]
+[gd_scene load_steps=9 format=3 uid="uid://cvlpcsid8g4vw"]
 
-[ext_resource type="Script" path="res://ForlornU/M1thieu/LimbBase.gd" id="1_qfawq"]
+[ext_resource type="Script" path="res://systems/movement/Leg.gd" id="1_do0xi"]
 [ext_resource type="Texture2D" uid="uid://c2b25h53xytlr" path="res://addons/attachmentgui/scale_vertical.png" id="2_il171"]
 
 [sub_resource type="Curve2D" id="Curve2D_6tdyr"]
@@ -9,53 +9,58 @@ _data = {
 }
 point_count = 3
 
-[sub_resource type="Curve" id="Curve_rbtrt"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.522293, 0.48033), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 3
+[sub_resource type="Curve" id="Curve_pkdjd"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0]
+point_count = 1
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_tk1k5"]
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_216lh"]
 target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/target")
-tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D6/Bone2D/Node2D")
+tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D5/Bone2D/Node2D")
 ccdik_data_chain_length = 2
 joint_data/0/bone_index = 0
-joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D6")
+joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D5")
 joint_data/0/rotate_from_joint = false
 joint_data/0/enable_constraint = true
-joint_data/0/constraint_angle_min = -3.43775
-joint_data/0/constraint_angle_max = 165.585
+joint_data/0/constraint_angle_min = -28.6479
+joint_data/0/constraint_angle_max = 88.8085
 joint_data/0/constraint_angle_invert = true
 joint_data/0/constraint_in_localspace = true
 joint_data/0/editor_draw_gizmo = true
 joint_data/1/bone_index = 1
-joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D6/Bone2D")
+joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D5/Bone2D")
 joint_data/1/rotate_from_joint = false
 joint_data/1/enable_constraint = true
 joint_data/1/constraint_angle_min = -28.6479
-joint_data/1/constraint_angle_max = 43.8313
+joint_data/1/constraint_angle_max = 28.6479
 joint_data/1/constraint_angle_invert = true
 joint_data/1/constraint_in_localspace = true
 joint_data/1/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_ll4po"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_t21i6"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_tk1k5")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_216lh")
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_67087"]
+radius = 31.0
+height = 82.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4pgmm"]
 
 [node name="Limb" type="Path2D"]
-position = Vector2(-13, -21)
+position = Vector2(-15, -56)
 curve = SubResource("Curve2D_6tdyr")
-script = ExtResource("1_qfawq")
+script = ExtResource("1_do0xi")
+is_grounded = true
 update = true
-line_thickness = 30.0
 enable_ik = true
-width_curve = SubResource("Curve_rbtrt")
-joint_constraints = Array[Vector2]([Vector2(2.89, 0.06), Vector2(0.765, 0.5)])
+width_curve = SubResource("Curve_pkdjd")
+joint_constraints = Array[Vector2]([Vector2(1.55, 0.5), Vector2(0.5, 0.5)])
 
 [node name="Line2D" type="Line2D" parent="."]
 texture_repeat = 2
-points = PackedVector2Array(0, 0, 56.5506, 46.1523, 62, 114)
-width = 30.0
-width_curve = SubResource("Curve_rbtrt")
+points = PackedVector2Array(0, 0, 38.8944, 61.7629, 21.0332, 127.428)
+width_curve = SubResource("Curve_pkdjd")
 default_color = Color(0.580206, 0.637485, 0.658722, 1)
 texture = ExtResource("2_il171")
 texture_mode = 1
@@ -65,16 +70,17 @@ end_cap_mode = 2
 antialiased = true
 
 [node name="Skeleton2D" type="Skeleton2D" parent="."]
-modification_stack = SubResource("SkeletonModificationStack2D_ll4po")
+visible = false
+modification_stack = SubResource("SkeletonModificationStack2D_t21i6")
 
-[node name="Bone2D6" type="Bone2D" parent="Skeleton2D"]
+[node name="Bone2D5" type="Bone2D" parent="Skeleton2D"]
 rest = Transform2D(1, 0, 0, 1, 0, 0)
 auto_calculate_length_and_angle = false
 length = 72.9931
 bone_angle = 9.46232
 metadata/_local_pose_override_enabled_ = true
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D5"]
 position = Vector2(72, 12)
 rest = Transform2D(1, 0, 0, 1, 72, 12)
 auto_calculate_length_and_angle = false
@@ -82,8 +88,35 @@ length = 68.0661
 bone_angle = 79.8457
 metadata/_local_pose_override_enabled_ = true
 
-[node name="Node2D" type="Node2D" parent="Skeleton2D/Bone2D6/Bone2D"]
+[node name="Node2D" type="Node2D" parent="Skeleton2D/Bone2D5/Bone2D"]
 position = Vector2(12, 67)
 
 [node name="target" type="Marker2D" parent="."]
-position = Vector2(62, 114)
+position = Vector2(21.0332, 127.428)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(37, 164)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+shape = SubResource("CapsuleShape2D_67087")
+metadata/_edit_lock_ = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="GroundCast" type="ShapeCast2D" parent="."]
+visible = false
+position = Vector2(1, 0)
+shape = SubResource("CapsuleShape2D_4pgmm")
+target_position = Vector2(14, 113)
+margin = 2.0
+max_results = 3
+collision_result = [{
+"collider": Object(StaticBody2D,"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"physics_interpolation_mode":0,"auto_translate_mode":0,"editor_description":"","visible":true,"modulate":Color(1, 1, 1, 1),"self_modulate":Color(1, 1, 1, 1),"show_behind_parent":false,"top_level":false,"light_mask":1,"visibility_layer":1,"z_index":0,"z_as_relative":true,"y_sort_enabled":false,"texture_filter":0,"texture_repeat":0,"material":null,"use_parent_material":false,"position":Vector2(37, 164),"rotation":0.0,"scale":Vector2(1, 1),"skew":0.0,"disable_mode":0,"collision_layer":1,"collision_mask":1,"collision_priority":1.0,"input_pickable":false,"physics_material_override":null,"constant_linear_velocity":Vector2(0, 0),"constant_angular_velocity":0.0,"script":null)
+,
+"collider_id": 15512247539775,
+"linear_velocity": Vector2(0, 0),
+"normal": Vector2(-0.515059, -0.857154),
+"point": Vector2(6.03323, 71.4282),
+"rid": RID(24747103343345664),
+"shape": 0
+}]

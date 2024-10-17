@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://054muqtx37p3"]
 
 [ext_resource type="Texture2D" uid="uid://0kct762r5r6s" path="res://ForlornU/prefabs/Leg Bottom.png" id="1_05uyy"]
-[ext_resource type="Script" path="res://ForlornU/attachment_socket.gd" id="2_cikmm"]
+[ext_resource type="Script" path="res://systems/attachment system/attachment_socket.gd" id="2_cikmm"]
 
 [node name="CreatureCreate" type="Node2D"]
 
