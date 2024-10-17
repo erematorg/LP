@@ -1,0 +1,195 @@
+[gd_scene load_steps=7 format=3 uid="uid://b6iabpna2s4t2"]
+
+[ext_resource type="PackedScene" uid="uid://cq40e51m80dth" path="res://creature_body.tscn" id="2_f1y4p"]
+[ext_resource type="PackedScene" uid="uid://cvlpcsid8g4vw" path="res://limb.tscn" id="2_gf0ws"]
+
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_7oaqp"]
+target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/target")
+tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Node2D")
+ccdik_data_chain_length = 5
+joint_data/0/bone_index = 0
+joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2")
+joint_data/0/rotate_from_joint = false
+joint_data/0/enable_constraint = true
+joint_data/0/constraint_angle_min = -53.5716
+joint_data/0/constraint_angle_max = 0.0
+joint_data/0/constraint_angle_invert = true
+joint_data/0/constraint_in_localspace = true
+joint_data/0/editor_draw_gizmo = true
+joint_data/1/bone_index = 1
+joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2/Bone2D")
+joint_data/1/rotate_from_joint = false
+joint_data/1/enable_constraint = true
+joint_data/1/constraint_angle_min = -1.71887
+joint_data/1/constraint_angle_max = 25.4966
+joint_data/1/constraint_angle_invert = true
+joint_data/1/constraint_in_localspace = true
+joint_data/1/editor_draw_gizmo = true
+joint_data/2/bone_index = 2
+joint_data/2/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2/Bone2D/Bone2D")
+joint_data/2/rotate_from_joint = false
+joint_data/2/enable_constraint = true
+joint_data/2/constraint_angle_min = -28.6479
+joint_data/2/constraint_angle_max = 40.107
+joint_data/2/constraint_angle_invert = true
+joint_data/2/constraint_in_localspace = true
+joint_data/2/editor_draw_gizmo = true
+joint_data/3/bone_index = 3
+joint_data/3/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D")
+joint_data/3/rotate_from_joint = false
+joint_data/3/enable_constraint = true
+joint_data/3/constraint_angle_min = -28.6479
+joint_data/3/constraint_angle_max = 40.107
+joint_data/3/constraint_angle_invert = true
+joint_data/3/constraint_in_localspace = true
+joint_data/3/editor_draw_gizmo = true
+joint_data/4/bone_index = 4
+joint_data/4/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D/Bone2D")
+joint_data/4/rotate_from_joint = false
+joint_data/4/enable_constraint = true
+joint_data/4/constraint_angle_min = -28.6479
+joint_data/4/constraint_angle_max = 40.107
+joint_data/4/constraint_angle_invert = true
+joint_data/4/constraint_in_localspace = true
+joint_data/4/editor_draw_gizmo = true
+
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_erwli"]
+enabled = true
+modification_count = 1
+modifications/0 = SubResource("SkeletonModification2DCCDIK_7oaqp")
+
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_yybua"]
+target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/target")
+tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D7/Bone2D/Node2D")
+ccdik_data_chain_length = 2
+joint_data/0/bone_index = 0
+joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D7")
+joint_data/0/rotate_from_joint = false
+joint_data/0/enable_constraint = true
+joint_data/0/constraint_angle_min = -3.43775
+joint_data/0/constraint_angle_max = 165.585
+joint_data/0/constraint_angle_invert = true
+joint_data/0/constraint_in_localspace = true
+joint_data/0/editor_draw_gizmo = true
+joint_data/1/bone_index = 1
+joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D7/Bone2D")
+joint_data/1/rotate_from_joint = false
+joint_data/1/enable_constraint = true
+joint_data/1/constraint_angle_min = -28.6479
+joint_data/1/constraint_angle_max = 43.8313
+joint_data/1/constraint_angle_invert = true
+joint_data/1/constraint_in_localspace = true
+joint_data/1/editor_draw_gizmo = true
+
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_5r84m"]
+enabled = true
+modification_count = 1
+modifications/0 = SubResource("SkeletonModification2DCCDIK_yybua")
+
+[node name="CreatureCreate" type="Node2D"]
+
+[node name="Body" parent="." instance=ExtResource("2_f1y4p")]
+update = true
+enable_ik = true
+joint_constraints = Array[Vector2]([Vector2(0, 0.935), Vector2(0.445, 0.03), Vector2(0.7, 0.5), Vector2(0.7, 0.5), Vector2(0.7, 0.5), Vector2(0.7, 0.5), Vector2(0.7, 0.5)])
+
+[node name="Line2D" parent="Body" index="0"]
+points = PackedVector2Array(0, 0, 79.0467, -123.335, 202.21, -172.243, 306.372, -139.522, 329.738, -129.231, 346.759, -116.509, 366.97, -108.98, 367, -109)
+
+[node name="Skeleton2D" parent="Body" index="1"]
+modification_stack = SubResource("SkeletonModificationStack2D_erwli")
+
+[node name="Bone2D2" type="Bone2D" parent="Body/Skeleton2D" index="0"]
+position = Vector2(-6, -1)
+rest = Transform2D(1, 0, 0, 1, -6, -1)
+auto_calculate_length_and_angle = false
+length = 146.492
+bone_angle = -32.1712
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2"]
+position = Vector2(124, -78)
+rest = Transform2D(1, 0, 0, 1, 124, -78)
+auto_calculate_length_and_angle = false
+length = 132.518
+bone_angle = -8.68042
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2/Bone2D"]
+position = Vector2(131, -20)
+rest = Transform2D(1, 0, 0, 1, 131, -20)
+auto_calculate_length_and_angle = false
+length = 109.179
+bone_angle = 8.42697
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2/Bone2D/Bone2D"]
+position = Vector2(108, 16)
+rest = Transform2D(1, 0, 0, 1, 108, 16)
+auto_calculate_length_and_angle = false
+length = 25.5299
+bone_angle = -3.2311
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D"]
+position = Vector2(25.4893, -1.43896)
+rest = Transform2D(1, 0, 0, 1, 25.4893, -1.43896)
+auto_calculate_length_and_angle = false
+length = 21.2506
+bone_angle = -22.2876
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D/Bone2D"]
+position = Vector2(19.663, -8.05943)
+rest = Transform2D(1, 0, 0, 1, 19.663, -8.05943)
+auto_calculate_length_and_angle = false
+length = 21.5688
+bone_angle = -38.6319
+
+[node name="Bone2D" type="Bone2D" parent="Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
+position = Vector2(16.8489, -13.4657)
+rest = Transform2D(1, 0, 0, 1, 16.8489, -13.4657)
+auto_calculate_length_and_angle = false
+length = 0.0359573
+bone_angle = -92.0428
+
+[node name="Node2D" type="Node2D" parent="Body/Skeleton2D/Bone2D2/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
+position = Vector2(-0.00128174, -0.0359344)
+
+[node name="target" parent="Body" index="2"]
+position = Vector2(367, -109)
+
+[node name="Limb" parent="Body" instance=ExtResource("2_gf0ws")]
+
+[node name="Line2D" parent="Body/Limb" index="0"]
+points = PackedVector2Array(0, 0, 39.0094, 61.695, 14, 125)
+
+[node name="Skeleton2D" parent="Body/Limb" index="1"]
+modification_stack = SubResource("SkeletonModificationStack2D_5r84m")
+
+[node name="Bone2D7" type="Bone2D" parent="Body/Limb/Skeleton2D" index="0"]
+rest = Transform2D(1, 0, 0, 1, 0, 0)
+auto_calculate_length_and_angle = false
+length = 72.9931
+bone_angle = 9.46232
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Bone2D" type="Bone2D" parent="Body/Limb/Skeleton2D/Bone2D7"]
+position = Vector2(72, 12)
+rest = Transform2D(1, 0, 0, 1, 72, 12)
+auto_calculate_length_and_angle = false
+length = 68.0661
+bone_angle = 79.8457
+metadata/_local_pose_override_enabled_ = true
+
+[node name="Node2D" type="Node2D" parent="Body/Limb/Skeleton2D/Bone2D7/Bone2D"]
+position = Vector2(12, 67)
+
+[node name="target" parent="Body/Limb" index="2"]
+position = Vector2(14, 125)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(121, -90)
+
+[editable path="Body"]
+[editable path="Body/Limb"]
