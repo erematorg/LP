@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cnyo8q1t475w6"]
 
-[ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/button01.png" id="1_rb5mb"]
+[ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
 [ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
 
 [node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "file_dialog", "path_label")]

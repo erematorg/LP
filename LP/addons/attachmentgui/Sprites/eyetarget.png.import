@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://caycfhf5ifbyo"
-path="res://.godot/imported/scale_horizontal.png-227fadc03ce3ab6580720d3eef46d737.ctex"
+uid="uid://87xwhfrlkavc"
+path="res://.godot/imported/eyetarget.png-ce3fad36bf58e0faa2ad82639841c65a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/attachmentgui/scale_horizontal.png"
-dest_files=["res://.godot/imported/scale_horizontal.png-227fadc03ce3ab6580720d3eef46d737.ctex"]
+source_file="res://addons/attachmentgui/Sprites/eyetarget.png"
+dest_files=["res://.godot/imported/eyetarget.png-ce3fad36bf58e0faa2ad82639841c65a.ctex"]
 
 [params]
 

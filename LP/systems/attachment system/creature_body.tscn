@@ -1,9 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://cq40e51m80dth"]
+[gd_scene load_steps=8 format=3 uid="uid://cq40e51m80dth"]
 
 [ext_resource type="Script" path="res://systems/movement/body.gd" id="1_vjue5"]
-[ext_resource type="Texture2D" uid="uid://caycfhf5ifbyo" path="res://addons/attachmentgui/scale_horizontal.png" id="2_tu86t"]
-[ext_resource type="Script" path="res://target_controller.gd" id="3_2usx1"]
-[ext_resource type="Texture2D" uid="uid://87xwhfrlkavc" path="res://addons/attachmentgui/eyetarget.png" id="3_xqhsc"]
+[ext_resource type="Script" path="res://scripts/misc/move_marker_to_cursor.gd" id="3_2usx1"]
+[ext_resource type="Texture2D" uid="uid://87xwhfrlkavc" path="res://addons/attachmentgui/Sprites/eyetarget.png" id="3_xqhsc"]
 
 [sub_resource type="Curve2D" id="Curve2D_x4pt4"]
 _data = {
@@ -87,8 +86,6 @@ scale = Vector2(1.2647, 1)
 points = PackedVector2Array(0, 0, 124, -78, 255, -98, 363, -82, 388.489, -83.439, 408.152, -91.4984, 425.001, -104.964, 425, -105)
 width = 96.575
 width_curve = SubResource("Curve_nfk32")
-texture = ExtResource("2_tu86t")
-texture_mode = 1
 joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
@@ -100,60 +97,60 @@ position = Vector2(6, 1)
 modification_stack = SubResource("SkeletonModificationStack2D_w7t5f")
 metadata/_edit_lock_ = true
 
-[node name="Bone2D7" type="Bone2D" parent="Skeleton2D"]
+[node name="Bone2D6" type="Bone2D" parent="Skeleton2D"]
 position = Vector2(-6, -1)
 rest = Transform2D(1, 0, 0, 1, -6, -1)
 auto_calculate_length_and_angle = false
 length = 146.492
 bone_angle = -32.1712
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6"]
 position = Vector2(124, -78)
 rest = Transform2D(1, 0, 0, 1, 124, -78)
 auto_calculate_length_and_angle = false
 length = 132.518
 bone_angle = -8.68042
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7/Bone2D"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6/Bone2D"]
 position = Vector2(131, -20)
 rest = Transform2D(1, 0, 0, 1, 131, -20)
 auto_calculate_length_and_angle = false
 length = 109.179
 bone_angle = 8.42697
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7/Bone2D/Bone2D"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6/Bone2D/Bone2D"]
 position = Vector2(108, 16)
 rest = Transform2D(1, 0, 0, 1, 108, 16)
 auto_calculate_length_and_angle = false
 length = 25.5299
 bone_angle = -3.2311
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7/Bone2D/Bone2D/Bone2D"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6/Bone2D/Bone2D/Bone2D"]
 position = Vector2(25.4893, -1.43896)
 rest = Transform2D(1, 0, 0, 1, 25.4893, -1.43896)
 auto_calculate_length_and_angle = false
 length = 21.2506
 bone_angle = -22.2876
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7/Bone2D/Bone2D/Bone2D/Bone2D"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6/Bone2D/Bone2D/Bone2D/Bone2D"]
 position = Vector2(19.663, -8.05943)
 rest = Transform2D(1, 0, 0, 1, 19.663, -8.05943)
 auto_calculate_length_and_angle = false
 length = 21.5688
 bone_angle = -38.6319
 
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D7/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
+[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D6/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
 position = Vector2(16.8489, -13.4657)
 rest = Transform2D(1, 0, 0, 1, 16.8489, -13.4657)
 auto_calculate_length_and_angle = false
 length = 0.0359573
 bone_angle = -92.0428
 
-[node name="Node2D" type="Node2D" parent="Skeleton2D/Bone2D7/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
+[node name="Node2D" type="Node2D" parent="Skeleton2D/Bone2D6/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D"]
 position = Vector2(-0.00128174, -0.0359344)
 
 [node name="target" type="Marker2D" parent="."]
-position = Vector2(393, -128)
+position = Vector2(461, -125)
 
 [node name="targetSprite" type="Sprite2D" parent="target"]
 texture = ExtResource("3_xqhsc")

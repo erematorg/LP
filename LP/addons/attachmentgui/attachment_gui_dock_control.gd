@@ -2,7 +2,7 @@
 extends Control
 
 var attachment_gui : attachmentgui
-const TEMPLATE_SCENE = "res://addons/attachmentgui/CreatureCreate.tscn"
+const TEMPLATE_SCENE = "res://addons/attachmentgui/Scenes/CreatureCreate.tscn"
 var current_creature_scene: PackedScene = null
 @export var new_button : Button
 @export var edit_button : Button

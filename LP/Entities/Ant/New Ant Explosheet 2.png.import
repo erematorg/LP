@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2b25h53xytlr"
-path="res://.godot/imported/scale_vertical.png-5aadc7ad93d683d861dcf87420dc92a6.ctex"
+uid="uid://ckr3e71t64n42"
+path="res://.godot/imported/New Ant Explosheet 2.png-0e01dc302e5dbdcd661aeaed3a8c1ab0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/attachmentgui/scale_vertical.png"
-dest_files=["res://.godot/imported/scale_vertical.png-5aadc7ad93d683d861dcf87420dc92a6.ctex"]
+source_file="res://Entities/Ant/New Ant Explosheet 2.png"
+dest_files=["res://.godot/imported/New Ant Explosheet 2.png-0e01dc302e5dbdcd661aeaed3a8c1ab0.ctex"]
 
 [params]
 

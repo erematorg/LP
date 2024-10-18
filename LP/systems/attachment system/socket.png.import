@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://87xwhfrlkavc"
-path="res://.godot/imported/eyetarget.png-1619c5c36592c15c6cfeeefa2ace8c32.ctex"
+uid="uid://clieye2k0uu6n"
+path="res://.godot/imported/socket.png-f20d68c3086653263957af36f483def7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/attachmentgui/eyetarget.png"
-dest_files=["res://.godot/imported/eyetarget.png-1619c5c36592c15c6cfeeefa2ace8c32.ctex"]
+source_file="res://systems/attachment system/socket.png"
+dest_files=["res://.godot/imported/socket.png-f20d68c3086653263957af36f483def7.ctex"]
 
 [params]
 

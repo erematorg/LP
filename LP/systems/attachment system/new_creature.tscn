@@ -1,9 +1,9 @@
 [gd_scene load_steps=7 format=3 uid="uid://b6iabpna2s4t2"]
 
-[ext_resource type="PackedScene" uid="uid://cq40e51m80dth" path="res://creature_body.tscn" id="2_f1y4p"]
-[ext_resource type="PackedScene" uid="uid://cvlpcsid8g4vw" path="res://limb.tscn" id="2_gf0ws"]
+[ext_resource type="PackedScene" uid="uid://cq40e51m80dth" path="res://systems/attachment system/creature_body.tscn" id="2_f1y4p"]
+[ext_resource type="PackedScene" uid="uid://cvlpcsid8g4vw" path="res://systems/attachment system/limb.tscn" id="2_gf0ws"]
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_xbbat"]
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_ra6rw"]
 target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/target")
 tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D10/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Node2D")
 ccdik_data_chain_length = 5
@@ -53,12 +53,12 @@ joint_data/4/constraint_angle_invert = true
 joint_data/4/constraint_in_localspace = true
 joint_data/4/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_nrm7n"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_b085c"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_xbbat")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_ra6rw")
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_2yhx6"]
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_e4qiv"]
 target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/target")
 tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D5/Bone2D/Node2D")
 ccdik_data_chain_length = 2
@@ -66,8 +66,8 @@ joint_data/0/bone_index = 0
 joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D5")
 joint_data/0/rotate_from_joint = false
 joint_data/0/enable_constraint = true
-joint_data/0/constraint_angle_min = -3.43775
-joint_data/0/constraint_angle_max = 165.585
+joint_data/0/constraint_angle_min = -28.6479
+joint_data/0/constraint_angle_max = 88.8085
 joint_data/0/constraint_angle_invert = true
 joint_data/0/constraint_in_localspace = true
 joint_data/0/editor_draw_gizmo = true
@@ -76,15 +76,15 @@ joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxCont
 joint_data/1/rotate_from_joint = false
 joint_data/1/enable_constraint = true
 joint_data/1/constraint_angle_min = -28.6479
-joint_data/1/constraint_angle_max = 43.8313
+joint_data/1/constraint_angle_max = 28.6479
 joint_data/1/constraint_angle_invert = true
 joint_data/1/constraint_in_localspace = true
 joint_data/1/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_ut07i"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_ijkmq"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_2yhx6")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_e4qiv")
 
 [node name="CreatureCreate" type="Node2D"]
 
@@ -96,10 +96,9 @@ joint_constraints = Array[Vector2]([Vector2(0, 0.935), Vector2(0.445, 0.03), Vec
 [node name="Line2D" parent="Body" index="0"]
 points = PackedVector2Array(0, 0, 118.732, -85.8063, 247.785, -55.6984, 356.921, -52.6657, 376.842, -68.633, 378.169, -89.842, 373.404, -110.878, 373.371, -110.892)
 default_color = Color(0.546708, 0.436286, 0.311721, 1)
-texture = null
 
 [node name="Skeleton2D" parent="Body" index="1"]
-modification_stack = SubResource("SkeletonModificationStack2D_nrm7n")
+modification_stack = SubResource("SkeletonModificationStack2D_b085c")
 
 [node name="Bone2D10" type="Bone2D" parent="Body/Skeleton2D" index="0"]
 position = Vector2(-6, -1)
@@ -164,10 +163,10 @@ position = Vector2(367, -109)
 [node name="Limb" parent="Body" instance=ExtResource("2_gf0ws")]
 
 [node name="Line2D" parent="Body/Limb" index="0"]
-points = PackedVector2Array(0, 0, 39.0094, 61.695, 14, 125)
+points = PackedVector2Array(0, 0, 33.4924, 64.8557, 16.5385, 130.777)
 
 [node name="Skeleton2D" parent="Body/Limb" index="1"]
-modification_stack = SubResource("SkeletonModificationStack2D_ut07i")
+modification_stack = SubResource("SkeletonModificationStack2D_ijkmq")
 
 [node name="Bone2D5" type="Bone2D" parent="Body/Limb/Skeleton2D" index="0"]
 rest = Transform2D(1, 0, 0, 1, 0, 0)
@@ -188,7 +187,10 @@ metadata/_local_pose_override_enabled_ = true
 position = Vector2(12, 67)
 
 [node name="target" parent="Body/Limb" index="2"]
-position = Vector2(14, 125)
+position = Vector2(19.2083, 151.887)
+
+[node name="StaticBody2D" parent="Body/Limb" index="3"]
+position = Vector2(112, 212)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(121, -90)

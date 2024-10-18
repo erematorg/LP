@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://clieye2k0uu6n"
-path="res://.godot/imported/socket.png-8bb1e59691765264f7ab9ad467c1e7bb.ctex"
+uid="uid://bxmt7s58ihfv"
+path="res://.godot/imported/New Ant Explosheet.png-4dc7aa4a64b951fb499ef26e9d0d09f1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/attachmentgui/socket.png"
-dest_files=["res://.godot/imported/socket.png-8bb1e59691765264f7ab9ad467c1e7bb.ctex"]
+source_file="res://Entities/Ant/New Ant Explosheet.png"
+dest_files=["res://.godot/imported/New Ant Explosheet.png-4dc7aa4a64b951fb499ef26e9d0d09f1.ctex"]
 
 [params]
 
