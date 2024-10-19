@@ -1,79 +1,132 @@
-[gd_scene load_steps=3 format=3 uid="uid://cnyo8q1t475w6"]
+[gd_scene load_steps=5 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
 [ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
+[ext_resource type="PackedScene" uid="uid://054muqtx37p3" path="res://addons/attachmentgui/Scenes/CreatureCreate.tscn" id="2_6gnth"]
+[ext_resource type="LabelSettings" uid="uid://drwy0e5elc4qn" path="res://addons/attachmentgui/attachment_gui_mainlabel.tres" id="4_3i1o5"]
 
-[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "file_dialog", "path_label")]
+[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "file_dialog", "path_label", "current_scene_label", "item_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = -543.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rn36r")
+TEMPLATE_SCENE = ExtResource("2_6gnth")
 new_button = NodePath("Panel/NewButton")
 edit_button = NodePath("Panel/EditButton")
 file_dialog = NodePath("FileDialog")
-path_label = NodePath("Label")
+path_label = NodePath("Panel/Path_Label")
+current_scene_label = NodePath("Panel/CurrentSceneLabel")
+item_container = NodePath("EditorPanel/ScrollContainer/GridContainer")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = -1
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 0.031
-offset_right = -1.0
-offset_bottom = 259.912
+offset_left = -1.0
+offset_bottom = 210.0
+grow_horizontal = 2
 
 [node name="NewButton" type="Button" parent="Panel"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -64.5
-offset_top = -65.0
-offset_right = 71.5
-offset_bottom = -22.0
+offset_left = -67.5
+offset_top = 103.0
+offset_right = 68.5
+offset_bottom = 146.0
 grow_horizontal = 2
-grow_vertical = 2
 text = "New Creature"
 icon = ExtResource("1_rb5mb")
 
 [node name="EditButton" type="Button" parent="Panel"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -35.5
-offset_top = 30.0
-offset_right = 36.5
-offset_bottom = 73.0
+offset_left = -64.5
+offset_top = 157.0
+offset_right = 65.5
+offset_bottom = 200.0
 grow_horizontal = 2
-grow_vertical = 2
 disabled = true
 text = "Edit Creature"
 icon = ExtResource("1_rb5mb")
 
+[node name="Path_Label" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -31.0
+offset_top = 34.0
+offset_right = 32.0
+offset_bottom = 65.0
+grow_horizontal = 2
+text = "PATH:"
+label_settings = ExtResource("4_3i1o5")
+horizontal_alignment = 1
+uppercase = true
+
+[node name="GUILABEL" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -95.5
+offset_right = 95.5
+offset_bottom = 31.0
+grow_horizontal = 2
+text = "Attachment gui"
+label_settings = ExtResource("4_3i1o5")
+horizontal_alignment = 1
+uppercase = true
+
+[node name="CurrentSceneLabel" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 61.0
+offset_right = 38.0
+offset_bottom = 92.0
+grow_horizontal = 2
+text = "SCENE:"
+label_settings = ExtResource("4_3i1o5")
+horizontal_alignment = 1
+uppercase = true
+
 [node name="FileDialog" type="FileDialog" parent="."]
 size = Vector2i(303, 630)
 
-[node name="Label" type="Label" parent="."]
+[node name="EditorPanel" type="Panel" parent="."]
+modulate = Color(0.292679, 0.89802, 0.754184, 1)
 layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.061
+anchors_preset = 14
+anchor_top = 0.5
 anchor_right = 1.0
-anchor_bottom = 0.0613333
-offset_left = 556.0
-offset_top = -11.528
-offset_right = -555.0
-offset_bottom = 11.256
+anchor_bottom = 0.5
+offset_bottom = 303.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "path:"
-metadata/_edit_use_anchors_ = true
+
+[node name="ScrollContainer" type="ScrollContainer" parent="EditorPanel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.993
+anchor_bottom = 1.0
+offset_right = 0.263
+offset_bottom = 1.0
+
+[node name="GridContainer" type="GridContainer" parent="EditorPanel/ScrollContainer"]
+clip_contents = true
+layout_mode = 2
+columns = 3
 
 [connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
 [connection signal="pressed" from="Panel/EditButton" to="." method="_on_edit_button_pressed"]
