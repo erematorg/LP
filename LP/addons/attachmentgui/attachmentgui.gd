@@ -5,6 +5,7 @@ class_name attachmentgui
 var dock
 var editor : EditorInterface
 var entities_folder : String = "res://Entities/"
+var dock_gui
 
 func _enter_tree() -> void:
 	editor = get_editor_interface()
@@ -29,10 +30,15 @@ func edit_scene(object : PackedScene, path : String):
 func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
-func load_resources_from_folder(attachment_gui):
-	var dir = DirAccess.open(entities_folder)
+func load_resources_from_folder(attachment_gui, folder_path : String = entities_folder):
+	dock_gui = attachment_gui
+	if attachment_gui == null or dock_gui == null:
+		print("Error")
+		return
+		
+	var dir = DirAccess.open(folder_path)
 	if not dir:
-		print("Something went wrong opening entities folder")
+		print("Something went wrong opening folder: " + folder_path)
 		return
 		
 	dir.list_dir_begin()
@@ -40,11 +46,18 @@ func load_resources_from_folder(attachment_gui):
 	
 	# Loop through the directory entries
 	while file_name != "":
+		if file_name == "." or file_name == "..":
+			print("avoiding special folder")
+			return
+		
+		var file_path = folder_path + "/"+ file_name
+		#If its a file, add it
 		if !dir.current_is_dir():
-			var file_path = entities_folder + file_name
 			# Check if the file is a resource we care about (like scenes, textures, etc.)
 			if file_name.ends_with(".tscn"):
 				attachment_gui.add_resource_item(file_path, file_name)
 				print("Found scene: " + file_path)
+		else:
+			load_resources_from_folder(dock_gui, file_path)
 		file_name = dir.get_next()
 	dir.list_dir_end()

@@ -83,7 +83,7 @@ func add_resource_item(file_path: String, file_name : String):
 	# Connect the button to a function that will handle instantiating the resource
 	button.pressed.connect(self._on_resource_button_pressed.bind(file_path))
 	item_container.add_child(button)
-	button.text = file_name +"\n"+ file_path.get_basename()
+	button.text = file_name +"\n"+ file_path
 	
 func add_grid_stop():
 	pass
