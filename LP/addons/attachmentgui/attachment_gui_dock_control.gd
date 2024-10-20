@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-var attachment_gui : attachmentgui
+var attachment_editor : attachmenteditor
 var current_creature_scene : PackedScene
 @export var TEMPLATE_SCENE : PackedScene
 @export var new_button : Button
@@ -17,7 +17,7 @@ func _ready() -> void:
 	edit_button.disabled = true
 
 func ensure_components():
-	if attachment_gui == null:
+	if attachment_editor == null:
 		print("Warning: No reference to attachmentGUI")
 	if TEMPLATE_SCENE == null:
 		print("Warning: No reference to TEMPLATE_SCENE")
@@ -45,15 +45,17 @@ func _on_new_button_pressed() -> void:
 func _on_edit_button_pressed() -> void:
 	ensure_components()
 	clear_container()
-	attachment_gui.edit_scene(current_creature_scene, path_label.text)
-	var rootNode = attachment_gui.get_open_scene()
+	if !path_label.text.ends_with(".tscn"):
+		path_label.text = path_label.text+".tscn"
+	attachment_editor.edit_scene(current_creature_scene, path_label.text)
+	var rootNode = attachment_editor.get_open_scene()
 	if rootNode == null:
 		print("No root node in scene")
 		current_scene_label.text = "NO SCENE FOUND"
 		return
 	else:
 		current_scene_label.text = str(rootNode.name)
-	attachment_gui.load_resources_from_folder(self)
+	attachment_editor.load_resources_from_folder(self)
 	
 
 #When selecting a path for the new creature, save it
@@ -72,10 +74,20 @@ func _on_file_dialog_file_selected(path: String) -> void:
 		current_creature_scene = scene
 		edit_button.disabled = false
 		print("New creature scene created!")
+		save_new_creature()
 	else:
 		print("Error with creating creature" + result)
+		return
+		
+func save_new_creature():
+		var error = ResourceSaver.save(current_creature_scene, path_label.text+".tscn")
+		if error == OK:
+			print("Scene saved successfully at: ", path_label.text)
+		else:
+			print("Failed to save scene. Error code: ", error)
 
-# Function to add a resource item (like a button or thumbnail) to the container
+
+# Function to add a resource item to the container
 func add_resource_item(file_path: String, file_name : String):
 	var button = Button.new()
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -83,8 +95,19 @@ func add_resource_item(file_path: String, file_name : String):
 	# Connect the button to a function that will handle instantiating the resource
 	button.pressed.connect(self._on_resource_button_pressed.bind(file_path))
 	item_container.add_child(button)
-	button.text = file_name +"\n"+ file_path
+	button.size = Vector2(100,100)
 	
+	#Find thumbnail and data
+	var file_scene = load(file_path)
+	var part_preview
+	var instance = file_scene.instantiate()
+	if instance is EntityPart:
+		part_preview = instance.thumbnail
+	if part_preview:
+		button.icon = part_preview
+	else:
+		button.text = file_name
+
 func add_grid_stop():
 	pass
 

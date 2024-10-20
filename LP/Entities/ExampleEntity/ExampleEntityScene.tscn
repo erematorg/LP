@@ -1,3 +1,8 @@
-[gd_scene format=3 uid="uid://dw64e23on1uke"]
+[gd_scene load_steps=3 format=3 uid="uid://dw64e23on1uke"]
+
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_part.gd" id="1_46a6d"]
+[ext_resource type="Texture2D" uid="uid://ls2u242lw7bo" path="res://Entities/Ant/ant_head.png" id="2_b23gq"]
 
 [node name="Human" type="Node2D"]
+script = ExtResource("1_46a6d")
+thumbnail = ExtResource("2_b23gq")
