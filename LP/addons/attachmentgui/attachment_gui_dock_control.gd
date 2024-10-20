@@ -9,7 +9,9 @@ var current_creature_scene : PackedScene
 @export var file_dialog : FileDialog
 @export var path_label : Label
 @export var current_scene_label : Label
-@export var item_container : GridContainer
+@export var item_container : BoxContainer
+const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
+
 
 func _ready() -> void:
 	path_label.text = "PATH:"
@@ -78,41 +80,66 @@ func _on_file_dialog_file_selected(path: String) -> void:
 	else:
 		print("Error with creating creature" + result)
 		return
-		
+
+
 func save_new_creature():
-		var error = ResourceSaver.save(current_creature_scene, path_label.text+".tscn")
-		if error == OK:
-			print("Scene saved successfully at: ", path_label.text)
-		else:
-			print("Failed to save scene. Error code: ", error)
+	var savelabel
+	if path_label.text.ends_with(".tscn"):
+		savelabel = ""
+	else:
+		savelabel = ".tscn"
+	var error = ResourceSaver.save(current_creature_scene, path_label.text+savelabel)
+	if error == OK:
+		print("Scene saved successfully at: ", path_label.text)
+	else:
+		print("Failed to save scene. Error code: ", error)
 
 
 # Function to add a resource item to the container
 func add_resource_item(file_path: String, file_name : String):
+	#Create our button
+	print("Add a button: " + file_name)
 	var button = Button.new()
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Connect the button to a function that will handle instantiating the resource
-	button.pressed.connect(self._on_resource_button_pressed.bind(file_path))
-	item_container.add_child(button)
-	button.size = Vector2(100,100)
-	
-	#Find thumbnail and data
-	var file_scene = load(file_path)
+	button.pressed.connect(self.resource_button_pressed.bind(file_path))
+	item_container.add_child(button) #Add button to the grid container
+	change_button_icon_and_text(button, file_path, file_name)
+
+
+func change_button_icon_and_text(button : Button, path : String, name : String):
+	var file_scene = load(path)
 	var part_preview
 	var instance = file_scene.instantiate()
+	#If scene is an EntityPart, try to retrieve its thumbnail
 	if instance is EntityPart:
 		part_preview = instance.thumbnail
+	#If thumbnail is valid, use that or use file name
 	if part_preview:
 		button.icon = part_preview
-	else:
-		button.text = file_name
+	button.text = name
 
-func add_grid_stop():
-	pass
+#Adding a new label means we are entering a new subfolder
+func add_grid_label(label):
+	print("Add a label: " + label)
+	var label_to_add = Label.new()
+	#var children_in_container = item_container.get_child_count()
+	#if children_in_container % 3 != 0:
+	## Add empty labels until we fill the current row
+		#var missing_slots = 3 - (children_in_container % 3)
+		#for i in range(missing_slots):
+			#var empty_label = Label.new()
+			#empty_label.text = ""  # Make it empty
+			#item_container.add_child(empty_label)
+	item_container.add_child(label_to_add)
+	label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
+	label_to_add.text = str(label+":")
+
 
 # When a resource button is clicked, this will instantiate the resource in the scene
-func _on_resource_button_pressed(resource: String):
+func resource_button_pressed(resource: String):
 	if not get_tree().edited_scene_root.name == current_scene_label.text:
 		print("No longer in the correct scene! Switch back to creature create scene or restart creature create process!")
 		return
@@ -124,6 +151,10 @@ func _on_resource_button_pressed(resource: String):
 	new_instance_scene.owner = get_tree().edited_scene_root
 	print("Instantiated resource: ", resource)
 	
+	
+	
 func clear_container():
-	for i in item_container.get_child_count():
-		item_container.get_child(i).queue_free()
+	var children = item_container.get_children()
+	for child in children:
+		child.free()
+	print("Container cleared, children: " + str(item_container.get_child_count()))

@@ -46,7 +46,7 @@ func load_resources_from_folder(reciever, folder_path : String = entities_folder
 	# Loop through the directory entries
 	while file_name != "":
 		if file_name == "." or file_name == "..":
-			print("avoiding special folder")
+			print("avoiding special folder: " + file_name )
 			return
 		
 		var file_path = folder_path + "/"+ file_name
@@ -57,7 +57,11 @@ func load_resources_from_folder(reciever, folder_path : String = entities_folder
 				reciever.add_resource_item(file_path, file_name)
 				files_found += 1
 		else:
+			var secondary_dir = DirAccess.open(file_path)
+			if secondary_dir.get_files().size() > 0:
+				reciever.add_grid_label(file_name)  # Add the folder name as a label
 			load_resources_from_folder(dock_gui, file_path)
+
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	print("Found " + str(files_found) + " files in " + folder_path)
