@@ -29,7 +29,7 @@ func edit_scene(object : PackedScene, path : String):
 func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
-func load_resources_from_folder(reciever, folder_path : String = entities_folder):
+func load_resources_from_folder(reciever : attachmentgui, folder_path : String = entities_folder):
 	dock_gui = reciever
 	if reciever == null or dock_gui == null:
 		print("Error")
@@ -59,9 +59,11 @@ func load_resources_from_folder(reciever, folder_path : String = entities_folder
 		else:
 			var secondary_dir = DirAccess.open(file_path)
 			if secondary_dir.get_files().size() > 0:
-				reciever.add_grid_label(file_name)  # Add the folder name as a label
+				reciever.add_grid_label(file_name+":")  # Add the folder name as a label
 			load_resources_from_folder(dock_gui, file_path)
 
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	print("Found " + str(files_found) + " files in " + folder_path)
+	if files_found < 1 and folder_path != entities_folder:
+		reciever.add_grid_label("-Empty-", false)

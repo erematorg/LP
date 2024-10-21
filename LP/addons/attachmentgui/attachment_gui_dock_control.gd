@@ -1,5 +1,6 @@
 @tool
 extends Control
+class_name attachmentgui
 
 var attachment_editor : attachmenteditor
 var current_creature_scene : PackedScene
@@ -11,7 +12,7 @@ var current_creature_scene : PackedScene
 @export var current_scene_label : Label
 @export var item_container : BoxContainer
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
-
+const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment_gui_smalllabel.tres")
 
 func _ready() -> void:
 	path_label.text = "PATH:"
@@ -98,7 +99,6 @@ func save_new_creature():
 # Function to add a resource item to the container
 func add_resource_item(file_path: String, file_name : String):
 	#Create our button
-	print("Add a button: " + file_name)
 	var button = Button.new()
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -116,26 +116,24 @@ func change_button_icon_and_text(button : Button, path : String, name : String):
 	#If scene is an EntityPart, try to retrieve its thumbnail
 	if instance is EntityPart:
 		part_preview = instance.thumbnail
+		button.text = instance.preview_name
+	else:
+		button.text = name
 	#If thumbnail is valid, use that or use file name
 	if part_preview:
 		button.icon = part_preview
-	button.text = name
 
-#Adding a new label means we are entering a new subfolder
-func add_grid_label(label):
-	print("Add a label: " + label)
+
+
+#Adding a new label means we are entering a new subfolder or showing "Empty"
+func add_grid_label(label, header : bool = true):
 	var label_to_add = Label.new()
-	#var children_in_container = item_container.get_child_count()
-	#if children_in_container % 3 != 0:
-	## Add empty labels until we fill the current row
-		#var missing_slots = 3 - (children_in_container % 3)
-		#for i in range(missing_slots):
-			#var empty_label = Label.new()
-			#empty_label.text = ""  # Make it empty
-			#item_container.add_child(empty_label)
 	item_container.add_child(label_to_add)
-	label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
-	label_to_add.text = str(label+":")
+	if header:
+		label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
+	else:
+		label_to_add.label_settings = ATTACHMENT_GUI_SMALLLABEL
+	label_to_add.text = str(label)
 
 
 # When a resource button is clicked, this will instantiate the resource in the scene
@@ -157,4 +155,3 @@ func clear_container():
 	var children = item_container.get_children()
 	for child in children:
 		child.free()
-	print("Container cleared, children: " + str(item_container.get_child_count()))
