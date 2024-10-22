@@ -2,15 +2,20 @@
 extends Control
 class_name attachmentgui
 
+signal spawn_entity(entity)
+
 var attachment_editor : attachmenteditor
 var current_creature_scene : PackedScene
 @export var TEMPLATE_SCENE : PackedScene
 @export var new_button : Button
 @export var edit_button : Button
+@export var socket_button : Button
 @export var file_dialog : FileDialog
 @export var path_label : Label
 @export var current_scene_label : Label
 @export var item_container : BoxContainer
+@onready var parts_panel: Panel = $PartsPanel
+const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
 const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment_gui_smalllabel.tres")
 
@@ -18,6 +23,8 @@ func _ready() -> void:
 	path_label.text = "PATH:"
 	current_scene_label.text = "SCENE:"
 	edit_button.disabled = true
+	socket_button.disabled = false
+	parts_panel.visible = false
 
 func ensure_components():
 	if attachment_editor == null:
@@ -59,6 +66,11 @@ func _on_edit_button_pressed() -> void:
 	else:
 		current_scene_label.text = str(rootNode.name)
 	attachment_editor.load_resources_from_folder(self)
+	enable_parts_panel()
+	if rootNode is CreatureCreator:
+		rootNode.inject_attachment_gui(self)
+		#spawn_entity.connect(rootNode, "new_entity_in_scene")
+		#spawn_entity.connect(rootNode.new_entity_in_scene())
 	
 
 #When selecting a path for the new creature, save it
@@ -83,6 +95,11 @@ func _on_file_dialog_file_selected(path: String) -> void:
 		return
 
 
+func enable_parts_panel():
+	parts_panel.visible = true
+	socket_button.disabled = false
+	
+
 func save_new_creature():
 	var savelabel
 	if path_label.text.ends_with(".tscn"):
@@ -103,6 +120,7 @@ func add_resource_item(file_path: String, file_name : String):
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	button.tooltip_text = file_path
 	# Connect the button to a function that will handle instantiating the resource
 	button.pressed.connect(self.resource_button_pressed.bind(file_path))
 	item_container.add_child(button) #Add button to the grid container
@@ -148,6 +166,7 @@ func resource_button_pressed(resource: String):
 	get_tree().edited_scene_root.add_child(new_instance_scene)
 	new_instance_scene.owner = get_tree().edited_scene_root
 	print("Instantiated resource: ", resource)
+	spawn_entity.emit(new_instance_scene)
 	
 	
 	
@@ -155,3 +174,10 @@ func clear_container():
 	var children = item_container.get_children()
 	for child in children:
 		child.free()
+
+
+func _on_socket_button_pressed() -> void:
+	var new_socket = LIMB_SOCKET.instantiate()
+	get_tree().edited_scene_root.add_child(new_socket)
+	new_socket.owner = get_tree().edited_scene_root
+	print("Instantiated new socket: ", new_socket.name)
