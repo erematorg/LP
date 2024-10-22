@@ -1,8 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6bxgc6d0e0jv"]
+[gd_scene load_steps=3 format=3 uid="uid://c6bxgc6d0e0jv"]
 
-[ext_resource type="Script" path="res://systems/attachment system/attachment_socket.gd" id="1_akdwv"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_socket.gd" id="1_akdwv"]
+[ext_resource type="Texture2D" uid="uid://clieye2k0uu6n" path="res://systems/attachment system/socket.png" id="2_mfmcb"]
 
-[node name="ArmSocket" type="Node2D"]
+[node name="LimbSocket" type="Node2D"]
 script = ExtResource("1_akdwv")
 
 [node name="Marker2D" type="Marker2D" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_mfmcb")
