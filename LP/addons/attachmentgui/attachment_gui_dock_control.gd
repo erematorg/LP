@@ -3,6 +3,7 @@ extends Control
 class_name attachmentgui
 
 signal spawn_entity(entity)
+signal spawn_socket(socket)
 
 var attachment_editor : attachmenteditor
 var current_creature_scene : PackedScene
@@ -69,9 +70,7 @@ func _on_edit_button_pressed() -> void:
 	enable_parts_panel()
 	if rootNode is CreatureCreator:
 		rootNode.inject_attachment_gui(self)
-		#spawn_entity.connect(rootNode, "new_entity_in_scene")
-		#spawn_entity.connect(rootNode.new_entity_in_scene())
-	
+
 
 #When selecting a path for the new creature, save it
 #and allow us to edit that scene
@@ -181,3 +180,4 @@ func _on_socket_button_pressed() -> void:
 	get_tree().edited_scene_root.add_child(new_socket)
 	new_socket.owner = get_tree().edited_scene_root
 	print("Instantiated new socket: ", new_socket.name)
+	spawn_socket.emit(new_socket)
