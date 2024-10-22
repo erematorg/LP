@@ -1,8 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://054muqtx37p3"]
+[gd_scene load_steps=3 format=3 uid="uid://054muqtx37p3"]
 
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/creature-creator.gd" id="1_ahjc5"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_socket.gd" id="2_cikmm"]
 
 [node name="CreatureCreate" type="Node2D"]
+script = ExtResource("1_ahjc5")
 
 [node name="CreatureRoot" type="Node2D" parent="."]
 
