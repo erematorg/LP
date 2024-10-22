@@ -7,18 +7,18 @@ var editor : EditorInterface
 var entities_folder : String = "res://Entities/"
 var dock_gui
 
+
 func _enter_tree() -> void:
 	editor = get_editor_interface()
 	dock = preload("res://addons/attachmentgui/Scenes/AttachmentGUIDock.tscn").instantiate()
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, dock)
 	dock.attachment_editor = self
 
-func _init() -> void:
-	self.name = "Attachment EDITOR"
 
 func _exit_tree() -> void:
 	remove_control_from_docks(dock)
 	dock.free()
+
 
 ## Editor Interactions
 func edit_scene(object : PackedScene, path : String):
@@ -26,8 +26,10 @@ func edit_scene(object : PackedScene, path : String):
 	editor.open_scene_from_path(path)
 	editor.get_editor_viewport_2d()
 		
+		
 func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
+
 
 func load_resources_from_folder(reciever : attachmentgui, folder_path : String = entities_folder):
 	dock_gui = reciever
@@ -35,10 +37,12 @@ func load_resources_from_folder(reciever : attachmentgui, folder_path : String =
 		print("Error")
 		return
 		
+		
 	var dir = DirAccess.open(folder_path)
 	if not dir:
 		print("Something went wrong opening folder: " + folder_path)
 		return
+		
 		
 	dir.list_dir_begin()
 	var file_name = dir.get_next()

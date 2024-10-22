@@ -13,6 +13,7 @@ var entities : Array[EntityPart]
 var sockets : Array[attachment_socket]
 var lines : Array[Line2D]
 
+@export var m_tracker : mouse_tracker
 
 #We have to connect to the signal from this end
 #So we inject the gui, and connect to its spawn signal
@@ -27,6 +28,7 @@ func inject_attachment_gui(gui : attachmentgui):
 func new_entity_in_scene(entity : EntityPart):
 	entities.push_back(entity)
 	entity.tree_exited.connect(remove_entity.bind(entity))
+	entity.inject_creature_creator(self)
 
 
 func new_socket_in_scene(socket : attachment_socket):
@@ -41,33 +43,27 @@ func _ready() -> void:
 	entities = []
 	sockets = []
 	lines = []
+	m_tracker.stopped_dragging.connect(drop_entity)
 	find_old_parts()
 
 
 func find_old_parts():
-	# Get the root node of the current scene
 	var root = get_tree().root
-	# Call a recursive helper function to search for the parts
+	# Call a recursive function to search for the parts
 	search_for_parts(root)
-	# Print the results for debugging
 	print("Found entities: " + str(entities.size()))
 	print("Found sockets: " + str(sockets.size()))
 
 
-# Recursive function to search through the entire node tree
 func search_for_parts(node: Node) -> void:
-	# Check if the current node is an EntityPart
+	# Add parts and sockets
 	if node is EntityPart:
 		new_entity_in_scene(node)
-	
-	# Check if the current node is an attachment_socket
 	elif node is attachment_socket:
 		new_socket_in_scene(node)
-	
 	# Recursively check all the children of this node
 	for child in node.get_children():
 		search_for_parts(child)
-
 
 
 func clear_old_lines():
@@ -90,12 +86,15 @@ func _process(delta: float) -> void:
 					closest_dist = dist
 					closest_socket = socket
 					
-			if closest_socket and closest_dist < 50.0:
+			# Draw a line between socket and limb
+			if closest_socket and closest_dist < show_line_distance:
 				var line = Line2D.new()
 				line.default_color = Color.RED
+				var normalized_dist = clamp((closest_dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)  # Normalize distance to a 0-1 range
+				line.width = lerp(2.5, 0.1, normalized_dist)
 				if closest_dist < snap_distance:
 					line.default_color = Color.GREEN
-				line.width = 2.0  # Optional: set the line width
+					line.width = 3.0
 				line.add_point(entity.global_position)
 				line.add_point(closest_socket.global_position)
 				line.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -114,3 +113,12 @@ func remove_socket(socket : attachment_socket):
 	print("User removed an entity: " + socket.name)
 	sockets.erase(socket)
 	pass
+
+
+func drop_entity():
+	for entity in entities:
+		if entity.recently_moved:
+			for socket in sockets:
+				if entity.global_position.distance_to(socket.global_position) < snap_distance:
+					entity.snap_to_socket(socket)
+			entity.recently_moved = false

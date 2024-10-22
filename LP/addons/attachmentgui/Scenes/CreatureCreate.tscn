@@ -4,8 +4,9 @@
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_socket.gd" id="2_cikmm"]
 [ext_resource type="Script" path="res://mouse_tracker.gd" id="3_dgbmd"]
 
-[node name="CreatureCreate" type="Node2D"]
+[node name="CreatureCreate" type="Node2D" node_paths=PackedStringArray("m_tracker")]
 script = ExtResource("1_ahjc5")
+m_tracker = NodePath("Control")
 
 [node name="CreatureRoot" type="Node2D" parent="."]
 
