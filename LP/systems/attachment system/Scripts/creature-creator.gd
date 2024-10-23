@@ -93,6 +93,7 @@ func _process(delta: float) -> void:
 				var normalized_dist = clamp((closest_dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)  # Normalize distance to a 0-1 range
 				line.width = lerp(2.5, 0.1, normalized_dist)
 				if closest_dist < snap_distance:
+					entity.closest_socket = closest_socket
 					line.default_color = Color.GREEN
 					line.width = 3.0
 				line.add_point(entity.global_position)
@@ -106,19 +107,31 @@ func _process(delta: float) -> void:
 func remove_entity(entity : EntityPart):
 	print("User removed an entity: " + entity.name)
 	entities.erase(entity)
-	pass
 
 
 func remove_socket(socket : attachment_socket):
 	print("User removed an entity: " + socket.name)
 	sockets.erase(socket)
-	pass
-
 
 func drop_entity():
 	for entity in entities:
 		if entity.recently_moved:
-			for socket in sockets:
-				if entity.global_position.distance_to(socket.global_position) < snap_distance:
-					entity.snap_to_socket(socket)
-			entity.recently_moved = false
+			var target_socket = entity.closest_socket
+			
+			# Find closest socket if none is remembered
+			if not target_socket:
+				for socket in sockets:
+					if entity.global_position.distance_to(socket.global_position) < snap_distance:
+						target_socket = socket
+						print("null socket, snapping to closest")
+			
+			# Snap to target socket if within range
+			if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
+				entity.snap_to_socket(target_socket)
+				print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
+			
+			# Clear closest socket for future use
+			entity.closest_socket = null
+		
+		# Reset recently moved flag
+		entity.recently_moved = false
