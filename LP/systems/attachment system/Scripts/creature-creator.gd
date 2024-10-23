@@ -2,18 +2,21 @@
 extends Node2D
 class_name CreatureCreator
 
-#Line
-var snap_distance = 15
-var show_line_distance = 50.0
-var far_color = Color.RED
-var close_color = Color.GREEN
+#Socket snap line
+@export var snap_distance = 8.0
+@export var show_line_distance = 25.0
+@export var far_color = Color.RED
+@export var close_color = Color.GREEN
+
+# Dependencies
+@onready var creature_root: Skeleton2D = $CreatureRoot
+@export var m_tracker : mouse_tracker
 
 #Arrays
 var entities : Array[EntityPart]
 var sockets : Array[attachment_socket]
 var lines : Array[Line2D]
 
-@export var m_tracker : mouse_tracker
 
 #We have to connect to the signal from this end
 #So we inject the gui, and connect to its spawn signal
@@ -38,8 +41,6 @@ func new_socket_in_scene(socket : attachment_socket):
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	show_line_distance = 50.0
-	snap_distance = 15
 	entities = []
 	sockets = []
 	lines = []
@@ -89,12 +90,12 @@ func _process(delta: float) -> void:
 			# Draw a line between socket and limb
 			if closest_socket and closest_dist < show_line_distance:
 				var line = Line2D.new()
-				line.default_color = Color.RED
+				line.default_color = far_color
 				var normalized_dist = clamp((closest_dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)  # Normalize distance to a 0-1 range
 				line.width = lerp(2.5, 0.1, normalized_dist)
 				if closest_dist < snap_distance:
 					entity.closest_socket = closest_socket
-					line.default_color = Color.GREEN
+					line.default_color = close_color
 					line.width = 3.0
 				line.add_point(entity.global_position)
 				line.add_point(closest_socket.global_position)
@@ -112,6 +113,7 @@ func remove_entity(entity : EntityPart):
 func remove_socket(socket : attachment_socket):
 	print("User removed an entity: " + socket.name)
 	sockets.erase(socket)
+
 
 func drop_entity():
 	for entity in entities:

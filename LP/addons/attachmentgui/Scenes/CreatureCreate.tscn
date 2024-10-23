@@ -1,24 +1,28 @@
-[gd_scene load_steps=4 format=3 uid="uid://054muqtx37p3"]
+[gd_scene load_steps=5 format=3 uid="uid://054muqtx37p3"]
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/creature-creator.gd" id="1_ahjc5"]
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_socket.gd" id="2_cikmm"]
 [ext_resource type="Script" path="res://mouse_tracker.gd" id="3_dgbmd"]
 
-[node name="CreatureCreate" type="Node2D" node_paths=PackedStringArray("m_tracker")]
+[sub_resource type="SkeletonModification2DFABRIK" id="SkeletonModification2DFABRIK_mbnb2"]
+enabled = false
+target_nodepath = NodePath("Marker2D")
+
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
+modification_count = 1
+modifications/0 = SubResource("SkeletonModification2DFABRIK_mbnb2")
+
+[node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("m_tracker")]
 script = ExtResource("1_ahjc5")
-m_tracker = NodePath("Control")
+m_tracker = NodePath("MouseTracker")
 
-[node name="CreatureRoot" type="Node2D" parent="."]
-
-[node name="Sprite2D" type="Sprite2D" parent="CreatureRoot"]
-
-[node name="ArmSocket" type="Node2D" parent="CreatureRoot"]
-position = Vector2(1, -1)
-script = ExtResource("2_cikmm")
-
-[node name="Control" type="Control" parent="."]
+[node name="MouseTracker" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("3_dgbmd")
+
+[node name="CreatureRoot" type="Skeleton2D" parent="."]
+modification_stack = SubResource("SkeletonModificationStack2D_gob83")
+
+[node name="Marker2D" type="Marker2D" parent="CreatureRoot"]

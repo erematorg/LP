@@ -161,8 +161,9 @@ func resource_button_pressed(resource: String):
 	var instance = load(resource)
 	var new_instance_scene : Node = instance.instantiate()
 	print(get_tree().edited_scene_root)
-	#attachment_gui.get_open_scene().get_tree().edited_scene_root.add_child(new_instance_scene)
-	get_tree().edited_scene_root.add_child(new_instance_scene)
+	var cc : CreatureCreator = get_tree().edited_scene_root
+	cc.creature_root.add_child(new_instance_scene)
+	#get_tree().edited_scene_root.add_child(new_instance_scene)
 	new_instance_scene.owner = get_tree().edited_scene_root
 	print("Instantiated resource: ", resource)
 	spawn_entity.emit(new_instance_scene)
