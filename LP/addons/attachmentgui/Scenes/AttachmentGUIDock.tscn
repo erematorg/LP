@@ -136,7 +136,6 @@ uppercase = true
 size = Vector2i(303, 630)
 
 [node name="PartsPanel" type="Panel" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.437
@@ -151,15 +150,22 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_h4040")
 [node name="ScrollContainer" type="ScrollContainer" parent="PartsPanel"]
 layout_mode = 1
 anchors_preset = -1
-anchor_right = 0.993
-anchor_bottom = 1.0
-offset_top = 39.0
-offset_right = 0.263
-offset_bottom = 1.0
+anchor_left = 0.008
+anchor_top = 0.095
+anchor_right = 1.0
+anchor_bottom = 0.968
+offset_left = 0.128
+offset_top = -0.19001
+offset_right = -7.0
+offset_bottom = -1.13608
+grow_horizontal = 2
+grow_vertical = 2
+vertical_scroll_mode = 2
 
 [node name="BoxContainer" type="VBoxContainer" parent="PartsPanel/ScrollContainer"]
-clip_contents = true
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="PartsPanel"]
 layout_mode = 0
