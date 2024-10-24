@@ -1,11 +1,15 @@
 @tool
-extends Node2D
+extends Bone2D
 class_name EntityPart
 
+enum type {BODY, HEAD, APPENDAGE}
 @export var thumbnail : Texture2D
 @export var preview_name : String
+@export var entity_type : type
 var creator : CreatureCreator
 var recently_moved = false
+var closest_socket : attachment_socket
+
 
 #Activate notification system
 func _ready() -> void:
