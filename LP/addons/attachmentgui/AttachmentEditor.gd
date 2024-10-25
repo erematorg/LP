@@ -35,7 +35,7 @@ func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
 
-func load_resources_from_folder(receiver : attachmentgui, folder_path : String = entities_folder):
+func load_resources_from_folder(receiver : AttachmentGui, folder_path : String = entities_folder):
 	dock_gui = receiver
 	if receiver == null or dock_gui == null:
 		push_error("Dock or receiver is null!")

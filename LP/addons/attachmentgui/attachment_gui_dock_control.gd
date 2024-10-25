@@ -1,11 +1,11 @@
 @tool
 extends Control
-class_name attachmentgui
+class_name AttachmentGui
 
 signal spawn_entity(entity)
 signal spawn_socket(socket)
 
-var attachment_editor : attachmenteditor
+var attachment_editor : AttachmentEditor
 var current_creature_scene : PackedScene
 @export var TEMPLATE_SCENE : PackedScene
 @export var new_button : Button
@@ -16,9 +16,13 @@ var current_creature_scene : PackedScene
 @export var current_scene_label : Label
 @export var item_container : BoxContainer
 @onready var parts_panel: Panel = $PartsPanel
+
+var latest_part : EntityPart
+
 const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
 const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment_gui_smalllabel.tres")
+const BLACKOUTLINEARM = preload("res://addons/attachmentgui/Sprites/blackoutlinearm.png")
 
 func _ready() -> void:
 	path_label.text = "PATH:"
@@ -29,27 +33,27 @@ func _ready() -> void:
 
 func ensure_components():
 	if attachment_editor == null:
-		print("Warning: No reference to attachmentGUI")
+		push_error("Warning: No reference to attachmentGUI")
 	if TEMPLATE_SCENE == null:
-		print("Warning: No reference to TEMPLATE_SCENE")
+		push_error("Warning: No reference to TEMPLATE_SCENE")
 	if new_button == null:
-		print("Warning: No reference to new_button")
+		push_error("Warning: No reference to new_button")
 	if edit_button == null:
-		print("Warning: No reference to edit_button")
+		push_error("Warning: No reference to edit_button")
 	if file_dialog == null:
-		print("Warning: No reference to file_dialog")
+		push_error("Warning: No reference to file_dialog")
 	if path_label == null:
-		print("Warning: No reference to path_label")
+		push_error("Warning: No reference to path_label")
 	if current_scene_label == null:
-		print("Warning: No reference to current_scene_label")
+		push_error("Warning: No reference to current_scene_label")
 	if item_container == null:
-		print("Warning: No reference to item_container")
+		push_error("Warning: No reference to item_container")
 
 
 #Open the file dialog to select/create a new creature scene
 func _on_new_button_pressed() -> void:
-	file_dialog.popup_centered()
 	ensure_components()
+	file_dialog.popup_centered()
 
 
 #When pressing 'Edit' open the new template scene
@@ -58,6 +62,9 @@ func _on_edit_button_pressed() -> void:
 	clear_container()
 	if !path_label.text.ends_with(".tscn"):
 		path_label.text = path_label.text+".tscn"
+	if not current_creature_scene:
+		push_error("current_creature_scene is null!")
+		return
 	attachment_editor.edit_scene(current_creature_scene, path_label.text)
 	var rootNode = attachment_editor.get_open_scene()
 	if rootNode == null:
@@ -67,9 +74,9 @@ func _on_edit_button_pressed() -> void:
 	else:
 		current_scene_label.text = str(rootNode.name)
 	attachment_editor.load_resources_from_folder(self)
-	enable_parts_panel()
 	if rootNode is CreatureCreator:
 		rootNode.inject_attachment_gui(self)
+		enable_parts_panel()
 
 
 #When selecting a path for the new creature, save it
@@ -115,6 +122,9 @@ func save_new_creature():
 # Function to add a resource item to the container
 func add_resource_item(file_path: String, file_name : String):
 	#Create our button
+	if file_path == "":
+		push_error("Path is null")
+		return
 	var button = Button.new()
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -130,16 +140,16 @@ func change_button_icon_and_text(button : Button, path : String, name : String):
 	var file_scene = load(path)
 	var part_preview
 	var instance = file_scene.instantiate()
-	#If scene is an EntityPart, try to retrieve its thumbnail
+	#If scene is an EntityPart, use its data
 	if instance is EntityPart:
 		part_preview = instance.thumbnail
-		button.text = instance.preview_name
+		var key = EntityPart.type.keys()[EntityPart.type.values().find(instance.entity_type)]
+		button.text = instance.preview_name + " : \n" + key
+		if part_preview:
+			button.icon = part_preview
 	else:
+		button.icon = BLACKOUTLINEARM
 		button.text = name
-	#If thumbnail is valid, use that or use file name
-	if part_preview:
-		button.icon = part_preview
-
 
 
 #Adding a new label means we are entering a new subfolder or showing "Empty"
@@ -156,14 +166,23 @@ func add_grid_label(label, header : bool = true):
 # When a resource button is clicked, this will instantiate the resource in the scene
 func resource_button_pressed(resource: String):
 	if not get_tree().edited_scene_root.name == current_scene_label.text:
-		print("No longer in the correct scene! Switch back to creature create scene or restart creature create process!")
+		push_warning("No longer in the correct scene! Switch back to creature create scene or restart creature create process!")
 		return
 	var instance = load(resource)
-	var new_instance_scene : Node = instance.instantiate()
-	print(get_tree().edited_scene_root)
-	var cc : CreatureCreator = get_tree().edited_scene_root
-	cc.creature_root.add_child(new_instance_scene)
-	#get_tree().edited_scene_root.add_child(new_instance_scene)
+	var new_instance_scene : Node2D = instance.instantiate()
+	if not new_instance_scene:
+		push_error("instance scene is null!")
+		return
+	#If this is first part added, child under root
+	if !latest_part:
+		var cc : CreatureCreator = get_tree().edited_scene_root
+		cc.creature_root.add_child(new_instance_scene)
+		new_instance_scene.global_position = Vector2.ZERO
+	else:
+	#If we already have a part, add this as its child
+		latest_part.add_child(new_instance_scene)
+		new_instance_scene.global_position = latest_part.global_position + Vector2(16, 0)
+	latest_part = new_instance_scene
 	new_instance_scene.owner = get_tree().edited_scene_root
 	print("Instantiated resource: ", resource)
 	spawn_entity.emit(new_instance_scene)
@@ -178,7 +197,11 @@ func clear_container():
 
 func _on_socket_button_pressed() -> void:
 	var new_socket = LIMB_SOCKET.instantiate()
+	if not new_socket:
+		push_error("Socket instantiation failed!")
+		return
 	get_tree().edited_scene_root.add_child(new_socket)
 	new_socket.owner = get_tree().edited_scene_root
-	print("Instantiated new socket: ", new_socket.name)
+	if latest_part:
+		new_socket.global_position = latest_part.global_position
 	spawn_socket.emit(new_socket)
