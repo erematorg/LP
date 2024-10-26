@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c6bxgc6d0e0jv"]
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_socket.gd" id="1_akdwv"]
-[ext_resource type="Texture2D" uid="uid://clieye2k0uu6n" path="res://systems/attachment system/socket.png" id="2_mfmcb"]
+[ext_resource type="Texture2D" uid="uid://0bpxnveb0fpu" path="res://addons/attachmentgui/Sprites/green_socket_small.png" id="2_xkeo3"]
 
 [node name="LimbSocket" type="Node2D"]
 script = ExtResource("1_akdwv")
@@ -10,4 +10,4 @@ script = ExtResource("1_akdwv")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
-texture = ExtResource("2_mfmcb")
+texture = ExtResource("2_xkeo3")

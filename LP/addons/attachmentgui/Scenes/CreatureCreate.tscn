@@ -1,15 +1,22 @@
-[gd_scene load_steps=5 format=3 uid="uid://054muqtx37p3"]
+[gd_scene load_steps=8 format=3 uid="uid://054muqtx37p3"]
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/creature-creator.gd" id="1_ahjc5"]
 [ext_resource type="Script" path="res://mouse_tracker.gd" id="3_dgbmd"]
+[ext_resource type="PackedScene" uid="uid://c6bxgc6d0e0jv" path="res://systems/attachment system/limb_socket.tscn" id="3_wx2r2"]
 
 [sub_resource type="SkeletonModification2DFABRIK" id="SkeletonModification2DFABRIK_mbnb2"]
 enabled = false
 target_nodepath = NodePath("Marker2D")
 
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_28buj"]
+
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_4308u"]
+
 [sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
-modification_count = 1
+modification_count = 3
 modifications/0 = SubResource("SkeletonModification2DFABRIK_mbnb2")
+modifications/1 = SubResource("SkeletonModification2DCCDIK_28buj")
+modifications/2 = SubResource("SkeletonModification2DCCDIK_4308u")
 
 [node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("m_tracker")]
 script = ExtResource("1_ahjc5")
@@ -26,3 +33,5 @@ script = ExtResource("3_dgbmd")
 modification_stack = SubResource("SkeletonModificationStack2D_gob83")
 
 [node name="Marker2D" type="Marker2D" parent="CreatureRoot"]
+
+[node name="LimbSocket" parent="CreatureRoot" instance=ExtResource("3_wx2r2")]

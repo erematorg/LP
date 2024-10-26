@@ -13,12 +13,10 @@ max_value = 4.0
 _data = [Vector2(0, 6.41624), 0.0, 0.0, 0, 0, Vector2(0.464968, 2.25127), 0.0, 0.0, 0, 0, Vector2(0.917197, 3.57107), 0.0, 0.0, 0, 0]
 point_count = 3
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_nvgfu"]
-target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/target")
-tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D4/Bone2D/Node2D")
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_mbybw"]
 ccdik_data_chain_length = 2
 joint_data/0/bone_index = 0
-joint_data/0/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D4")
+joint_data/0/bone2d_node = NodePath("")
 joint_data/0/rotate_from_joint = false
 joint_data/0/enable_constraint = true
 joint_data/0/constraint_angle_min = -28.6479
@@ -26,20 +24,16 @@ joint_data/0/constraint_angle_max = 88.8085
 joint_data/0/constraint_angle_invert = true
 joint_data/0/constraint_in_localspace = true
 joint_data/0/editor_draw_gizmo = true
-joint_data/1/bone_index = 1
-joint_data/1/bone2d_node = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Limb/Skeleton2D/Bone2D4/Bone2D")
+joint_data/1/bone_index = -1
+joint_data/1/bone2d_node = NodePath("")
 joint_data/1/rotate_from_joint = false
-joint_data/1/enable_constraint = true
-joint_data/1/constraint_angle_min = -28.6479
-joint_data/1/constraint_angle_max = 28.6479
-joint_data/1/constraint_angle_invert = true
-joint_data/1/constraint_in_localspace = true
+joint_data/1/enable_constraint = false
 joint_data/1/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_6ijs7"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_ia47a"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_nvgfu")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_mbybw")
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_rxw6m"]
 radius = 22.1332
@@ -60,34 +54,16 @@ joint_constraints = Array[Vector2]([Vector2(1.55, 0.5), Vector2(0.5, 0.5)])
 
 [node name="Line2D" type="Line2D" parent="."]
 texture_repeat = 2
-points = PackedVector2Array(0, 0, 26.1867, 68.1341, 2.11393, 131.801)
+points = PackedVector2Array(0, 0, 72, 12, 84, 79)
 width_curve = SubResource("Curve_pkdjd")
-default_color = Color(0.580206, 0.637485, 0.658722, 1)
+default_color = Color(0.146533, 0.162374, 0.162182, 1)
 joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 antialiased = true
 
 [node name="Skeleton2D" type="Skeleton2D" parent="."]
-modification_stack = SubResource("SkeletonModificationStack2D_6ijs7")
-
-[node name="Bone2D4" type="Bone2D" parent="Skeleton2D"]
-rest = Transform2D(1, 0, 0, 1, 0, 0)
-auto_calculate_length_and_angle = false
-length = 72.9931
-bone_angle = 9.46232
-metadata/_local_pose_override_enabled_ = true
-
-[node name="Bone2D" type="Bone2D" parent="Skeleton2D/Bone2D4"]
-position = Vector2(72, 12)
-rest = Transform2D(1, 0, 0, 1, 72, 12)
-auto_calculate_length_and_angle = false
-length = 68.0661
-bone_angle = 79.8457
-metadata/_local_pose_override_enabled_ = true
-
-[node name="Node2D" type="Node2D" parent="Skeleton2D/Bone2D4/Bone2D"]
-position = Vector2(12, 67)
+modification_stack = SubResource("SkeletonModificationStack2D_ia47a")
 
 [node name="target" type="Marker2D" parent="."]
 position = Vector2(2.56312, 159.808)

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cq40e51m80dth" path="res://systems/attachment system/creature_body.tscn" id="2_f1y4p"]
 [ext_resource type="PackedScene" uid="uid://cvlpcsid8g4vw" path="res://systems/attachment system/limb.tscn" id="2_gf0ws"]
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_ra6rw"]
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_k3jvg"]
 target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/target")
 tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Skeleton2D/Bone2D10/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Bone2D/Node2D")
 ccdik_data_chain_length = 5
@@ -53,12 +53,12 @@ joint_data/4/constraint_angle_invert = true
 joint_data/4/constraint_in_localspace = true
 joint_data/4/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_b085c"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_c46nv"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_ra6rw")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_k3jvg")
 
-[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_e4qiv"]
+[sub_resource type="SkeletonModification2DCCDIK" id="SkeletonModification2DCCDIK_4cfrc"]
 target_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/target")
 tip_nodepath = NodePath("/root/@EditorNode@16914/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/CreatureCreate/Body/Limb/Skeleton2D/Bone2D5/Bone2D/Node2D")
 ccdik_data_chain_length = 2
@@ -81,10 +81,10 @@ joint_data/1/constraint_angle_invert = true
 joint_data/1/constraint_in_localspace = true
 joint_data/1/editor_draw_gizmo = true
 
-[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_ijkmq"]
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_r6csm"]
 enabled = true
 modification_count = 1
-modifications/0 = SubResource("SkeletonModification2DCCDIK_e4qiv")
+modifications/0 = SubResource("SkeletonModification2DCCDIK_4cfrc")
 
 [node name="CreatureCreate" type="Node2D"]
 
@@ -98,7 +98,7 @@ points = PackedVector2Array(0, 0, 118.732, -85.8063, 247.785, -55.6984, 356.921,
 default_color = Color(0.546708, 0.436286, 0.311721, 1)
 
 [node name="Skeleton2D" parent="Body" index="1"]
-modification_stack = SubResource("SkeletonModificationStack2D_b085c")
+modification_stack = SubResource("SkeletonModificationStack2D_c46nv")
 
 [node name="Bone2D10" type="Bone2D" parent="Body/Skeleton2D" index="0"]
 position = Vector2(-6, -1)
@@ -163,10 +163,10 @@ position = Vector2(367, -109)
 [node name="Limb" parent="Body" instance=ExtResource("2_gf0ws")]
 
 [node name="Line2D" parent="Body/Limb" index="0"]
-points = PackedVector2Array(0, 0, 33.4924, 64.8557, 16.5385, 130.777)
+points = PackedVector2Array(0, 0, 33.4924, 64.8557, 16.5386, 130.777)
 
 [node name="Skeleton2D" parent="Body/Limb" index="1"]
-modification_stack = SubResource("SkeletonModificationStack2D_ijkmq")
+modification_stack = SubResource("SkeletonModificationStack2D_r6csm")
 
 [node name="Bone2D5" type="Bone2D" parent="Body/Limb/Skeleton2D" index="0"]
 rest = Transform2D(1, 0, 0, 1, 0, 0)

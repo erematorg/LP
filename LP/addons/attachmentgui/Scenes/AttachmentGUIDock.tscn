@@ -37,6 +37,9 @@ path_label = NodePath("Panel/Path_Label")
 current_scene_label = NodePath("Panel/CurrentSceneLabel")
 item_container = NodePath("PartsPanel/ScrollContainer/BoxContainer")
 
+[node name="FileDialog" type="FileDialog" parent="."]
+size = Vector2i(303, 630)
+
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 10
@@ -132,17 +135,14 @@ label_settings = ExtResource("4_3i1o5")
 horizontal_alignment = 1
 uppercase = true
 
-[node name="FileDialog" type="FileDialog" parent="."]
-size = Vector2i(303, 630)
-
 [node name="PartsPanel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
-anchor_top = 0.437
 anchor_right = 1.0
-anchor_bottom = 1.057
-offset_top = -23.176
-offset_bottom = -22.936
+anchor_bottom = 0.401
+offset_top = 260.0
+offset_bottom = 541.152
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_h4040")
@@ -175,6 +175,7 @@ text = "Add Parts:"
 label_settings = SubResource("LabelSettings_v55td")
 
 [node name="ComponentsPanel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.437
@@ -206,7 +207,7 @@ offset_bottom = 34.0
 text = "Add Components:"
 label_settings = SubResource("LabelSettings_v55td")
 
+[connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
 [connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
 [connection signal="pressed" from="Panel/EditButton" to="." method="_on_edit_button_pressed"]
 [connection signal="pressed" from="Panel/SocketButton" to="." method="_on_socket_button_pressed"]
-[connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
