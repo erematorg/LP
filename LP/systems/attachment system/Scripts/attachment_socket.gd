@@ -16,15 +16,19 @@ var limb : LimbBase
 func _ready() -> void:
 	update_sprite()
 	
-func assign_new_limb(part):
-	if part and !occupied:
-		update_sprite()
-		occupied = true
-		#WARNING, reparenting causes the node to exit tree for a frame and reenter, causing issues
-		#part.reparent(get_parent())
+func assign_new_limb(part : EntityPart):
+	if not part: #and !occupied:
+		push_error("Part is missing!")
+		return
+	occupied = true
+	update_sprite()
+	#NOTE, reparenting causes the node to exit tree for a frame and reenter
+	part.reparent(get_parent())
+
 
 func remove_limb():
-	pass
+	occupied = false
+	update_sprite()
 
 func update_sprite():
 	if occupied:
