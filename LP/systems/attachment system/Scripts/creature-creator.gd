@@ -142,27 +142,12 @@ func remove_socket(socket : AttachmentSocket):
 func drop_entity():
 	for entity in entities:
 		if entity.recently_moved:
-			var target_socket = entity.closest_socket
 			# Find closest socket if none is remembered
+			var target_socket = entity.closest_socket
 			if not target_socket:
 				target_socket = find_closest_socket(target_socket, entity)
 			try_snap(target_socket, entity)
-			#if not target_socket:
-				#for socket in sockets:
-					#if entity.global_position.distance_to(socket.global_position) < snap_distance:
-						#target_socket = socket
-						#print("null socket, snapping to closest")
-			#
-			## Snap to target socket if within range
-			#if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
-				#entity.snap_to_socket(target_socket)
-				#print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
-			#
-			## Clear closest socket for future use
-			#entity.closest_socket = null
-		
-		# Reset recently moved flag
-		entity.recently_moved = false
+			entity.recently_moved = false
 
 
 func find_closest_socket(closest_socket, entity) -> AttachmentSocket:
@@ -177,6 +162,5 @@ func try_snap(target_socket, entity):
 	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
 		entity.snap_to_socket(target_socket)
 		print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
-			
 		# Clear closest socket for future use
 	entity.closest_socket = null
