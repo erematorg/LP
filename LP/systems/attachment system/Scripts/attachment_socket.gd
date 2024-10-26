@@ -20,7 +20,8 @@ func assign_new_limb(part):
 	if part and !occupied:
 		update_sprite()
 		occupied = true
-		part.reparent(get_parent())
+		#WARNING, reparenting causes the node to exit tree for a frame and reenter, causing issues
+		#part.reparent(get_parent())
 
 func remove_limb():
 	pass
