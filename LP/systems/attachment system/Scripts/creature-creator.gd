@@ -37,6 +37,7 @@ func new_entity_in_scene(entity : EntityPart):
 	add_entity_to_skeleton(entity)
 	entities.push_back(entity)
 	entity.tree_exited.connect(remove_entity.bind(entity))
+	entity.tree_entered.connect(recall_entity.bind(entity))
 	entity.inject_creature_creator(self)
 
 
@@ -133,6 +134,10 @@ func _process(delta: float) -> void:
 func remove_entity(entity : EntityPart):
 	print("User removed an entity: " + entity.name)
 	entities.erase(entity)
+	
+func recall_entity(entity : EntityPart):
+	print("Part returned, reparented to: " + str(entity.get_parent()))
+	entities.push_back(entity)
 
 func remove_socket(socket : AttachmentSocket):
 	print("User removed an entity: " + socket.name)
