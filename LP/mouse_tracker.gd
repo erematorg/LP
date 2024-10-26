@@ -1,5 +1,5 @@
 @tool
-extends Control
+extends Node
 class_name mouse_tracker
 
 signal stopped_dragging
