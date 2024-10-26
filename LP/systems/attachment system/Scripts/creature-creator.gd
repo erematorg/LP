@@ -108,6 +108,8 @@ func _process(delta: float) -> void:
 			var closest_socket : AttachmentSocket = null
 			var closest_dist = INF
 			for socket in sockets:
+				if socket.isValid == false:
+					continue
 				var dist = entity.global_position.distance_to(socket.global_position)
 				if dist < closest_dist:
 					closest_dist = dist
@@ -162,7 +164,9 @@ func find_closest_socket(closest_socket, entity) -> AttachmentSocket:
 			print("null socket, snapping to closest")
 	return closest_socket
 
-func try_snap(target_socket, entity):
+func try_snap(target_socket : AttachmentSocket, entity):
+	if target_socket.placement_mode:
+		return
 	# Snap to target socket if within range
 	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
 		entity.snap_to_socket(target_socket)
