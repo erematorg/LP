@@ -143,21 +143,40 @@ func drop_entity():
 	for entity in entities:
 		if entity.recently_moved:
 			var target_socket = entity.closest_socket
-			
 			# Find closest socket if none is remembered
 			if not target_socket:
-				for socket in sockets:
-					if entity.global_position.distance_to(socket.global_position) < snap_distance:
-						target_socket = socket
-						print("null socket, snapping to closest")
-			
-			# Snap to target socket if within range
-			if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
-				entity.snap_to_socket(target_socket)
-				print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
-			
-			# Clear closest socket for future use
-			entity.closest_socket = null
+				target_socket = find_closest_socket(target_socket, entity)
+			try_snap(target_socket, entity)
+			#if not target_socket:
+				#for socket in sockets:
+					#if entity.global_position.distance_to(socket.global_position) < snap_distance:
+						#target_socket = socket
+						#print("null socket, snapping to closest")
+			#
+			## Snap to target socket if within range
+			#if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
+				#entity.snap_to_socket(target_socket)
+				#print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
+			#
+			## Clear closest socket for future use
+			#entity.closest_socket = null
 		
 		# Reset recently moved flag
 		entity.recently_moved = false
+
+
+func find_closest_socket(closest_socket, entity) -> AttachmentSocket:
+	for socket in sockets:
+		if entity.global_position.distance_to(socket.global_position) < snap_distance:
+			closest_socket = socket
+			print("null socket, snapping to closest")
+	return closest_socket
+
+func try_snap(target_socket, entity):
+	# Snap to target socket if within range
+	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
+		entity.snap_to_socket(target_socket)
+		print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
+			
+		# Clear closest socket for future use
+	entity.closest_socket = null
