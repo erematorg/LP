@@ -166,6 +166,5 @@ func try_snap(target_socket, entity):
 	# Snap to target socket if within range
 	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
 		entity.snap_to_socket(target_socket)
-		print("snapping to remembered socket" if entity.closest_socket else "snapping to closest socket")
 		# Clear closest socket for future use
 	entity.closest_socket = null
