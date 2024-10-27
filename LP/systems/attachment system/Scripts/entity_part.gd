@@ -9,11 +9,13 @@ enum type {BODY, HEAD, APPENDAGE}
 var creator : CreatureCreator
 var recently_moved = false
 var closest_socket : AttachmentSocket
-
+var last_position : Vector2
+var attached_socket : AttachmentSocket
 
 #Activate notification system
 func _ready() -> void:
 	set_notify_transform(true)
+	last_position = global_position
 
 
 func inject_creature_creator(cc : CreatureCreator):
@@ -29,6 +31,7 @@ func snap_to_socket(socket : AttachmentSocket):
 	recently_moved = false
 	if socket.has_method("assign_new_limb"):
 		socket.assign_new_limb(self)
+		attached_socket = socket
 	else:
 		push_warning("socket lacks assign_limb function")
 
@@ -36,4 +39,8 @@ func snap_to_socket(socket : AttachmentSocket):
 #This will trigger whenever the part is moved
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSFORM_CHANGED:
-		recently_moved = true
+		if global_position.distance_to(last_position) > 7: #8 is snapping distance
+			recently_moved = true
+			last_position = global_position
+			if attached_socket and attached_socket.entity == self:
+				attached_socket.remove_limb()

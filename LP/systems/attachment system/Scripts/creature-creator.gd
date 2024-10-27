@@ -16,7 +16,7 @@ class_name CreatureCreator
 var entities : Array[EntityPart]
 var sockets : Array[AttachmentSocket]
 var lines : Array[Line2D]
-
+var socket_stack_pairs: Dictionary = {}
 
 #We have to connect to the signal from this end
 #So we inject the gui, and connect to its spawn signal
@@ -47,10 +47,51 @@ func new_socket_in_scene(socket : AttachmentSocket):
 		return
 	sockets.push_back(socket)
 	socket.tree_exited.connect(remove_socket.bind(socket))
-	if creature_root.get_modification_stack().modification_count != sockets.size():
-		print("Not correct amount of stacks for amount of sockets!")
+	if not socket_stack_pairs.has(socket):
+		add_stack_for_socket(socket)
+	else:
+		print("Socket already has a modification stack")
+	print("new socket/stack pair added")
+	#if creature_root.get_modification_stack().modification_count != sockets.size():
+	#	print("Not correct amount of stacks for amount of sockets!")
+	#	ensure_socket_stack_pairs()
 	#var newstack = SkeletonModification2DCCDIK.new()
 	#creature_root.get_modification_stack().add_modification(newstack)
+
+# Function to maintain pairs and keep them synchronized
+func ensure_socket_stack_pairs():
+	# Check for stale pairs (remove stacks if their socket no longer exists)
+	for socket in socket_stack_pairs.keys():
+		if not sockets.has(socket):
+			remove_stack_for_socket(socket)
+			socket_stack_pairs.erase(socket)
+	# Add stacks for new sockets
+	for socket in sockets:
+		if !socket_stack_pairs.has(socket):
+			add_stack_for_socket(socket)
+	# Warning if still not matched, but shouldn’t happen with this setup
+	if creature_root.get_modification_stack().modification_count != socket_stack_pairs.size():
+		print("Warning: Modifications and sockets are not fully synchronized.")
+			
+func add_stack_for_socket(socket: AttachmentSocket):
+	# Only create a stack if the socket doesn't already have one
+	var new_stack
+	print("New socket with type: " + str(socket.IK_type))
+	if socket.IK_type == AttachmentSocket.IK_chain_type.CCDIK:
+		new_stack = SkeletonModification2DCCDIK.new()
+	elif socket.IK_type == AttachmentSocket.IK_chain_type.FABRIK:
+		new_stack = SkeletonModification2DFABRIK.new()
+	creature_root.get_modification_stack().add_modification(new_stack)
+	socket_stack_pairs[socket] = new_stack
+	print("Added new stack for socket:", socket.name)
+
+
+func remove_stack_for_socket(socket: AttachmentSocket):
+	# Remove the stack if it exists in the dictionary
+	if socket_stack_pairs.has(socket):
+		var stack_to_remove = socket_stack_pairs[socket]
+		creature_root.get_modification_stack().remove_modification(stack_to_remove)
+		print("Removed stack for socket:", socket.name)
 
 
 func add_entity_to_skeleton(entity : EntityPart):
@@ -70,6 +111,7 @@ func _ready() -> void:
 		return
 	m_tracker.stopped_dragging.connect(drop_entity)
 	find_old_parts()
+	ensure_socket_stack_pairs()
 
 
 func find_old_parts():
@@ -105,12 +147,13 @@ func _process(delta: float) -> void:
 		return
 	#Loop throuh each entity, if they have recently moved, prepare to draw lines to sockets
 	for entity in entities:
-		#if not entity.recently_moved:
-		#	continue
+		if not entity.recently_moved:
+			continue
 		var closest_socket
 		closest_socket = find_closest_socket(entity)
 		if closest_socket:
-			draw_line_between(entity, closest_socket)
+			if entity.entity_type == closest_socket.accepted_type:
+				draw_line_between(entity, closest_socket)
 
 
  #Find the closest socket to a given entity
@@ -169,12 +212,18 @@ func remove_socket(socket : AttachmentSocket):
 
 func drop_entity():
 	for entity in entities:
+		if not entity:
+			push_warning("Entity is null! ")
+			continue
 		if entity.recently_moved:
 			# Find closest socket if none is remembered
 			var target_socket = entity.closest_socket
 			if not target_socket:
 				target_socket = find_closest_socket(entity)#target_socket, entity)
-			try_snap(target_socket, entity)
+			if not target_socket:
+				continue
+			if entity.entity_type == target_socket.accepted_type: 
+				try_snap(target_socket, entity)
 			entity.recently_moved = false
 
 

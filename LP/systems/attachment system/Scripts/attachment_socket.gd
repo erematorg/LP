@@ -3,16 +3,18 @@
 extends Node2D
 class_name AttachmentSocket
 
-#Occupancy
+enum IK_chain_type {CCDIK, FABRIK}
 @export var placement_mode : bool = true:
 	set(val):
 		placement_mode = val
 		call_deferred("update_state")
+@export var IK_type : IK_chain_type		
+@export var accepted_type : EntityPart.type#int = EntityPart.type.BODY
+
+#Occupancy
 var occupied : bool = false
 var limb : LimbBase
 var entity : EntityPart
-#A possible way of constraining part types for each socket
-#var accepted_type : int = EntityPart.type.BODY
 
 #Visuals
 var socket_icon = preload("res://systems/attachment system/socket.png")
@@ -29,7 +31,7 @@ func _ready() -> void:
 
 
 func assign_new_limb(part : EntityPart):
-	if not part or placement_mode:
+	if not part or placement_mode or part.entity_type != accepted_type:
 		push_error("Cannot assign limb to socket")
 		return
 	occupied = true
