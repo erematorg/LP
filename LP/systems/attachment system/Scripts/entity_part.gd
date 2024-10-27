@@ -21,18 +21,16 @@ func inject_creature_creator(cc : CreatureCreator):
 
 
 func snap_to_socket(socket : AttachmentSocket):
-	if not socket:
+	if not socket or socket.placement_mode:
 		push_error("socket is null!")
 		return
+	
 	global_position = socket.global_position
 	recently_moved = false
-	if socket is AttachmentSocket:
-		if socket.has_method("assign_new_limb"):
-			socket.assign_new_limb(self)
-		else:
-			push_warning("socket lacks assign_limb function")
+	if socket.has_method("assign_new_limb"):
+		socket.assign_new_limb(self)
 	else:
-		print("Socket is NOT of type attachment_socket, it is: ", str(socket))
+		push_warning("socket lacks assign_limb function")
 
 
 #This will trigger whenever the part is moved
