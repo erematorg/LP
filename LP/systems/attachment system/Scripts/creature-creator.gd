@@ -96,41 +96,60 @@ func clear_old_lines():
 		for line in lines:
 			line.queue_free()
 		lines.clear()
-		
-		
-#Update position of all entitites and sockets and draw lines between them
+
+
+# Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
 	clear_old_lines()
-	if entities.size() > 0 and sockets.size() > 0:
-		for entity in entities:
-			if entity.recently_moved == false:
-				continue
-			var closest_socket : AttachmentSocket = null
-			var closest_dist = INF
-			for socket in sockets:
-				if socket.isValid == false:
-					continue
-				var dist = entity.global_position.distance_to(socket.global_position)
-				if dist < closest_dist:
-					closest_dist = dist
-					closest_socket = socket
-					
-			# Draw a line between socket and limb
-			if closest_socket and closest_dist < show_line_distance:
-				var line = Line2D.new()
-				line.default_color = far_color
-				var normalized_dist = clamp((closest_dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)  # Normalize distance to a 0-1 range
-				line.width = lerp(2.5, 0.1, normalized_dist)
-				if closest_dist < snap_distance:
-					entity.closest_socket = closest_socket
-					line.default_color = close_color
-					line.width = 3.0
-				line.add_point(entity.global_position)
-				line.add_point(closest_socket.global_position)
-				line.begin_cap_mode = Line2D.LINE_CAP_ROUND
-				line.end_cap_mode = Line2D.LINE_CAP_ROUND
-				add_child(line)
-				lines.push_back(line)
+	if entities.is_empty() or sockets.is_empty():
+		return
+	#Loop throuh each entity, if they have recently moved, prepare to draw lines to sockets
+	for entity in entities:
+		#if not entity.recently_moved:
+		#	continue
+		var closest_socket
+		closest_socket = find_closest_socket(entity)
+		if closest_socket:
+			draw_line_between(entity, closest_socket)
+
+
+ #Find the closest socket to a given entity
+func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
+	var closest_socket: AttachmentSocket = null
+	var closest_dist = show_line_distance
+	
+	for socket in sockets:
+		if socket.placement_mode or socket.occupied:
+			continue
+		var dist = entity.global_position.distance_to(socket.global_position)
+		if dist < closest_dist:
+			closest_dist = dist
+			closest_socket = socket
+	return closest_socket
+
+
+# Draw a line between an entity and its closest socket, with dynamic appearance based on distance
+func draw_line_between(entity: EntityPart, closest_socket: AttachmentSocket) -> void:
+	var line = Line2D.new()
+	set_line_visual(line, entity, closest_socket)
+	line.add_point(entity.global_position)
+	line.add_point(closest_socket.global_position)
+	add_child(line)
+	lines.push_back(line)
+
+
+# Set line visual properties based on distance to the closest socket
+func set_line_visual(line: Line2D, entity: EntityPart, closest_socket: AttachmentSocket) -> void:
+	var dist = entity.global_position.distance_to(closest_socket.global_position)
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	if dist < snap_distance:
+		line.default_color = close_color
+		line.width = 3.0
+	else:
+		line.default_color = far_color
+		var normalized_dist = clamp((dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)
+		line.width = lerp(2.5, 0.1, normalized_dist)
 
 
 func remove_entity(entity : EntityPart):
@@ -144,6 +163,8 @@ func recall_entity(entity : EntityPart):
 func remove_socket(socket : AttachmentSocket):
 	print("User removed an entity: " + socket.name)
 	sockets.erase(socket)
+	socket.entity = null
+	socket.update_state()
 
 
 func drop_entity():
@@ -152,19 +173,14 @@ func drop_entity():
 			# Find closest socket if none is remembered
 			var target_socket = entity.closest_socket
 			if not target_socket:
-				target_socket = find_closest_socket(target_socket, entity)
+				target_socket = find_closest_socket(entity)#target_socket, entity)
 			try_snap(target_socket, entity)
 			entity.recently_moved = false
 
 
-func find_closest_socket(closest_socket, entity) -> AttachmentSocket:
-	for socket in sockets:
-		if entity.global_position.distance_to(socket.global_position) < snap_distance:
-			closest_socket = socket
-			print("null socket, snapping to closest")
-	return closest_socket
-
 func try_snap(target_socket : AttachmentSocket, entity):
+	if not target_socket or not entity:
+		return
 	if target_socket.placement_mode:
 		return
 	# Snap to target socket if within range
