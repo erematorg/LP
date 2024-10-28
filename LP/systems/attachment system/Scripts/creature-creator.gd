@@ -52,11 +52,9 @@ func new_socket_in_scene(socket : AttachmentSocket):
 	else:
 		print("Socket already has a modification stack")
 	print("new socket/stack pair added")
-	#if creature_root.get_modification_stack().modification_count != sockets.size():
-	#	print("Not correct amount of stacks for amount of sockets!")
-	#	ensure_socket_stack_pairs()
-	#var newstack = SkeletonModification2DCCDIK.new()
-	#creature_root.get_modification_stack().add_modification(newstack)
+	socket.init_cc(self)
+	ensure_socket_stack_pairs()
+
 
 # Function to maintain pairs and keep them synchronized
 func ensure_socket_stack_pairs():
@@ -89,9 +87,19 @@ func add_stack_for_socket(socket: AttachmentSocket):
 func remove_stack_for_socket(socket: AttachmentSocket):
 	# Remove the stack if it exists in the dictionary
 	if socket_stack_pairs.has(socket):
-		var stack_to_remove = socket_stack_pairs[socket]
-		creature_root.get_modification_stack().remove_modification(stack_to_remove)
-		print("Removed stack for socket:", socket.name)
+		var stack_to_remove: SkeletonModification2D = socket_stack_pairs[socket]
+		var modification_stack = creature_root.get_modification_stack()
+		for i in creature_root.get_modification_stack().modification_count:
+			var current_stack = modification_stack.get_modification(i)
+			if current_stack == stack_to_remove:
+				# Remove the modification at the found index
+				modification_stack.delete_modification(i)
+				print("Removed stack for socket:", socket.name)
+				break  # Exit loop after deletion to avoid errors
+		# Remove the socket entry from the dictionary
+		socket_stack_pairs.erase(socket)
+	else:
+		push_error("Socket not found in socket_stack_pairs. No stack to remove.")
 
 
 func add_entity_to_skeleton(entity : EntityPart):
@@ -142,6 +150,13 @@ func clear_old_lines():
 
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
+	#Runtime code here if needed
+	
+	
+	#Only in editor code after this point:
+	if not Engine.is_editor_hint():
+		return
+
 	clear_old_lines()
 	if entities.is_empty() or sockets.is_empty():
 		return
@@ -205,9 +220,11 @@ func recall_entity(entity : EntityPart):
 
 func remove_socket(socket : AttachmentSocket):
 	print("User removed an entity: " + socket.name)
+	remove_stack_for_socket(socket)
 	sockets.erase(socket)
 	socket.entity = null
 	socket.update_state()
+	ensure_socket_stack_pairs()
 
 
 func drop_entity():
