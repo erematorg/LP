@@ -8,8 +8,10 @@ enum IK_chain_type {CCDIK, FABRIK}
 	set(val):
 		placement_mode = val
 		call_deferred("update_state")
-@export var IK_type : IK_chain_type		
-@export var accepted_type : EntityPart.type#int = EntityPart.type.BODY
+@export var IK_type : IK_chain_type
+@export var accepted_type : EntityPart.type
+
+var creature_creator : CreatureCreator
 
 #Occupancy
 var occupied : bool = false
@@ -30,13 +32,17 @@ func _ready() -> void:
 	update_state()
 
 
+func init_cc(cc : CreatureCreator):
+	if not creature_creator:
+		creature_creator = cc
+
+
 func assign_new_limb(part : EntityPart):
 	if not part or placement_mode or part.entity_type != accepted_type:
 		push_error("Cannot assign limb to socket")
 		return
 	occupied = true
 	update_state()
-	#NOTE, reparenting causes the node to exit tree for a frame and reenter
 	part.reparent(get_parent())
 	entity = part
 
@@ -47,12 +53,20 @@ func remove_limb():
 	update_state()
 
 
-#func check_valid():
-	#var parent = get_parent()
-	#var v : bool = false
-	#if parent and parent is Bone2D:
-		#v = true
-	#isValid = v
+func find_closest_bone():
+	if not creature_creator:
+		push_warning("Creature Creator is null in socket!")
+		return
+	var closest_bone
+	var closest_dist = INF
+	for entity in creature_creator.entities:
+		var dist = global_position.distance_to(entity.global_position)
+		if dist < closest_dist:
+			closest_bone = entity
+			closest_dist = dist
+	if closest_bone:
+		reparent(closest_bone)
+
 
 
 #Gray if placement, red if placed but empty, green if placed and socketed
@@ -60,8 +74,11 @@ func update_state():
 	if placement_mode:
 		sprite_2d.texture = GRAY_SOCKET_SMALL
 		return
+	find_closest_bone()
 	if occupied:
 		sprite_2d.texture = BLUE_SOCKET_SMALL
+	elif !occupied and get_parent() is not Bone2D:
+		sprite_2d.texture = RED_SOCKET_SMALL
 	else:
 		sprite_2d.texture = GREEN_SOCKET_SMALL
 		
