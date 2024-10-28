@@ -8,7 +8,10 @@ enum IK_chain_type {CCDIK, FABRIK}
 	set(val):
 		placement_mode = val
 		call_deferred("update_state")
-@export var IK_type : IK_chain_type
+@export var IK_type : IK_chain_type:
+	set(val):
+		IK_type = val
+		call_deferred("update_ik_type")
 @export var accepted_type : EntityPart.type
 
 var creature_creator : CreatureCreator
@@ -68,6 +71,11 @@ func find_closest_bone():
 		reparent(closest_bone)
 
 
+func update_ik_type():
+	if not creature_creator:
+		return
+	creature_creator.update_ik_types()
+	
 
 #Gray if placement, red if placed but empty, green if placed and socketed
 func update_state():

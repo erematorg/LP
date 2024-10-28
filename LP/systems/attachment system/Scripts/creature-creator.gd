@@ -59,7 +59,7 @@ func new_socket_in_scene(socket : AttachmentSocket):
 # Function to maintain pairs and keep them synchronized
 func ensure_socket_stack_pairs():
 	# Check for stale pairs (remove stacks if their socket no longer exists)
-	for socket in socket_stack_pairs.keys():
+	for socket : AttachmentSocket in socket_stack_pairs.keys():
 		if not sockets.has(socket):
 			remove_stack_for_socket(socket)
 			socket_stack_pairs.erase(socket)
@@ -82,6 +82,33 @@ func add_stack_for_socket(socket: AttachmentSocket):
 	creature_root.get_modification_stack().add_modification(new_stack)
 	socket_stack_pairs[socket] = new_stack
 	print("Added new stack for socket:", socket.name)
+
+
+func update_ik_types():
+	# Loop through each socket-modification pair in the dictionary
+	pass
+	for socket : AttachmentSocket in socket_stack_pairs.keys():
+		var current_stack : SkeletonModification2D = socket_stack_pairs[socket]
+		## Check if the stack type matches the socket's IK_type
+		var correct_stack_type = null
+		match socket.IK_type:
+			socket.IK_chain_type.CCDIK:
+				if not current_stack is SkeletonModification2DCCDIK:
+					correct_stack_type = SkeletonModification2DCCDIK.new()
+			socket.IK_chain_type.FABRIK:
+				if not current_stack is SkeletonModification2DFABRIK:
+					correct_stack_type = SkeletonModification2DFABRIK.new()
+
+		## If we have determined a new, correct stack type
+		if correct_stack_type:
+			var modification_stack = creature_root.get_modification_stack()
+			for i in modification_stack.modification_count:
+				var i_stack = modification_stack.get_modification(i)
+				if i_stack == current_stack:
+					modification_stack.delete_modification(i)
+					modification_stack.add_modification(correct_stack_type)
+					socket_stack_pairs[socket] = correct_stack_type
+					print("Stack updated")
 
 
 func remove_stack_for_socket(socket: AttachmentSocket):
