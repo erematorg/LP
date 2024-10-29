@@ -45,6 +45,7 @@ func new_socket_in_scene(socket : AttachmentSocket):
 	if not socket:
 		push_error("socket is null!")
 		return
+
 	sockets.push_back(socket)
 	socket.tree_exited.connect(remove_socket.bind(socket))
 	if not socket_stack_pairs.has(socket):
@@ -86,7 +87,6 @@ func add_stack_for_socket(socket: AttachmentSocket):
 
 func update_ik_types():
 	# Loop through each socket-modification pair in the dictionary
-	pass
 	for socket : AttachmentSocket in socket_stack_pairs.keys():
 		var current_stack : SkeletonModification2D = socket_stack_pairs[socket]
 		## Check if the stack type matches the socket's IK_type
@@ -99,7 +99,7 @@ func update_ik_types():
 				if not current_stack is SkeletonModification2DFABRIK:
 					correct_stack_type = SkeletonModification2DFABRIK.new()
 
-		## If we have determined a new, correct stack type
+		## If we have determined stack is wrong. Change it
 		if correct_stack_type:
 			var modification_stack = creature_root.get_modification_stack()
 			for i in modification_stack.modification_count:
