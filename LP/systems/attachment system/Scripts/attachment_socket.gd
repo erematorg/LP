@@ -46,7 +46,10 @@ func assign_new_limb(part : EntityPart):
 		return
 	occupied = true
 	update_state()
-	part.reparent(get_parent())
+	if get_parent():
+		part.reparent(get_parent())
+	else:
+		push_warning("No parent for new limb to attach to!")
 	entity = part
 
 
