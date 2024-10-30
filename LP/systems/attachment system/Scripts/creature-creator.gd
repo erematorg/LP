@@ -14,9 +14,7 @@ class_name CreatureCreator
 
 #Arrays
 @export var entities : Array[EntityPart]
-@export var sockets : Array[AttachmentSocket]
 @export var lines : Array[Line2D]
-var socket_pairs : Array[SocketModificationPair]
 @export var socket_stack_pairs: Dictionary = {}
 
 #We have to connect to the signal from this end
@@ -43,17 +41,12 @@ func new_entity_in_scene(entity : EntityPart):
 
 
 func new_socket_in_scene(socket : AttachmentSocket):
-	if not socket or sockets.has(socket):
+	if not socket or socket_stack_pairs.has(socket):
 		push_error("socket is invalid!")
 		return
 
-	sockets.push_back(socket)
 	socket.tree_exited.connect(remove_socket.bind(socket))
-	if not socket_stack_pairs.has(socket):
-		add_stack_for_socket(socket)
-	else:
-		print("Socket already has a modification stack")
-	print("new socket/stack pair added")
+	add_stack_for_socket(socket)
 	socket.init_cc(self)
 	ensure_socket_stack_pairs()
 
@@ -62,13 +55,13 @@ func new_socket_in_scene(socket : AttachmentSocket):
 func ensure_socket_stack_pairs():
 	# Check for stale pairs (remove stacks if their socket no longer exists)
 	for socket : AttachmentSocket in socket_stack_pairs.keys():
-		if not sockets.has(socket):
-			remove_stack_for_socket(socket)
-			socket_stack_pairs.erase(socket)
-	# Add stacks for new sockets
-	for socket in sockets:
-		if !socket_stack_pairs.has(socket):
+		var stack = socket_stack_pairs[socket]
+		if stack == null or not is_instance_valid(stack):
+			#remove_stack_for_socket(socket)
+			#socket_stack_pairs.erase(socket)
 			add_stack_for_socket(socket)
+			push_warning("Socket lacked a stack, adding")
+
 	# Warning if still not matched, but shouldn’t happen with this setup
 	if creature_root.get_modification_stack().modification_count != socket_stack_pairs.size():
 		print("Warning: Modifications and sockets are not fully synchronized.")
@@ -141,7 +134,6 @@ func add_entity_to_skeleton(entity : EntityPart):
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	entities = []
-	sockets = []
 	lines = []
 	if not m_tracker:
 		push_error("mouse tracker is null!")
@@ -156,7 +148,7 @@ func find_old_parts():
 	# Call a recursive function to search for the parts
 	search_for_parts(root)
 	print("Found entities: " + str(entities.size()))
-	print("Found sockets: " + str(sockets.size()))
+	print("Found sockets: " + str(socket_stack_pairs.size()))
 
 
 func search_for_parts(node: Node) -> void:
@@ -186,7 +178,7 @@ func _process(delta: float) -> void:
 		return
 
 	clear_old_lines()
-	if entities.is_empty() or sockets.is_empty():
+	if entities.is_empty() or socket_stack_pairs.is_empty():
 		return
 	#Loop throuh each entity, if they have recently moved, prepare to draw lines to sockets
 	for entity in entities:
@@ -203,7 +195,7 @@ func _process(delta: float) -> void:
 func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = show_line_distance
-	for socket in sockets:
+	for socket in socket_stack_pairs:
 		if socket.placement_mode or socket.occupied:
 			continue
 		var dist = entity.global_position.distance_to(socket.global_position)
@@ -246,11 +238,11 @@ func recall_entity(entity : EntityPart):
 	entities.push_back(entity)
 
 func remove_socket(socket : AttachmentSocket):
-	print("User removed an entity: " + socket.name)
-	remove_stack_for_socket(socket)
-	sockets.erase(socket)
 	socket.entity = null
 	socket.update_state()
+	print("User removed an entity: " + socket.name)
+	remove_stack_for_socket(socket)
+	socket_stack_pairs.erase(socket)
 	ensure_socket_stack_pairs()
 
 
