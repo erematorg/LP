@@ -13,10 +13,11 @@ class_name CreatureCreator
 @export var m_tracker : mouse_tracker
 
 #Arrays
-var entities : Array[EntityPart]
-var sockets : Array[AttachmentSocket]
-var lines : Array[Line2D]
-var socket_stack_pairs: Dictionary = {}
+@export var entities : Array[EntityPart]
+@export var sockets : Array[AttachmentSocket]
+@export var lines : Array[Line2D]
+var socket_pairs : Array[SocketModificationPair]
+@export var socket_stack_pairs: Dictionary = {}
 
 #We have to connect to the signal from this end
 #So we inject the gui, and connect to its spawn signal
@@ -42,8 +43,8 @@ func new_entity_in_scene(entity : EntityPart):
 
 
 func new_socket_in_scene(socket : AttachmentSocket):
-	if not socket:
-		push_error("socket is null!")
+	if not socket or sockets.has(socket):
+		push_error("socket is invalid!")
 		return
 
 	sockets.push_back(socket)
@@ -71,7 +72,8 @@ func ensure_socket_stack_pairs():
 	# Warning if still not matched, but shouldn’t happen with this setup
 	if creature_root.get_modification_stack().modification_count != socket_stack_pairs.size():
 		print("Warning: Modifications and sockets are not fully synchronized.")
-			
+
+
 func add_stack_for_socket(socket: AttachmentSocket):
 	# Only create a stack if the socket doesn't already have one
 	var new_stack
@@ -179,7 +181,6 @@ func clear_old_lines():
 func _process(delta: float) -> void:
 	#Runtime code here if needed
 	
-	
 	#Only in editor code after this point:
 	if not Engine.is_editor_hint():
 		return
@@ -202,7 +203,6 @@ func _process(delta: float) -> void:
 func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = show_line_distance
-	
 	for socket in sockets:
 		if socket.placement_mode or socket.occupied:
 			continue
@@ -260,15 +260,16 @@ func drop_entity():
 			push_warning("Entity is null! ")
 			continue
 		if entity.recently_moved:
+			entity.recently_moved = false
 			# Find closest socket if none is remembered
 			var target_socket = entity.closest_socket
 			if not target_socket:
-				target_socket = find_closest_socket(entity)#target_socket, entity)
+				target_socket = find_closest_socket(entity)
 			if not target_socket:
+				print("no target socket")
 				continue
 			if entity.entity_type == target_socket.accepted_type: 
 				try_snap(target_socket, entity)
-			entity.recently_moved = false
 
 
 func try_snap(target_socket : AttachmentSocket, entity):
