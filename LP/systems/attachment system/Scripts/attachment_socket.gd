@@ -45,12 +45,11 @@ func assign_new_limb(part : EntityPart):
 		push_error("Cannot assign limb to socket")
 		return
 	occupied = true
-	update_state()
-	if get_parent():
-		part.reparent(get_parent())
-	else:
-		push_warning("No parent for new limb to attach to!")
 	entity = part
+	update_state()
+	if get_parent() and is_instance_valid(get_parent()):
+		#add_sibling(part)
+		part.reparent(get_parent())
 
 
 func remove_limb():
@@ -72,6 +71,7 @@ func find_closest_bone():
 			closest_dist = dist
 	if closest_bone:
 		reparent(closest_bone)
+		creature_creator.new_socket_in_scene(self)
 
 
 func update_ik_type():
@@ -84,6 +84,13 @@ func update_ik_type():
 func update_state():
 	if placement_mode:
 		sprite_2d.texture = GRAY_SOCKET_SMALL
+		#Turn gray and unparent
+		if not get_tree():
+			return
+		if is_instance_valid(get_tree().edited_scene_root):
+			reparent(get_tree().edited_scene_root)
+		else:
+			reparent(get_tree().root)
 		return
 	find_closest_bone()
 	if occupied:
