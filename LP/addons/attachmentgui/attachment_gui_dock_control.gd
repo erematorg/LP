@@ -180,7 +180,11 @@ func resource_button_pressed(resource: String):
 		new_instance_scene.global_position = latest_part.global_position + Vector2(16, 0)
 	else:
 		var cc : CreatureCreator = get_tree().edited_scene_root
-		cc.creature_root.add_child(new_instance_scene)
+		if is_instance_valid(cc):
+			if cc.creature_root:
+				cc.creature_root.add_child(new_instance_scene)
+			else:
+				push_warning("no creature root")
 		new_instance_scene.global_position = Vector2.ZERO
 
 	latest_part = new_instance_scene
