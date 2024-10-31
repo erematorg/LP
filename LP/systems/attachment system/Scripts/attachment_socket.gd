@@ -17,8 +17,7 @@ enum IK_chain_type {CCDIK, FABRIK}
 var creature_creator : CreatureCreator
 
 #Occupancy
-var occupied : bool = false
-var limb : LimbBase
+#var limb : LimbBase ## deprecated
 var my_entity : EntityPart
 
 #Visuals
@@ -44,7 +43,6 @@ func assign_new_limb(part : EntityPart):
 	if not part or placement_mode or part.entity_type != accepted_type:
 		push_error("Cannot assign limb to socket")
 		return
-	occupied = true
 	my_entity = part
 	if get_parent() and is_instance_valid(get_parent()):
 		part.reparent(get_parent())
@@ -52,7 +50,6 @@ func assign_new_limb(part : EntityPart):
 
 
 func remove_limb():
-	occupied = false
 	my_entity = null
 	update_state()
 
@@ -90,13 +87,11 @@ func update_state():
 			return
 		if is_instance_valid(get_tree().edited_scene_root):
 			reparent(get_tree().edited_scene_root)
-		else:
-			reparent(get_tree().root)
 		return
 	find_closest_bone()
-	if occupied:
+	if my_entity:
 		sprite_2d.texture = BLUE_SOCKET_SMALL
-	elif !occupied and get_parent() is not Bone2D:
+	elif !my_entity or get_parent() is not Bone2D:
 		sprite_2d.texture = RED_SOCKET_SMALL
 	else:
 		sprite_2d.texture = GREEN_SOCKET_SMALL
