@@ -45,10 +45,9 @@ func new_entity_in_scene(entity : EntityPart):
 
 func new_socket_in_scene(socket : AttachmentSocket):
 	if not socket or socket_stack_pairs.has(socket):
-		push_error("socket is invalid!")
 		return
-	if socket.owner != get_tree().edited_scene_root:
-		socket.owner = get_tree().edited_scene_root
+	self.add_child(socket)
+	socket.owner = self
 	socket.tree_exited.connect(remove_socket.bind(socket))
 	add_stack_for_socket(socket)
 	socket.init_cc(self)
@@ -190,6 +189,8 @@ func _process(delta: float) -> void:
 		var closest_socket
 		closest_socket = find_closest_socket(entity)
 		if closest_socket:
+			if closest_socket.get_parent() == entity or entity.get_parent() == closest_socket:
+				continue
 			if entity.entity_type == closest_socket.accepted_type:
 				draw_line_between(entity, closest_socket)
 
@@ -241,7 +242,7 @@ func recall_entity(entity : EntityPart):
 	entities.push_back(entity)
 
 func remove_socket(socket : AttachmentSocket):
-	socket.entity = null
+	socket.my_entity = null
 	socket.update_state()
 	print("User removed an entity: " + socket.name)
 	remove_stack_for_socket(socket)
@@ -261,7 +262,8 @@ func drop_entity():
 			if not target_socket:
 				target_socket = find_closest_socket(entity)
 			if not target_socket:
-				print("no target socket")
+				continue
+			if target_socket.get_parent() == entity or entity.get_parent() == target_socket:
 				continue
 			if entity.entity_type == target_socket.accepted_type: 
 				try_snap(target_socket, entity)

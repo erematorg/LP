@@ -190,8 +190,4 @@ func _on_socket_button_pressed() -> void:
 	if not new_socket:
 		push_error("Socket instantiation failed!")
 		return
-	get_tree().edited_scene_root.add_child(new_socket)
-	#new_socket.owner = get_tree().edited_scene_root
-	if latest_part and is_instance_valid(latest_part):
-		new_socket.global_position = latest_part.global_position
 	spawn_socket.emit(new_socket)

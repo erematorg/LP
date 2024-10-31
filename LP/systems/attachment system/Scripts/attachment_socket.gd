@@ -19,7 +19,7 @@ var creature_creator : CreatureCreator
 #Occupancy
 var occupied : bool = false
 var limb : LimbBase
-var entity : EntityPart
+var my_entity : EntityPart
 
 #Visuals
 var socket_icon = preload("res://systems/attachment system/socket.png")
@@ -45,16 +45,15 @@ func assign_new_limb(part : EntityPart):
 		push_error("Cannot assign limb to socket")
 		return
 	occupied = true
-	entity = part
+	my_entity = part
 	update_state()
 	if get_parent() and is_instance_valid(get_parent()):
-		#add_sibling(part)
 		part.reparent(get_parent())
 
 
 func remove_limb():
 	occupied = false
-	entity = null
+	my_entity = null
 	update_state()
 
 
@@ -65,6 +64,8 @@ func find_closest_bone():
 	var closest_bone
 	var closest_dist = INF
 	for entity in creature_creator.entities:
+		if my_entity == entity:
+			continue
 		var dist = global_position.distance_to(entity.global_position)
 		if dist < closest_dist:
 			closest_bone = entity

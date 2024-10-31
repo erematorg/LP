@@ -42,5 +42,5 @@ func _notification(what: int) -> void:
 		if global_position.distance_to(last_position) > 7: #8 is snapping distance
 			recently_moved = true
 			last_position = global_position
-			if attached_socket and attached_socket.entity == self:
+			if attached_socket and attached_socket.my_entity == self:
 				attached_socket.remove_limb()
