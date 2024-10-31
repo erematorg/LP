@@ -2,7 +2,7 @@
 extends Bone2D
 class_name EntityPart
 
-enum type {BODY, HEAD, APPENDAGE}
+enum type {ANY, BODY, HEAD, APPENDAGE}
 @export var thumbnail : Texture2D
 @export var preview_name : String
 @export var entity_type : type
