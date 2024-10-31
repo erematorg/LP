@@ -168,29 +168,13 @@ func resource_button_pressed(resource: String):
 	if not get_tree().edited_scene_root.name == current_scene_label.text:
 		push_warning("No longer in the correct scene! Switch back to creature create scene or restart creature create process!")
 		return
+	var cc : CreatureCreator = get_tree().edited_scene_root
 	var instance = load(resource)
 	var new_instance_scene : Node2D = instance.instantiate()
 	if not new_instance_scene:
 		push_error("instance scene is null!")
 		return
-		
-	# Try to add to latest part if it exists
-	if latest_part and is_instance_valid(latest_part):
-		latest_part.add_child(new_instance_scene)
-		new_instance_scene.global_position = latest_part.global_position + Vector2(16, 0)
-	else:
-		var cc : CreatureCreator = get_tree().edited_scene_root
-		if is_instance_valid(cc):
-			if cc.creature_root:
-				cc.creature_root.add_child(new_instance_scene)
-			else:
-				push_warning("no creature root")
-		new_instance_scene.global_position = Vector2.ZERO
-
 	latest_part = new_instance_scene
-	if not is_instance_valid(get_tree().edited_scene_root):
-		push_warning("Scene is corrupt?")
-	new_instance_scene.owner = get_tree().edited_scene_root
 	print("Instantiated resource: ", resource)
 	spawn_entity.emit(new_instance_scene)
 	
@@ -207,7 +191,7 @@ func _on_socket_button_pressed() -> void:
 		push_error("Socket instantiation failed!")
 		return
 	get_tree().edited_scene_root.add_child(new_socket)
-	new_socket.owner = get_tree().edited_scene_root
+	#new_socket.owner = get_tree().edited_scene_root
 	if latest_part and is_instance_valid(latest_part):
 		new_socket.global_position = latest_part.global_position
 	spawn_socket.emit(new_socket)

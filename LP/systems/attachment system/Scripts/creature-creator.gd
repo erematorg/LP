@@ -33,7 +33,10 @@ func new_entity_in_scene(entity : EntityPart):
 	if not entity:
 		push_error("Entity is null!")
 		return
-	add_entity_to_skeleton(entity)
+
+	creature_root.add_child(entity)
+	entity.owner = self
+	ensure_skeleton_disabled(entity)
 	entities.push_back(entity)
 	entity.tree_exited.connect(remove_entity.bind(entity))
 	entity.tree_entered.connect(recall_entity.bind(entity))
@@ -44,7 +47,8 @@ func new_socket_in_scene(socket : AttachmentSocket):
 	if not socket or socket_stack_pairs.has(socket):
 		push_error("socket is invalid!")
 		return
-
+	if socket.owner != get_tree().edited_scene_root:
+		socket.owner = get_tree().edited_scene_root
 	socket.tree_exited.connect(remove_socket.bind(socket))
 	add_stack_for_socket(socket)
 	socket.init_cc(self)
@@ -124,8 +128,7 @@ func remove_stack_for_socket(socket: AttachmentSocket):
 		push_error("Socket not found in socket_stack_pairs. No stack to remove.")
 
 
-func add_entity_to_skeleton(entity : EntityPart):
-	#Turn of the IK, and set pose, this is because the IK will go bananas if IK is active
+func ensure_skeleton_disabled(entity : EntityPart):
 	var stack : SkeletonModificationStack2D = creature_root.get_modification_stack()
 	stack.enabled = false
 	print("Please reset skeleton rest pose before enabling stack")
