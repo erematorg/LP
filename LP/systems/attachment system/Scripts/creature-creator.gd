@@ -196,14 +196,41 @@ func _process(delta: float) -> void:
 				continue
 			if entity.entity_type == closest_socket.accepted_type:
 				draw_line_between(entity, closest_socket)
+	update_stacks_with_occupied_parts()
+
+
+# Loop through all socket-modification pairs and set each stack’s first joint
+func update_stacks_with_occupied_parts():
+	for socket : AttachmentSocket in socket_stack_pairs:
+		var stack : SkeletonModification2DCCDIK = socket_stack_pairs[socket]
+		if not stack or socket.my_entity == null:
+			continue
+		# Check if the socket is occupied
+		var occupying_part = socket.my_entity
+		if occupying_part is Bone2D:
+			var chain_length = 1 + get_chain_length(occupying_part)
+			stack.ccdik_data_chain_length = chain_length
+			# Set each joint index in the stack based on the calculated chain length
+			for j in range(chain_length):
+				stack.set_ccdik_joint_bone_index(j, j)
+
+
+# Helper function to calculate the chain length recursively
+func get_chain_length(bone: Bone2D) -> int:
+	var length : int = 0
+	for i in bone.get_child_count():
+		var child = bone.get_child(i)
+		if child is Bone2D:
+			length += get_chain_length(child)
+	return length
 
 
  #Find the closest socket to a given entity
 func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = show_line_distance
-	for socket in socket_stack_pairs:
-		if socket.placement_mode or socket.occupied:
+	for socket : AttachmentSocket in socket_stack_pairs:
+		if socket.placement_mode or not socket.my_entity:
 			continue
 		var dist = entity.global_position.distance_to(socket.global_position)
 		if dist < closest_dist:
@@ -256,7 +283,6 @@ func remove_socket(socket : AttachmentSocket):
 func drop_entity():
 	for entity in entities:
 		if not entity:
-			push_warning("Entity is null! ")
 			continue
 		if entity.recently_moved:
 			entity.recently_moved = false
@@ -280,5 +306,5 @@ func try_snap(target_socket : AttachmentSocket, entity):
 	# Snap to target socket if within range
 	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
 		entity.snap_to_socket(target_socket)
-		# Clear closest socket for future use
+	# Clear closest socket for future use
 	entity.closest_socket = null
