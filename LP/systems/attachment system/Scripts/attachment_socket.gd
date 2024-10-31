@@ -46,9 +46,9 @@ func assign_new_limb(part : EntityPart):
 		return
 	occupied = true
 	my_entity = part
-	update_state()
 	if get_parent() and is_instance_valid(get_parent()):
 		part.reparent(get_parent())
+	update_state()
 
 
 func remove_limb():

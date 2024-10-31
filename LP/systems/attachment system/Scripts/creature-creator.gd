@@ -33,7 +33,6 @@ func new_entity_in_scene(entity : EntityPart):
 	if not entity:
 		push_error("Entity is null!")
 		return
-
 	creature_root.add_child(entity)
 	entity.owner = self
 	ensure_skeleton_disabled(entity)
@@ -56,18 +55,21 @@ func new_socket_in_scene(socket : AttachmentSocket):
 
 # Function to maintain pairs and keep them synchronized
 func ensure_socket_stack_pairs():
+	var mod_stack = creature_root.get_modification_stack()
 	# Check for stale pairs (remove stacks if their socket no longer exists)
 	for socket : AttachmentSocket in socket_stack_pairs.keys():
 		var stack = socket_stack_pairs[socket]
 		if stack == null or not is_instance_valid(stack):
-			#remove_stack_for_socket(socket)
-			#socket_stack_pairs.erase(socket)
 			add_stack_for_socket(socket)
 			push_warning("Socket lacked a stack, adding")
-
+	for i in mod_stack.modification_count:
+		if not socket_stack_pairs.values().has(mod_stack.get_modification(i)):
+			mod_stack.get_modification(i).free()
 	# Warning if still not matched, but shouldn’t happen with this setup
-	if creature_root.get_modification_stack().modification_count != socket_stack_pairs.size():
+	if mod_stack.modification_count != socket_stack_pairs.size():
 		print("Warning: Modifications and sockets are not fully synchronized.")
+	else:
+		print("Corrected mod stack count")
 
 
 func add_stack_for_socket(socket: AttachmentSocket):
@@ -171,17 +173,18 @@ func clear_old_lines():
 		lines.clear()
 
 
+func will_process() -> bool:
+	return Engine.is_editor_hint() and not (entities.is_empty() or socket_stack_pairs.is_empty())
+
+
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
 	#Runtime code here if needed
-	
+	##
 	#Only in editor code after this point:
-	if not Engine.is_editor_hint():
+	if not will_process():
 		return
-
 	clear_old_lines()
-	if entities.is_empty() or socket_stack_pairs.is_empty():
-		return
 	#Loop throuh each entity, if they have recently moved, prepare to draw lines to sockets
 	for entity in entities:
 		if not entity.recently_moved:
