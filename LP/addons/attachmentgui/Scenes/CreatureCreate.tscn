@@ -8,6 +8,7 @@
 [node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("m_tracker")]
 script = ExtResource("1_ahjc5")
 m_tracker = NodePath("MouseTracker")
+metadata/_edit_lock_ = true
 
 [node name="MouseTracker" type="Control" parent="."]
 layout_mode = 3
@@ -15,6 +16,8 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("3_dgbmd")
+metadata/_edit_lock_ = true
 
 [node name="CreatureRoot" type="Skeleton2D" parent="."]
 modification_stack = SubResource("SkeletonModificationStack2D_gob83")
+metadata/_edit_lock_ = true
