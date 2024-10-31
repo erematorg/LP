@@ -17,8 +17,6 @@ var current_creature_scene : PackedScene
 @export var item_container : BoxContainer
 @onready var parts_panel: Panel = $PartsPanel
 
-var latest_part : EntityPart
-
 const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
 const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment_gui_smalllabel.tres")
@@ -174,7 +172,6 @@ func resource_button_pressed(resource: String):
 	if not new_instance_scene:
 		push_error("instance scene is null!")
 		return
-	latest_part = new_instance_scene
 	print("Instantiated resource: ", resource)
 	spawn_entity.emit(new_instance_scene)
 	
