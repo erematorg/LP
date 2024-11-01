@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://cnyo8q1t475w6"]
+[gd_scene load_steps=10 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
 [ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
@@ -18,6 +18,9 @@ bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 font_size = 24
 outline_size = 1
 outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cc6ja"]
+bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 
 [node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "path_label", "current_scene_label", "item_container")]
 layout_mode = 3
@@ -54,10 +57,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -67.5
-offset_top = 103.0
-offset_right = 68.5
-offset_bottom = 146.0
+offset_left = -176.0
+offset_top = 92.0
+offset_right = -40.0
+offset_bottom = 135.0
 grow_horizontal = 2
 tooltip_text = "Create a new creature!"
 theme_override_styles/normal = SubResource("StyleBoxFlat_mdbwr")
@@ -69,10 +72,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -64.0
-offset_top = 151.0
-offset_right = 66.0
-offset_bottom = 194.0
+offset_left = -178.0
+offset_top = 144.0
+offset_right = -40.0
+offset_bottom = 187.0
 grow_horizontal = 2
 disabled = true
 text = "Edit Creature"
@@ -83,12 +86,25 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -64.0
-offset_top = 201.0
-offset_right = 66.0
-offset_bottom = 244.0
+offset_left = -176.0
+offset_top = 199.0
+offset_right = -46.0
+offset_bottom = 242.0
 grow_horizontal = 2
 text = "Add Socket"
+icon = ExtResource("1_rb5mb")
+
+[node name="SocketButton2" type="Button" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -1.0
+offset_top = 144.0
+offset_right = 160.0
+offset_bottom = 187.0
+grow_horizontal = 2
+text = "Export Creature"
 icon = ExtResource("1_rb5mb")
 
 [node name="Path_Label" type="Label" parent="Panel"]
@@ -136,7 +152,6 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="PartsPanel" type="Panel" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -171,20 +186,19 @@ size_flags_vertical = 3
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
-text = "Add Parts:"
+text = "Parts:"
 label_settings = SubResource("LabelSettings_v55td")
 
 [node name="ComponentsPanel" type="Panel" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = -1
-anchor_top = 0.437
 anchor_right = 1.0
-anchor_bottom = 1.057
-offset_top = 369.824
-offset_bottom = 370.064
+anchor_bottom = 0.401
+offset_top = 260.0
+offset_bottom = 402.152
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_cc6ja")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="ComponentsPanel"]
 layout_mode = 1
@@ -204,10 +218,20 @@ layout_mode = 0
 offset_left = 2.0
 offset_right = 223.0
 offset_bottom = 34.0
-text = "Add Components:"
+text = "Components:"
 label_settings = SubResource("LabelSettings_v55td")
+
+[node name="CheckButton" type="CheckButton" parent="."]
+layout_mode = 0
+offset_left = 508.0
+offset_top = 260.0
+offset_right = 601.0
+offset_bottom = 291.0
+text = "Menu"
 
 [connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
 [connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
 [connection signal="pressed" from="Panel/EditButton" to="." method="_on_edit_button_pressed"]
 [connection signal="pressed" from="Panel/SocketButton" to="." method="_on_socket_button_pressed"]
+[connection signal="pressed" from="Panel/SocketButton2" to="." method="_on_socket_button_pressed"]
+[connection signal="toggled" from="CheckButton" to="." method="_on_check_button_toggled"]

@@ -16,6 +16,7 @@ var current_creature_scene : PackedScene
 @export var current_scene_label : Label
 @export var item_container : BoxContainer
 @onready var parts_panel: Panel = $PartsPanel
+@onready var components_panel: Panel = $ComponentsPanel
 
 const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
@@ -28,6 +29,7 @@ func _ready() -> void:
 	edit_button.disabled = true
 	socket_button.disabled = false
 	parts_panel.visible = false
+	components_panel.visible = false
 
 func ensure_components():
 	if attachment_editor == null:
@@ -74,7 +76,8 @@ func _on_edit_button_pressed() -> void:
 	attachment_editor.load_resources_from_folder(self)
 	if rootNode is CreatureCreator:
 		rootNode.inject_attachment_gui(self)
-		enable_parts_panel()
+		components_panel.visible = true
+		socket_button.disabled = false
 
 
 #When selecting a path for the new creature, save it
@@ -98,11 +101,6 @@ func _on_file_dialog_file_selected(path: String) -> void:
 		print("Error with creating creature" + result)
 		return
 
-
-func enable_parts_panel():
-	parts_panel.visible = true
-	socket_button.disabled = false
-	
 
 func save_new_creature():
 	var savelabel
@@ -188,3 +186,8 @@ func _on_socket_button_pressed() -> void:
 		push_error("Socket instantiation failed!")
 		return
 	spawn_socket.emit(new_socket)
+
+
+func _on_check_button_toggled(toggled_on: bool) -> void:
+	parts_panel.visible = toggled_on
+	components_panel.visible = !toggled_on
