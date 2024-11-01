@@ -9,8 +9,9 @@ class_name CreatureCreator
 @export var close_color = Color.GREEN
 
 # Dependencies
-@onready var creature_root: Skeleton2D = $CreatureRoot
+@export var creature_root: Skeleton2D
 @export var m_tracker : mouse_tracker
+@export var component_node : Node
 
 #Arrays
 @export var entities : Array[EntityPart]
@@ -27,14 +28,15 @@ func inject_attachment_gui(gui : AttachmentGui):
 		gui.spawn_entity.connect(new_entity_in_scene)
 	if not gui.spawn_socket.is_connected(new_socket_in_scene):
 		gui.spawn_socket.connect(new_socket_in_scene)
+	if not gui.spawn_component.is_connected(new_component_in_scene):
+		gui.spawn_component.connect(new_component_in_scene)
 	
 
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
 		push_error("Entity is null!")
 		return
-	creature_root.add_child(entity)
-	entity.owner = self
+	add_new_node(creature_root, entity)
 	ensure_skeleton_disabled(entity)
 	entities.push_back(entity)
 	entity.tree_exited.connect(remove_entity.bind(entity))
@@ -51,6 +53,25 @@ func new_socket_in_scene(socket : AttachmentSocket):
 	add_stack_for_socket(socket)
 	socket.init_cc(self)
 	ensure_socket_stack_pairs()
+	
+func new_component_in_scene(component : String):
+	# load component script
+	var script = load(component) as Script
+	if not script:
+		push_warning("Component script failed to load - " + component)
+		return
+	#Check that the component already exists
+	for c in component_node.get_children():
+		if c.get_script() == script:
+			push_warning("Component already exists!")
+			return
+	#create node
+	var new_node = Node.new()
+	new_node.set_script(script)
+	component_node.add_child(new_node)
+	new_node.name = script.get_global_name()+"_node"
+	new_node.owner = self
+	print("New node created and script attached from path:", component)
 
 
 # Function to maintain pairs and keep them synchronized
@@ -308,3 +329,7 @@ func try_snap(target_socket : AttachmentSocket, entity):
 		entity.snap_to_socket(target_socket)
 	# Clear closest socket for future use
 	entity.closest_socket = null
+	
+func add_new_node(parent, child):
+	parent.add_child(child)
+	child.owner = self

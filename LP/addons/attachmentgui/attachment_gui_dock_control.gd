@@ -4,6 +4,7 @@ class_name AttachmentGui
 
 signal spawn_entity(entity)
 signal spawn_socket(socket)
+signal spawn_component(component)
 
 var attachment_editor : AttachmentEditor
 var current_creature_scene : PackedScene
@@ -14,6 +15,8 @@ var current_creature_scene : PackedScene
 @export var file_dialog : FileDialog
 @export var path_label : Label
 @export var current_scene_label : Label
+@onready var component_part_check: CheckButton = $CheckButton
+
 
 #Body parts / Entitites
 var stage : int = 0
@@ -66,7 +69,7 @@ func _on_new_button_pressed() -> void:
 func _on_edit_button_pressed() -> void:
 	stage = 0
 	ensure_components()
-	clear_container()
+	clear_containers()
 	if !path_label.text.ends_with(".tscn"):
 		path_label.text = path_label.text+".tscn"
 	if not current_creature_scene:
@@ -142,7 +145,8 @@ func add_resource_item(file_path: String, file_name : String):
 
 
 func add_component_to_list(path, button, name):
-	#connect signal
+	# Connect the button to a function that will handle instantiating the resource
+	button.pressed.connect(self.add_component_instance.bind(path))
 	components_container.add_child(button)
 	
 func add_part_to_list(path, button, name):
@@ -174,7 +178,10 @@ func change_button_icon_and_text(button : Button, path : String, name : String):
 #Adding a new label means we are entering a new subfolder or showing "Empty"
 func add_grid_label(label, header : bool = true):
 	var label_to_add = Label.new()
-	parts_container.add_child(label_to_add)
+	if stage == 0:
+		parts_container.add_child(label_to_add)
+	elif stage == 1:
+		components_container.add_child(label_to_add)
 	if header:
 		label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
 	else:
@@ -197,8 +204,16 @@ func resource_button_pressed(resource: String):
 	spawn_entity.emit(new_instance_scene)
 	
 	
-func clear_container():
-	var children = parts_container.get_children()
+func add_component_instance(resource: String):
+	if not get_tree().edited_scene_root.name == current_scene_label.text:
+		push_warning("No longer in the correct scene! Switch back to creature create scene or restart creature create process!")
+		return
+	var cc : CreatureCreator = get_tree().edited_scene_root
+	spawn_component.emit(resource)
+
+
+func clear_containers():
+	var children = parts_container.get_children() + components_container.get_children()
 	for child in children:
 		child.free()
 
@@ -214,3 +229,4 @@ func _on_socket_button_pressed() -> void:
 func _on_check_button_toggled(toggled_on: bool) -> void:
 	parts_panel.visible = toggled_on
 	components_panel.visible = !toggled_on
+	component_part_check.text = "Components" if components_panel.visible else "Body Parts"

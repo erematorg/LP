@@ -1,9 +1,10 @@
-[gd_scene load_steps=10 format=3 uid="uid://cnyo8q1t475w6"]
+[gd_scene load_steps=11 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
 [ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
 [ext_resource type="PackedScene" uid="uid://054muqtx37p3" path="res://addons/attachmentgui/Scenes/CreatureCreate.tscn" id="2_6gnth"]
 [ext_resource type="LabelSettings" uid="uid://drwy0e5elc4qn" path="res://addons/attachmentgui/attachment_gui_mainlabel.tres" id="4_3i1o5"]
+[ext_resource type="Texture2D" uid="uid://cbnv8bbrn0ku5" path="res://addons/attachmentgui/Sprites/dna_32.png" id="5_d4pyt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i810g"]
 bg_color = Color(0.129412, 0.145098, 0.168627, 1)
@@ -225,12 +226,17 @@ text = "Components:"
 label_settings = SubResource("LabelSettings_v55td")
 
 [node name="CheckButton" type="CheckButton" parent="."]
-layout_mode = 0
-offset_left = 508.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -17.5
 offset_top = 260.0
-offset_right = 601.0
-offset_bottom = 291.0
-text = "Menu"
+offset_right = 165.5
+offset_bottom = 300.0
+grow_horizontal = 2
+text = "Components"
+icon = ExtResource("5_d4pyt")
 
 [connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
 [connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
