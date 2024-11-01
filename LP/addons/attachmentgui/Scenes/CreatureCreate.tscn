@@ -18,6 +18,10 @@ offset_bottom = 40.0
 script = ExtResource("3_dgbmd")
 metadata/_edit_lock_ = true
 
-[node name="CreatureRoot" type="Skeleton2D" parent="."]
+[node name="Components" type="Node" parent="."]
+
+[node name="CreatureRoot" type="Node2D" parent="."]
+
+[node name="Skeleton" type="Skeleton2D" parent="CreatureRoot"]
 modification_stack = SubResource("SkeletonModificationStack2D_gob83")
 metadata/_edit_lock_ = true

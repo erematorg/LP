@@ -4,7 +4,8 @@ class_name AttachmentEditor
 
 var dock
 var editor : EditorInterface
-var entities_folder : String = "res://Entities/"
+var entities_folder : String = "res://entities/"
+var components_folder : String = "res://components/"
 var dock_gui
 
 
@@ -29,44 +30,40 @@ func edit_scene(object : PackedScene, path : String):
 		return
 	editor.open_scene_from_path(path)
 	editor.get_editor_viewport_2d()
-		
-		
+
+
 func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
 
-func load_resources_from_folder(receiver : AttachmentGui, folder_path : String = entities_folder):
-	dock_gui = receiver
-	if receiver == null or dock_gui == null:
-		push_error("Dock or receiver is null!")
-		return
-		
+func load_resources_from_folder(receiver : AttachmentGui, target : String, folder_path : String = entities_folder):
 	var dir = DirAccess.open(folder_path)
-	if not dir:
-		print("Something went wrong opening folder: " + folder_path)
+	dock_gui = receiver
+	if receiver == null or dock_gui == null or not dir:
+		push_error("Dock/Receiver/FolderPath is null - AttachmentEditor")
 		return
-		
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	var files_found = 0
+
 	# Loop through the directory entries
 	while file_name != "":
 		if file_name == "." or file_name == "..":
 			print("avoiding special folder: " + file_name )
 			continue
-		
 		var file_path = folder_path + "/"+ file_name
-		#If its a file, add it
-		if !dir.current_is_dir():
-			# Check if the file is a resource we care about (like scenes, textures, etc.)
-			if file_name.ends_with(".tscn"):
-				receiver.add_resource_item(file_path, file_name)
-				files_found += 1
-		else:
+		
+		if dir.current_is_dir():
+			# Recursive call for directories
 			var secondary_dir = DirAccess.open(file_path)
 			if secondary_dir and secondary_dir.get_files().size() > 0:
-				receiver.add_grid_label(file_name+":")  # Add the folder name as a label
-			load_resources_from_folder(dock_gui, file_path)
+				receiver.add_grid_label(file_name + ":")  # Add the folder name as a label
+			load_resources_from_folder(dock_gui, target, file_path)  # Pass target as well for consistency
+		else:
+			# If it's a file, check if it's a target resource
+			if file_name.ends_with(target):
+				receiver.add_resource_item(file_path, file_name)
+				files_found += 1
 
 		file_name = dir.get_next()
 	dir.list_dir_end()

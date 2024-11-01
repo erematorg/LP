@@ -151,8 +151,8 @@ func find_old_parts():
 	var root = get_tree().root
 	# Call a recursive function to search for the parts
 	search_for_parts(root)
-	print("Found entities: " + str(entities.size()))
-	print("Found sockets: " + str(socket_stack_pairs.size()))
+	print("Found previous entities: " + str(entities.size()))
+	print("Found previous sockets: " + str(socket_stack_pairs.size()))
 
 
 func search_for_parts(node: Node) -> void:

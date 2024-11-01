@@ -14,14 +14,20 @@ var current_creature_scene : PackedScene
 @export var file_dialog : FileDialog
 @export var path_label : Label
 @export var current_scene_label : Label
-@export var item_container : BoxContainer
+
+#Body parts / Entitites
+var stage : int = 0
 @onready var parts_panel: Panel = $PartsPanel
+@export var parts_container : BoxContainer
+#Components
 @onready var components_panel: Panel = $ComponentsPanel
+@export var components_container : BoxContainer
 
 const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
 const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment_gui_smalllabel.tres")
 const BLACKOUTLINEARM = preload("res://addons/attachmentgui/Sprites/blackoutlinearm.png")
+const DNA = preload("res://addons/attachmentgui/Sprites/dna.png")
 
 func _ready() -> void:
 	path_label.text = "PATH:"
@@ -46,8 +52,8 @@ func ensure_components():
 		push_error("Warning: No reference to path_label")
 	if current_scene_label == null:
 		push_error("Warning: No reference to current_scene_label")
-	if item_container == null:
-		push_error("Warning: No reference to item_container")
+	if parts_container == null:
+		push_error("Warning: No reference to parts_container")
 
 
 #Open the file dialog to select/create a new creature scene
@@ -58,6 +64,7 @@ func _on_new_button_pressed() -> void:
 
 #When pressing 'Edit' open the new template scene
 func _on_edit_button_pressed() -> void:
+	stage = 0
 	ensure_components()
 	clear_container()
 	if !path_label.text.ends_with(".tscn"):
@@ -67,17 +74,18 @@ func _on_edit_button_pressed() -> void:
 		return
 	attachment_editor.edit_scene(current_creature_scene, path_label.text)
 	var rootNode = attachment_editor.get_open_scene()
-	if rootNode == null:
-		print("No root node in scene")
+	if rootNode == null or rootNode is not CreatureCreator:
+		print("Root is either null or not creaturecreator - attachmentgui")
 		current_scene_label.text = "NO SCENE FOUND"
 		return
-	else:
-		current_scene_label.text = str(rootNode.name)
-	attachment_editor.load_resources_from_folder(self)
-	if rootNode is CreatureCreator:
-		rootNode.inject_attachment_gui(self)
-		components_panel.visible = true
-		socket_button.disabled = false
+
+	current_scene_label.text = str(rootNode.name)
+	attachment_editor.load_resources_from_folder(self, ".tscn") #load parts
+	stage += 1
+	attachment_editor.load_resources_from_folder(self, ".gd", attachment_editor.components_folder) #load components
+	rootNode.inject_attachment_gui(self)
+	components_panel.visible = true
+	socket_button.disabled = false
 
 
 #When selecting a path for the new creature, save it
@@ -126,16 +134,29 @@ func add_resource_item(file_path: String, file_name : String):
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	button.tooltip_text = file_path
-	# Connect the button to a function that will handle instantiating the resource
-	button.pressed.connect(self.resource_button_pressed.bind(file_path))
-	item_container.add_child(button) #Add button to the grid container
+	if stage == 0:
+		add_part_to_list(file_path, button, file_name)
+	elif stage == 1:
+		add_component_to_list(file_path, button, file_name)
 	change_button_icon_and_text(button, file_path, file_name)
+
+
+func add_component_to_list(path, button, name):
+	#connect signal
+	components_container.add_child(button)
+	
+func add_part_to_list(path, button, name):
+	# Connect the button to a function that will handle instantiating the resource
+	button.pressed.connect(self.resource_button_pressed.bind(path))
+	parts_container.add_child(button) #Add button to the grid container
 
 
 func change_button_icon_and_text(button : Button, path : String, name : String):
 	var file_scene = load(path)
 	var part_preview
-	var instance = file_scene.instantiate()
+	var instance
+	if path.ends_with(".tscn"):
+		instance = file_scene.instantiate()
 	#If scene is an EntityPart, use its data
 	if instance is EntityPart:
 		part_preview = instance.thumbnail
@@ -143,15 +164,17 @@ func change_button_icon_and_text(button : Button, path : String, name : String):
 		button.text = instance.preview_name + " : \n" + key
 		if part_preview:
 			button.icon = part_preview
+		else:
+			button.icon = BLACKOUTLINEARM
 	else:
-		button.icon = BLACKOUTLINEARM
+		button.icon = DNA
 		button.text = name
 
 
 #Adding a new label means we are entering a new subfolder or showing "Empty"
 func add_grid_label(label, header : bool = true):
 	var label_to_add = Label.new()
-	item_container.add_child(label_to_add)
+	parts_container.add_child(label_to_add)
 	if header:
 		label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
 	else:
@@ -175,7 +198,7 @@ func resource_button_pressed(resource: String):
 	
 	
 func clear_container():
-	var children = item_container.get_children()
+	var children = parts_container.get_children()
 	for child in children:
 		child.free()
 

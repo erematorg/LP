@@ -22,7 +22,7 @@ outline_color = Color(0, 0, 0, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cc6ja"]
 bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 
-[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "path_label", "current_scene_label", "item_container")]
+[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "path_label", "current_scene_label", "parts_container", "components_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,7 +38,8 @@ socket_button = NodePath("Panel/SocketButton")
 file_dialog = NodePath("FileDialog")
 path_label = NodePath("Panel/Path_Label")
 current_scene_label = NodePath("Panel/CurrentSceneLabel")
-item_container = NodePath("PartsPanel/ScrollContainer/BoxContainer")
+parts_container = NodePath("PartsPanel/ScrollContainer/BoxContainer")
+components_container = NodePath("ComponentsPanel/ScrollContainer/BoxContainer")
 
 [node name="FileDialog" type="FileDialog" parent="."]
 size = Vector2i(303, 630)
@@ -152,6 +153,7 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="PartsPanel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -190,6 +192,7 @@ text = "Parts:"
 label_settings = SubResource("LabelSettings_v55td")
 
 [node name="ComponentsPanel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
