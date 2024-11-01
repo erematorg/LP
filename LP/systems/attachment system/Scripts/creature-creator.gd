@@ -47,8 +47,7 @@ func new_entity_in_scene(entity : EntityPart):
 func new_socket_in_scene(socket : AttachmentSocket):
 	if not socket or socket_stack_pairs.has(socket):
 		return
-	self.add_child(socket)
-	socket.owner = self
+	add_new_node(self, socket)
 	socket.tree_exited.connect(remove_socket.bind(socket))
 	add_stack_for_socket(socket)
 	socket.init_cc(self)
@@ -68,9 +67,8 @@ func new_component_in_scene(component : String):
 	#create node
 	var new_node = Node.new()
 	new_node.set_script(script)
-	component_node.add_child(new_node)
+	add_new_node(component_node, new_node)
 	new_node.name = script.get_global_name()+"_node"
-	new_node.owner = self
 	print("New node created and script attached from path:", component)
 
 
