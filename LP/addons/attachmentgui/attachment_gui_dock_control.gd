@@ -13,10 +13,9 @@ var current_creature_scene : PackedScene
 @export var edit_button : Button
 @export var socket_button : Button
 @export var file_dialog : FileDialog
+@export var select_dialog : FileDialog
 @export var path_label : Label
 @export var current_scene_label : Label
-@onready var component_part_check: CheckButton = $CheckButton
-
 
 #Body parts / Entitites
 var stage : int = 0
@@ -64,6 +63,10 @@ func _on_new_button_pressed() -> void:
 	ensure_components()
 	file_dialog.popup_centered()
 
+## Selecting a creature scene!
+func _on_select_button_pressed() -> void:
+	ensure_components()
+	select_dialog.popup_centered()
 
 #When pressing 'Edit' open the new template scene
 func _on_edit_button_pressed() -> void:
@@ -110,7 +113,7 @@ func _on_file_dialog_file_selected(path: String) -> void:
 		save_new_creature()
 	else:
 		print("Error with creating creature" + result)
-		return
+
 
 
 func save_new_creature():
@@ -124,6 +127,21 @@ func save_new_creature():
 		print("Scene saved successfully at: ", path_label.text)
 	else:
 		print("Failed to save scene. Error code: ", error)
+
+
+func select_creature(path : String):
+	path_label.text = path
+	var packedscene = load(path)
+	var scene = packedscene.instantiate()
+	print(path) # string path
+	print(packedscene) #packed scene
+	print(scene) #root of scene
+	if scene:
+		current_creature_scene = packedscene
+		edit_button.disabled = false
+		print("New creature scene selected!")
+	else:
+		print("Error with selecting creature")
 
 
 # Function to add a resource item to the container
@@ -226,7 +244,12 @@ func _on_socket_button_pressed() -> void:
 	spawn_socket.emit(new_socket)
 
 
-func _on_check_button_toggled(toggled_on: bool) -> void:
-	parts_panel.visible = toggled_on
-	components_panel.visible = !toggled_on
-	component_part_check.text = "Components" if components_panel.visible else "Body Parts"
+##Selecting body parts or components to show!
+func _on_selection(index: int) -> void:
+	match index:
+		0:
+			components_panel.visible = true
+			parts_panel.visible = false
+		1: 
+			parts_panel.visible = true
+			components_panel.visible = false

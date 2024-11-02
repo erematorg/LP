@@ -1,10 +1,9 @@
-[gd_scene load_steps=11 format=3 uid="uid://cnyo8q1t475w6"]
+[gd_scene load_steps=10 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
 [ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
 [ext_resource type="PackedScene" uid="uid://054muqtx37p3" path="res://addons/attachmentgui/Scenes/CreatureCreate.tscn" id="2_6gnth"]
 [ext_resource type="LabelSettings" uid="uid://drwy0e5elc4qn" path="res://addons/attachmentgui/attachment_gui_mainlabel.tres" id="4_3i1o5"]
-[ext_resource type="Texture2D" uid="uid://cbnv8bbrn0ku5" path="res://addons/attachmentgui/Sprites/dna_32.png" id="5_d4pyt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i810g"]
 bg_color = Color(0.129412, 0.145098, 0.168627, 1)
@@ -23,7 +22,7 @@ outline_color = Color(0, 0, 0, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cc6ja"]
 bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 
-[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "path_label", "current_scene_label", "parts_container", "components_container")]
+[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "select_dialog", "path_label", "current_scene_label", "parts_container", "components_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,14 +35,23 @@ TEMPLATE_SCENE = ExtResource("2_6gnth")
 new_button = NodePath("Panel/NewButton")
 edit_button = NodePath("Panel/EditButton")
 socket_button = NodePath("Panel/SocketButton")
-file_dialog = NodePath("FileDialog")
+file_dialog = NodePath("CreateFileDialog")
+select_dialog = NodePath("SelectFileDialog")
 path_label = NodePath("Panel/Path_Label")
 current_scene_label = NodePath("Panel/CurrentSceneLabel")
 parts_container = NodePath("PartsPanel/ScrollContainer/BoxContainer")
 components_container = NodePath("ComponentsPanel/ScrollContainer/BoxContainer")
 
-[node name="FileDialog" type="FileDialog" parent="."]
+[node name="CreateFileDialog" type="FileDialog" parent="."]
 size = Vector2i(303, 630)
+
+[node name="SelectFileDialog" type="FileDialog" parent="."]
+auto_translate_mode = 1
+title = "Open a File"
+size = Vector2i(303, 630)
+ok_button_text = "Open"
+file_mode = 0
+filters = PackedStringArray("*.tscn")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -59,14 +67,29 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -176.0
-offset_top = 92.0
-offset_right = -40.0
-offset_bottom = 135.0
+offset_left = -179.0
+offset_top = 102.0
+offset_right = -43.0
+offset_bottom = 145.0
 grow_horizontal = 2
 tooltip_text = "Create a new creature!"
 theme_override_styles/normal = SubResource("StyleBoxFlat_mdbwr")
 text = "New Creature"
+icon = ExtResource("1_rb5mb")
+
+[node name="SelectButton" type="Button" parent="Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 32.0
+offset_top = 123.0
+offset_right = 171.0
+offset_bottom = 166.0
+grow_horizontal = 2
+tooltip_text = "Create a new creature!"
+theme_override_styles/normal = SubResource("StyleBoxFlat_mdbwr")
+text = "Select Creature"
 icon = ExtResource("1_rb5mb")
 
 [node name="EditButton" type="Button" parent="Panel"]
@@ -74,10 +97,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -178.0
-offset_top = 144.0
-offset_right = -40.0
-offset_bottom = 187.0
+offset_left = -181.0
+offset_top = 154.0
+offset_right = -43.0
+offset_bottom = 197.0
 grow_horizontal = 2
 disabled = true
 text = "Edit Creature"
@@ -88,24 +111,25 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -176.0
-offset_top = 199.0
-offset_right = -46.0
-offset_bottom = 242.0
+offset_left = -179.0
+offset_top = 209.0
+offset_right = -49.0
+offset_bottom = 252.0
 grow_horizontal = 2
 text = "Add Socket"
 icon = ExtResource("1_rb5mb")
 
-[node name="SocketButton2" type="Button" parent="Panel"]
+[node name="ExportButton" type="Button" parent="Panel"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -1.0
-offset_top = 144.0
-offset_right = 160.0
-offset_bottom = 187.0
+offset_left = 33.5
+offset_top = 175.0
+offset_right = 194.5
+offset_bottom = 218.0
 grow_horizontal = 2
+disabled = true
 text = "Export Creature"
 icon = ExtResource("1_rb5mb")
 
@@ -143,10 +167,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -36.0
-offset_top = 61.0
-offset_right = 38.0
-offset_bottom = 92.0
+offset_left = -40.0
+offset_top = 72.0
+offset_right = 34.0
+offset_bottom = 103.0
 grow_horizontal = 2
 text = "SCENE:"
 label_settings = ExtResource("4_3i1o5")
@@ -225,22 +249,26 @@ offset_bottom = 34.0
 text = "Components:"
 label_settings = SubResource("LabelSettings_v55td")
 
-[node name="CheckButton" type="CheckButton" parent="."]
+[node name="selection" type="OptionButton" parent="."]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -17.5
+offset_left = -1.5
 offset_top = 260.0
-offset_right = 165.5
+offset_right = 181.5
 offset_bottom = 300.0
 grow_horizontal = 2
-text = "Components"
-icon = ExtResource("5_d4pyt")
+selected = 0
+item_count = 2
+popup/item_0/text = "Components"
+popup/item_1/text = "Body Parts"
+popup/item_1/id = 1
 
-[connection signal="file_selected" from="FileDialog" to="." method="_on_file_dialog_file_selected"]
+[connection signal="file_selected" from="CreateFileDialog" to="." method="_on_file_dialog_file_selected"]
+[connection signal="file_selected" from="SelectFileDialog" to="." method="select_creature"]
 [connection signal="pressed" from="Panel/NewButton" to="." method="_on_new_button_pressed"]
+[connection signal="pressed" from="Panel/SelectButton" to="." method="_on_select_button_pressed"]
 [connection signal="pressed" from="Panel/EditButton" to="." method="_on_edit_button_pressed"]
 [connection signal="pressed" from="Panel/SocketButton" to="." method="_on_socket_button_pressed"]
-[connection signal="pressed" from="Panel/SocketButton2" to="." method="_on_socket_button_pressed"]
-[connection signal="toggled" from="CheckButton" to="." method="_on_check_button_toggled"]
+[connection signal="item_selected" from="selection" to="." method="_on_selection"]
