@@ -50,6 +50,7 @@ func assign_new_limb(part : EntityPart):
 
 
 func remove_limb():
+	my_entity.recently_detached = true
 	my_entity = null
 	update_state()
 
@@ -91,8 +92,9 @@ func update_state():
 	find_closest_bone()
 	if my_entity:
 		sprite_2d.texture = BLUE_SOCKET_SMALL
-	elif !my_entity or get_parent() is not Bone2D:
-		sprite_2d.texture = RED_SOCKET_SMALL
 	else:
-		sprite_2d.texture = GREEN_SOCKET_SMALL
+		if get_parent() is not Bone2D:
+			sprite_2d.texture = RED_SOCKET_SMALL
+		else:
+			sprite_2d.texture = GREEN_SOCKET_SMALL
 		

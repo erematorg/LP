@@ -8,6 +8,7 @@ enum type {ANY, BODY, HEAD, APPENDAGE}
 @export var entity_type : type
 var creator : CreatureCreator
 var recently_moved = false
+var recently_detached = false
 var closest_socket : AttachmentSocket
 var last_position : Vector2
 var attached_socket : AttachmentSocket

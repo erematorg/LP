@@ -213,7 +213,7 @@ func _process(delta: float) -> void:
 		if closest_socket:
 			if closest_socket.get_parent() == entity or entity.get_parent() == closest_socket:
 				continue
-			if entity.entity_type == closest_socket.accepted_type:
+			if entity.entity_type == closest_socket.accepted_type or closest_socket.accepted_type == EntityPart.type.ANY:
 				draw_line_between(entity, closest_socket)
 	update_stacks_with_occupied_parts()
 
@@ -249,7 +249,7 @@ func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = show_line_distance
 	for socket : AttachmentSocket in socket_stack_pairs:
-		if socket.placement_mode or not socket.my_entity:
+		if socket.placement_mode or socket.my_entity:
 			continue
 		var dist = entity.global_position.distance_to(socket.global_position)
 		if dist < closest_dist:
@@ -301,32 +301,30 @@ func remove_socket(socket : AttachmentSocket):
 
 func drop_entity():
 	for entity in entities:
-		if not entity:
+		if not entity or not entity.recently_moved:
 			continue
-		if entity.recently_moved:
-			entity.recently_moved = false
-			# Find closest socket if none is remembered
-			var target_socket = entity.closest_socket
-			if not target_socket:
-				target_socket = find_closest_socket(entity)
-			if not target_socket:
-				continue
-			if target_socket.get_parent() == entity or entity.get_parent() == target_socket:
-				continue
-			if entity.entity_type == target_socket.accepted_type: 
-				try_snap(target_socket, entity)
+		if entity.recently_detached:
+			entity.reparent(creature_root)
+			entity.recently_detached = false
+			print("Entity detached fully")
+		entity.recently_moved = false
+		# Find closest socket if none is remembered
+		var target_socket = entity.closest_socket if entity.closest_socket else find_closest_socket(entity)
+		if not target_socket or target_socket.placement_mode:
+			continue
+		if target_socket.get_parent() == entity or entity.get_parent() == target_socket:
+			continue
+		if entity.entity_type == target_socket.accepted_type: 
+			try_snap(target_socket, entity)
 
 
-func try_snap(target_socket : AttachmentSocket, entity):
-	if not target_socket or not entity:
-		return
-	if target_socket.placement_mode:
-		return
+func try_snap(target_socket : AttachmentSocket, entity : EntityPart):
 	# Snap to target socket if within range
 	if target_socket and entity.global_position.distance_to(target_socket.global_position) < snap_distance:
 		entity.snap_to_socket(target_socket)
 	# Clear closest socket for future use
 	entity.closest_socket = null
+
 	
 func add_new_node(parent, child):
 	parent.add_child(child)
