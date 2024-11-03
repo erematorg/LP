@@ -6,9 +6,11 @@
 
 [sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
 
-[node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("creature_root", "component_node")]
+[node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("creature_root", "m_tracker", "line_tracker", "component_node")]
 script = ExtResource("1_ahjc5")
 creature_root = NodePath("CreatureRoot/Skeleton")
+m_tracker = NodePath("MouseTracker")
+line_tracker = NodePath("LineTracker")
 component_node = NodePath("Components")
 metadata/_edit_lock_ = true
 

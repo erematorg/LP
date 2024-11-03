@@ -2,11 +2,9 @@
 extends Node2D
 class_name CreatureCreator
 
-#Socket snap line
+#Socket snap settings
 @export var snap_distance = 8.0
 @export var show_line_distance = 25.0
-@export var far_color = Color.RED
-@export var close_color = Color.GREEN
 
 # Dependencies
 @export var creature_root: Skeleton2D
@@ -16,11 +14,10 @@ class_name CreatureCreator
 
 #Arrays
 @export var entities : Array[EntityPart]
-@export var lines : Array[Line2D]
 @export var socket_stack_pairs: Dictionary = {}
 
-#We have to connect to the signal from this end
-#So we inject the gui, and connect to its spawn signal
+
+## This is our "start/ready" function, called from the attachmentgui
 func inject_attachment_gui(gui : AttachmentGui):
 	if not gui:
 		push_error("gui is null in creature creator!")
@@ -31,6 +28,15 @@ func inject_attachment_gui(gui : AttachmentGui):
 		gui.spawn_socket.connect(new_socket_in_scene)
 	if not gui.spawn_component.is_connected(new_component_in_scene):
 		gui.spawn_component.connect(new_component_in_scene)
+	entities = []
+	if not m_tracker or not line_tracker:
+		push_error("lacking trackers!")
+		return
+	m_tracker.stopped_dragging.connect(drop_entity)
+	find_old_parts()
+	ensure_socket_stack_pairs()
+	call_deferred("update_stacks_with_occupied_parts")
+	line_tracker.init_linetracker(snap_distance, show_line_distance)
 	
 
 func new_entity_in_scene(entity : EntityPart):
@@ -155,19 +161,6 @@ func ensure_skeleton_disabled(entity : EntityPart):
 	print("Please reset skeleton rest pose before enabling stack")
 
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	entities = []
-	lines = []
-	if not m_tracker:
-		push_error("mouse tracker is null!")
-		return
-	m_tracker.stopped_dragging.connect(drop_entity)
-	find_old_parts()
-	ensure_socket_stack_pairs()
-	call_deferred("update_stacks_with_occupied_parts")
-
-
 func find_old_parts():
 	var root = get_tree().root
 	# Call a recursive function to search for the parts
@@ -187,13 +180,6 @@ func search_for_parts(node: Node) -> void:
 		search_for_parts(child)
 
 
-func clear_old_lines():
-	if lines.size() > 0:
-		for line in lines:
-			line.queue_free()
-		lines.clear()
-
-
 func will_process() -> bool:
 	return Engine.is_editor_hint() and not (entities.is_empty() or socket_stack_pairs.is_empty())
 
@@ -205,7 +191,7 @@ func _process(delta: float) -> void:
 	#Only in editor code after this point:
 	if not will_process():
 		return
-	clear_old_lines()
+	line_tracker.clear_old_lines()
 	#Loop throuh each entity, if they have recently moved, prepare to draw lines to sockets
 	for entity in entities:
 		if not entity.recently_moved:
@@ -216,7 +202,7 @@ func _process(delta: float) -> void:
 			if closest_socket.get_parent() == entity or entity.get_parent() == closest_socket:
 				continue
 			if entity.entity_type == closest_socket.accepted_type or closest_socket.accepted_type == EntityPart.type.ANY:
-				draw_line_between(entity, closest_socket)
+				line_tracker.draw_line_between(entity, closest_socket)
 	#update_stacks_with_occupied_parts()
 
 
@@ -265,30 +251,6 @@ func find_closest_socket(entity: EntityPart) -> AttachmentSocket:
 			closest_dist = dist
 			closest_socket = socket
 	return closest_socket
-
-
-# Draw a line between an entity and its closest socket, with dynamic appearance based on distance
-func draw_line_between(entity: EntityPart, closest_socket: AttachmentSocket) -> void:
-	var line = Line2D.new()
-	set_line_visual(line, entity, closest_socket)
-	line.add_point(entity.global_position)
-	line.add_point(closest_socket.global_position)
-	add_child(line)
-	lines.push_back(line)
-
-
-# Set line visual properties based on distance to the closest socket
-func set_line_visual(line: Line2D, entity: EntityPart, closest_socket: AttachmentSocket) -> void:
-	var dist = entity.global_position.distance_to(closest_socket.global_position)
-	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	line.end_cap_mode = Line2D.LINE_CAP_ROUND
-	if dist < snap_distance:
-		line.default_color = close_color
-		line.width = 3.0
-	else:
-		line.default_color = far_color
-		var normalized_dist = clamp((dist - 0.0) / (show_line_distance - 0.0), 0.0, 1.0)
-		line.width = lerp(2.5, 0.1, normalized_dist)
 
 
 func remove_entity(entity : EntityPart):
