@@ -19,8 +19,8 @@ class_name CreatureCreator
 
 ## This is our "start/ready" function, called from the attachmentgui
 func inject_attachment_gui(gui : AttachmentGui):
-	if not gui:
-		push_error("gui is null in creature creator!")
+	if not gui or not m_tracker or not line_tracker:
+		push_error("Lacking required dependencies! - CretureCreator inject_attachment_gui")
 		return
 	if not gui.spawn_entity.is_connected(new_entity_in_scene):
 		gui.spawn_entity.connect(new_entity_in_scene)
@@ -28,16 +28,13 @@ func inject_attachment_gui(gui : AttachmentGui):
 		gui.spawn_socket.connect(new_socket_in_scene)
 	if not gui.spawn_component.is_connected(new_component_in_scene):
 		gui.spawn_component.connect(new_component_in_scene)
-	entities = []
-	if not m_tracker or not line_tracker:
-		push_error("lacking trackers!")
-		return
 	m_tracker.stopped_dragging.connect(drop_entity)
+	entities = []
 	find_old_parts()
 	ensure_socket_stack_pairs()
 	call_deferred("update_stacks_with_occupied_parts")
 	line_tracker.init_linetracker(snap_distance, show_line_distance)
-	
+
 
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
@@ -183,7 +180,6 @@ func search_for_parts(node: Node) -> void:
 func will_process() -> bool:
 	return Engine.is_editor_hint() and not (entities.is_empty() or socket_stack_pairs.is_empty())
 
-
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
 	#Runtime code here if needed
@@ -203,7 +199,6 @@ func _process(delta: float) -> void:
 				continue
 			if entity.entity_type == closest_socket.accepted_type or closest_socket.accepted_type == EntityPart.type.ANY:
 				line_tracker.draw_line_between(entity, closest_socket)
-	#update_stacks_with_occupied_parts()
 
 
 # Update each socket-modification stack with the occupied part’s skeleton index
@@ -236,7 +231,6 @@ func get_chain_length(bone: Bone2D) -> int:
 		if child is Bone2D:
 			length += get_chain_length(child)  # Add child chain lengths recursively
 	return length
-
 
 
  #Find the closest socket to a given entity
