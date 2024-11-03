@@ -10,7 +10,8 @@ class_name CreatureCreator
 
 # Dependencies
 @export var creature_root: Skeleton2D
-@export var m_tracker : mouse_tracker
+@export var m_tracker : MouseTracker
+@export var line_tracker : LineTracker
 @export var component_node : Node
 
 #Arrays
@@ -164,6 +165,7 @@ func _ready() -> void:
 	m_tracker.stopped_dragging.connect(drop_entity)
 	find_old_parts()
 	ensure_socket_stack_pairs()
+	call_deferred("update_stacks_with_occupied_parts")
 
 
 func find_old_parts():
@@ -215,33 +217,40 @@ func _process(delta: float) -> void:
 				continue
 			if entity.entity_type == closest_socket.accepted_type or closest_socket.accepted_type == EntityPart.type.ANY:
 				draw_line_between(entity, closest_socket)
-	update_stacks_with_occupied_parts()
+	#update_stacks_with_occupied_parts()
 
 
-# Loop through all socket-modification pairs and set each stack’s first joint
+# Update each socket-modification stack with the occupied part’s skeleton index
 func update_stacks_with_occupied_parts():
-	for socket : AttachmentSocket in socket_stack_pairs:
+	for socket in socket_stack_pairs:
 		var stack : SkeletonModification2DCCDIK = socket_stack_pairs[socket]
 		if not stack or socket.my_entity == null:
 			continue
-		# Check if the socket is occupied
+
 		var occupying_part = socket.my_entity
 		if occupying_part is Bone2D:
-			var chain_length = 1 + get_chain_length(occupying_part)
+			# Calculate chain length from this bone
+			var chain_length = get_chain_length(occupying_part)
 			stack.ccdik_data_chain_length = chain_length
-			# Set each joint index in the stack based on the calculated chain length
-			for j in range(chain_length):
-				stack.set_ccdik_joint_bone_index(j, j)
+			
+			# Traverse through the bone chain to set joint indices in the stack
+			var current_bone = occupying_part
+			for i in range(chain_length):
+				if current_bone:
+					stack.set_ccdik_joint_bone_index(i, current_bone.get_index_in_skeleton())
+					# Move to the next child that is also a Bone2D, if available
+					current_bone = current_bone.get_child(0) if current_bone.get_child_count() > 0 and current_bone.get_child(0) is Bone2D else null
 
 
 # Helper function to calculate the chain length recursively
 func get_chain_length(bone: Bone2D) -> int:
-	var length : int = 0
-	for i in bone.get_child_count():
+	var length : int = 1  # Start with 1 to count the current bone
+	for i in range(bone.get_child_count()):
 		var child = bone.get_child(i)
 		if child is Bone2D:
-			length += get_chain_length(child)
+			length += get_chain_length(child)  # Add child chain lengths recursively
 	return length
+
 
 
  #Find the closest socket to a given entity
@@ -316,6 +325,7 @@ func drop_entity():
 			continue
 		if entity.entity_type == target_socket.accepted_type: 
 			try_snap(target_socket, entity)
+	call_deferred("update_stacks_with_occupied_parts")
 
 
 func try_snap(target_socket : AttachmentSocket, entity : EntityPart):
