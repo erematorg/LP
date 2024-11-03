@@ -115,7 +115,6 @@ func _on_file_dialog_file_selected(path: String) -> void:
 		print("Error with creating creature" + result)
 
 
-
 func save_new_creature():
 	var savelabel
 	if path_label.text.ends_with(".tscn"):
