@@ -24,7 +24,7 @@ func inject_creature_creator(cc : CreatureCreator):
 
 
 func snap_to_socket(socket : AttachmentSocket):
-	if not socket or socket.placement_mode:
+	if not socket or socket.enabled:
 		push_error("socket is null!")
 		return
 	
