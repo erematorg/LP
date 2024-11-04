@@ -98,13 +98,17 @@ func update_ik_types():
 					modification_stack.add_modification(correct_stack_type)
 					socket_stack_pairs[socket] = correct_stack_type
 					print("Stack updated")
+	update_stacks_with_occupied_parts()
 
 
 # Update each socket-modification stack with the occupied part’s skeleton index
 func update_stacks_with_occupied_parts():
 	for socket in socket_stack_pairs:
 		var stack = socket_stack_pairs[socket]
-		if not stack or socket.my_entity == null:
+		if not stack:
+			continue
+		if socket.my_entity == null:
+			nullify_stack(stack)
 			continue
 		#Check the entity is correct
 		var occupying_part = socket.my_entity
@@ -119,6 +123,13 @@ func update_stacks_with_occupied_parts():
 			update_fabrik(occupying_part, stack, chain_length)
 		else:
 			push_warning("Stack type not recognized")
+
+
+func nullify_stack(stack):
+	if stack is SkeletonModification2DCCDIK:
+		stack.ccdik_data_chain_length = 0
+	elif stack is SkeletonModification2DFABRIK:
+		stack.fabrik_data_chain_length = 0
 
 
 func update_ccdik(first_bone, stack : SkeletonModification2DCCDIK, chain_length : int):
@@ -156,9 +167,8 @@ func update_fabrik(first_bone, stack : SkeletonModification2DFABRIK, chain_lengt
 			stack.set_fabrik_joint_bone_index(i, current_bone.get_index_in_skeleton())
 			#Check that we set the value correctly!
 			if stack.get_fabrik_joint_bone_index(i) == -1:
-				push_warning("Chain Length is wrong!")
-				stack.fabrik_data_chain_length = 0
-				break
+				push_warning("Chain indicies are wrong!")
+				##No need to break for FABRIK
 			# Move to the next bone in the chain
 			current_bone = next_bone_in_chain(current_bone)
 	
