@@ -90,9 +90,6 @@ func will_process() -> bool:
 
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
-	#Runtime code here if needed
-	##
-	#Only in editor code after this point:
 	if not will_process():
 		return
 	line_tracker.clear_old_lines()

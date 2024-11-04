@@ -103,26 +103,53 @@ func update_ik_types():
 # Update each socket-modification stack with the occupied part’s skeleton index
 func update_stacks_with_occupied_parts():
 	for socket in socket_stack_pairs:
-		var stack : SkeletonModification2DCCDIK = socket_stack_pairs[socket]
+		var stack = socket_stack_pairs[socket]
 		if not stack or socket.my_entity == null:
 			continue
+		if stack is SkeletonModification2DCCDIK:
+			update_ccdik(socket, stack)
+		elif stack is SkeletonModification2DFABRIK:
+			update_fabrik(socket, stack)
+		else:
+			push_warning("Stack type not recognized")
 
-		var occupying_part = socket.my_entity
-		if occupying_part is Bone2D:
-			# Calculate chain length from this bone
-			var chain_length = get_chain_length(occupying_part)
-			stack.ccdik_data_chain_length = chain_length
-			
-			# Traverse through the bone chain to set joint indices in the stack
-			var current_bone = occupying_part
-			for i in range(chain_length):
-				if current_bone:
-					print("Bone: " + str(current_bone.name))
-					print("I : " + str(current_bone.get_index_in_skeleton()))
-					stack.set_ccdik_joint_bone_index(i, current_bone.get_index_in_skeleton())
-					# Move to the next child that is also a Bone2D, if available
-					current_bone = current_bone.get_child(0) if current_bone.get_child_count() > 0 and current_bone.get_child(0) is Bone2D else null
 
+func update_ccdik(socket, stack : SkeletonModification2DCCDIK):
+	var occupying_part = socket.my_entity
+	if not occupying_part is Bone2D:
+		push_warning("Ineligible part in socket")
+		return
+		
+	# Calculate chain length from this bone
+	var chain_length = get_chain_length(occupying_part)
+	stack.ccdik_data_chain_length = chain_length
+	print("Updating CCDIK, Chain length: " + str(chain_length))
+	# Traverse through the bone chain to set joint indices in the stack
+	var current_bone = occupying_part
+	for i in range(chain_length):
+		if current_bone:
+			#Set value of new joint
+			stack.set_ccdik_joint_bone_index(i, current_bone.get_index_in_skeleton())
+			#Check that we set the value correctly!
+			if stack.get_ccdik_joint_bone_index(i) == -1:
+				push_warning("Chain Length is wrong!")
+				stack.ccdik_data_chain_length = 0
+				break
+			# Move to the next bone in the chain
+			current_bone = next_bone_in_chain(current_bone)
+
+
+
+func next_bone_in_chain(current_bone : Node2D) -> Node2D:
+	var new_bone = null
+	for i in current_bone.get_children():
+		if i is Bone2D:
+			new_bone = i
+	return new_bone
+
+
+func update_fabrik(socket, stack):
+	pass
 
  #Find the closest socket to a given entity
 func find_closest_socket(entity: EntityPart, distance) -> AttachmentSocket:

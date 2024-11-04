@@ -18,7 +18,6 @@ func _process(delta):
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		drag_time+=delta
 		if drag_time >= max_drag_time and not dragging:
-			print("We are dragging the mouse")
 			dragging = true
 	else:
 		if dragging:
