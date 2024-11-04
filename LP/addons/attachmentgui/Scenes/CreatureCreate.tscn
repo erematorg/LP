@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/creature-creator.gd" id="1_ahjc5"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/line_tracker.gd" id="3_3v5u3"]
-[ext_resource type="Script" path="res://mouse_tracker.gd" id="3_dgbmd"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/mouse_tracker.gd" id="3_dgbmd"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_tracker.gd" id="4_0b8n6"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_tracker.gd" id="5_5eww6"]
 
@@ -15,12 +15,11 @@ m_tracker = NodePath("MouseTracker")
 line_tracker = NodePath("LineTracker")
 attachment_tracker = NodePath("AttachmentTracker")
 entity_tracker = NodePath("EntityTracker")
-component_node = NodePath("Components")
+component_node = NodePath("CreatureRoot/Components")
 metadata/_edit_lock_ = true
 
 [node name="MouseTracker" type="Node" parent="."]
 script = ExtResource("3_dgbmd")
-metadata/_edit_lock_ = true
 
 [node name="LineTracker" type="Node" parent="."]
 script = ExtResource("3_3v5u3")
@@ -32,10 +31,11 @@ skeleton = NodePath("../CreatureRoot/Skeleton")
 [node name="EntityTracker" type="Node" parent="."]
 script = ExtResource("5_5eww6")
 
-[node name="Components" type="Node" parent="."]
-
 [node name="CreatureRoot" type="Node2D" parent="."]
+metadata/_edit_lock_ = true
 
 [node name="Skeleton" type="Skeleton2D" parent="CreatureRoot"]
 modification_stack = SubResource("SkeletonModificationStack2D_gob83")
 metadata/_edit_lock_ = true
+
+[node name="Components" type="Node" parent="CreatureRoot"]
