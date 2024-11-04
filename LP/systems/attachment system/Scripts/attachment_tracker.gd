@@ -106,26 +106,25 @@ func update_stacks_with_occupied_parts():
 		var stack = socket_stack_pairs[socket]
 		if not stack or socket.my_entity == null:
 			continue
+		#Check the entity is correct
+		var occupying_part = socket.my_entity
+		if not occupying_part is Bone2D:
+			push_warning("Ineligible part in socket")
+			continue
+		#Perform update on skeleton
+		var chain_length = get_chain_length(occupying_part)
 		if stack is SkeletonModification2DCCDIK:
-			update_ccdik(socket, stack)
+			update_ccdik(occupying_part, stack, chain_length)
 		elif stack is SkeletonModification2DFABRIK:
-			update_fabrik(socket, stack)
+			update_fabrik(occupying_part, stack, chain_length)
 		else:
 			push_warning("Stack type not recognized")
 
 
-func update_ccdik(socket, stack : SkeletonModification2DCCDIK):
-	var occupying_part = socket.my_entity
-	if not occupying_part is Bone2D:
-		push_warning("Ineligible part in socket")
-		return
-		
-	# Calculate chain length from this bone
-	var chain_length = get_chain_length(occupying_part)
+func update_ccdik(first_bone, stack : SkeletonModification2DCCDIK, chain_length : int):
 	stack.ccdik_data_chain_length = chain_length
-	print("Updating CCDIK, Chain length: " + str(chain_length))
 	# Traverse through the bone chain to set joint indices in the stack
-	var current_bone = occupying_part
+	var current_bone : Bone2D = first_bone
 	for i in range(chain_length):
 		if current_bone:
 			#Set value of new joint
@@ -139,7 +138,6 @@ func update_ccdik(socket, stack : SkeletonModification2DCCDIK):
 			current_bone = next_bone_in_chain(current_bone)
 
 
-
 func next_bone_in_chain(current_bone : Node2D) -> Node2D:
 	var new_bone = null
 	for i in current_bone.get_children():
@@ -148,9 +146,22 @@ func next_bone_in_chain(current_bone : Node2D) -> Node2D:
 	return new_bone
 
 
-func update_fabrik(socket, stack):
-	pass
-
+func update_fabrik(first_bone, stack : SkeletonModification2DFABRIK, chain_length : int):
+	stack.fabrik_data_chain_length = chain_length
+	# Traverse through the bone chain to set joint indices in the stack
+	var current_bone : Bone2D = first_bone
+	for i in range(chain_length):
+		if current_bone:
+			#Set value of new joint
+			stack.set_fabrik_joint_bone_index(i, current_bone.get_index_in_skeleton())
+			#Check that we set the value correctly!
+			if stack.get_fabrik_joint_bone_index(i) == -1:
+				push_warning("Chain Length is wrong!")
+				stack.fabrik_data_chain_length = 0
+				break
+			# Move to the next bone in the chain
+			current_bone = next_bone_in_chain(current_bone)
+	
  #Find the closest socket to a given entity
 func find_closest_socket(entity: EntityPart, distance) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
