@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bgy331qvc86ml"
-path="res://.godot/imported/ant_midsection_thumbnail.png-f78daaf1d71a8e5a8f0f34c7b4e51b66.ctex"
+path="res://.godot/imported/ant_midsection_thumbnail.png-9c97f6790b2aec93680a3d33e605a5ff.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Entities/Ant/sprites/ant_midsection_thumbnail.png"
-dest_files=["res://.godot/imported/ant_midsection_thumbnail.png-f78daaf1d71a8e5a8f0f34c7b4e51b66.ctex"]
+source_file="res://entities/Ant/sprites/ant_midsection_thumbnail.png"
+dest_files=["res://.godot/imported/ant_midsection_thumbnail.png-9c97f6790b2aec93680a3d33e605a5ff.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c6y48n3xrgq6n"
-path="res://.godot/imported/ant_abdomen_thumbnail.png-c3821d1b14026dc35953806c5468dc4a.ctex"
+path="res://.godot/imported/ant_abdomen_thumbnail.png-95d38efa5ca9343acf8de9be168c17cf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Entities/Ant/sprites/ant_abdomen_thumbnail.png"
-dest_files=["res://.godot/imported/ant_abdomen_thumbnail.png-c3821d1b14026dc35953806c5468dc4a.ctex"]
+source_file="res://entities/Ant/sprites/ant_abdomen_thumbnail.png"
+dest_files=["res://.godot/imported/ant_abdomen_thumbnail.png-95d38efa5ca9343acf8de9be168c17cf.ctex"]
 
 [params]
 
