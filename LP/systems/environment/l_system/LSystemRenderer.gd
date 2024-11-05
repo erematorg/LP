@@ -13,12 +13,15 @@ var default_length: float
 # Rendering configuration
 @export var use_multimesh: bool = true  # Enable MultiMesh by default
 var branch_count: int
+var leaf_count: int
 
 # MultiMesh setup
 var multimesh_instance: MultiMeshInstance2D
 var branch_multimesh: MultiMesh
 var root_multimesh_instance: MultiMeshInstance2D
 var root_multimesh: MultiMesh
+var leaf_multimesh_instance: MultiMeshInstance2D
+var leaf_multimesh: MultiMesh
 
 # Branch density control
 @export var branch_density: float = 1.0
@@ -34,6 +37,7 @@ var root_multimesh: MultiMesh
 # Color configuration (for shader usage)
 @export var branch_color: Color = Color(0.0, 1.0, 0.0)
 @export var root_color: Color = Color(0.4, 0.2, 0.0)
+@export var leaf_color: Color = Color(0.0, 0.8, 0.0)
 
 # Wind effect parameters
 @export var wind_radius: float = 100.0
@@ -52,6 +56,7 @@ var time_passed: float = 0.0  # Time tracker for wind oscillation
 # Cached mesh sizes
 var cached_branch_mesh_size: Vector2
 var cached_root_mesh_size: Vector2
+var cached_leaf_mesh_size: Vector2
 
 # Called when the node enters the scene tree
 func _ready():
@@ -60,6 +65,7 @@ func _ready():
 	if use_multimesh:
 		_prepare_multimesh()
 		_prepare_root_multimesh()
+		_prepare_leaf_multimesh()
 		apply_shader()  # Apply the shader
 
 	set_process(true)
@@ -69,6 +75,7 @@ func _connect_to_l_system_manager():
 	var manager = get_parent().get_node("LSystemManager")
 	if manager != null:
 		manager.connect("l_system_changed", Callable(self, "_on_l_system_changed"))
+		manager.connect("lifecycle_stage_changed", Callable(self, "_on_lifecycle_stage_changed"))
 
 # Prepare the MultiMesh for branches
 func _prepare_multimesh():
@@ -100,6 +107,21 @@ func _prepare_root_multimesh():
 	root_multimesh_instance.multimesh = root_multimesh
 	add_child(root_multimesh_instance)
 
+# Prepare the MultiMesh for leaves
+func _prepare_leaf_multimesh():
+	leaf_multimesh_instance = MultiMeshInstance2D.new()
+	leaf_multimesh = MultiMesh.new()
+	leaf_multimesh.transform_format = MultiMesh.TRANSFORM_2D
+
+	# Basic quad mesh for each leaf
+	var leaf_mesh := QuadMesh.new()
+	leaf_mesh.size = Vector2(5, 5)  # Adjust size for leaf representation
+	leaf_multimesh.mesh = leaf_mesh
+	cached_leaf_mesh_size = leaf_mesh.size
+	
+	leaf_multimesh_instance.multimesh = leaf_multimesh
+	add_child(leaf_multimesh_instance)
+
 # Apply the shader to the MultiMeshInstance2D
 func apply_shader():
 	# Load the shader from the .gdshader file
@@ -119,9 +141,17 @@ func apply_shader():
 	root_material.set_shader_parameter("root_color", root_color)  # Set root color from inspector
 	root_multimesh_instance.material = root_material
 
+	# Leaf material
+	var leaf_material = ShaderMaterial.new()
+	leaf_material.shader = shader
+	leaf_material.set_shader_parameter("is_leaf", true)  # Set shader parameter directly
+	leaf_material.set_shader_parameter("leaf_color", leaf_color)  # Set leaf color from inspector
+	leaf_multimesh_instance.material = leaf_material
+
 	# Debugging to confirm shader application
 	print("Branch Shader Material Assigned: ", multimesh_instance.material)
 	print("Root Shader Material Assigned: ", root_multimesh_instance.material)
+	print("Leaf Shader Material Assigned: ", leaf_multimesh_instance.material)
 
 # Handle L-System updates
 func _on_l_system_changed(new_l_system: LSystem, new_root_system: LSystem):
@@ -131,18 +161,37 @@ func _on_l_system_changed(new_l_system: LSystem, new_root_system: LSystem):
 		root_system = new_root_system
 
 	if l_system == null or root_system == null:
-		print("L-System or Root-System is null. Skipping update.")
+		push_error("L-System or Root-System is null. Skipping update.")
 		return
 
-	cached_l_string = l_system.generate()
-	branch_count = int(cached_l_string.length() * branch_density)  # Adjust branch count based on density
-	branch_multimesh.instance_count = branch_count
-	cached_root_string = root_system.generate()
-	var root_count = int(cached_root_string.length() * root_density)
-	root_multimesh.instance_count = root_count
+	var new_l_string = l_system.generate()
+	print("Generated L-System String: ", new_l_string)  # Print L-System string to verify leaf generation
+	if new_l_string != cached_l_string:
+		cached_l_string = new_l_string
+		branch_count = int(cached_l_string.length() * branch_density)  # Adjust branch count based on density
+		branch_multimesh.instance_count = branch_count
 	
-	if root_count > 0:
+	# Count the number of leaves
+	leaf_count = cached_l_string.count("L")
+	leaf_multimesh.instance_count = leaf_count
+
+	var new_root_string = root_system.generate()
+	if new_root_string != cached_root_string:
+		cached_root_string = new_root_string
+		var root_count = int(cached_root_string.length() * root_density)
+		root_multimesh.instance_count = root_count
+	
+	if root_multimesh.instance_count > 0:
 		_update_multimesh()
+
+# Handle lifecycle stage updates
+func _on_lifecycle_stage_changed(stage_index: int, stage_data: Dictionary):
+	if stage_data.has("color"):
+		branch_color = stage_data["color"]
+		root_color = stage_data["color"]
+		leaf_color = stage_data["color"]
+		apply_shader()
+		print("Lifecycle stage changed. Updated colors to: ", branch_color)
 
 # Generate and position branches using MultiMesh, applying wind effect and Bezier-like curvature
 func _generate_multimesh_branches():
@@ -204,6 +253,11 @@ func _generate_multimesh_branches():
 
 				pos = next_pos
 				depth += 1
+				index += 1
+			"L":
+				# Handle leaf positioning
+				var leaf_transform = Transform2D().translated(pos)
+				_set_multimesh_leaf(index, leaf_transform)
 				index += 1
 			"+": angle += deg_to_rad(l_system.angle)
 			"-": angle -= deg_to_rad(l_system.angle)
@@ -277,7 +331,7 @@ func _generate_multimesh_roots():
 func _set_multimesh_branch(index: int, branch_transform: Transform2D, thickness: float):
 	# Adjust the size of the branch based on thickness
 	var new_size = Vector2(l_system.length, thickness)
-	if cached_branch_mesh_size != new_size:
+	if !is_equal_approx(cached_branch_mesh_size.x, new_size.x) or !is_equal_approx(cached_branch_mesh_size.y, new_size.y):
 		cached_branch_mesh_size = new_size
 		branch_multimesh.mesh.size = cached_branch_mesh_size
 
@@ -291,6 +345,10 @@ func _set_multimesh_root(index: int, root_transform: Transform2D, thickness: flo
 		cached_root_mesh_size = new_size
 		root_multimesh.mesh.size = cached_root_mesh_size
 	root_multimesh_instance.multimesh.set_instance_transform_2d(index, root_transform)
+
+# Set the transform for each leaf in the MultiMesh
+func _set_multimesh_leaf(index: int, leaf_transform: Transform2D):
+	leaf_multimesh.set_instance_transform_2d(index, leaf_transform)
 
 # Update process to handle dynamic wind and redraw branches
 func _process(delta):
@@ -311,8 +369,14 @@ func change_stage(stage_index: int):
 		current_stage = manager.lifecycle_stages[stage_index]
 		
 		# Update appearance, like color, size, etc., if needed
-		cached_l_string = l_system.generate()  # Update cached string on stage change
-		cached_root_string = root_system.generate()  # Update cached root string on stage change
+		var new_l_string = l_system.generate()
+		if new_l_string != cached_l_string:
+			cached_l_string = new_l_string
+		
+		var new_root_string = root_system.generate()
+		if new_root_string != cached_root_string:
+			cached_root_string = new_root_string
+		
 		_update_multimesh()
 		queue_redraw()
 	else:
