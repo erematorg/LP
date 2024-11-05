@@ -26,6 +26,10 @@ WeatherGlobals="*res://systems/weather_system/WeatherGlobals.gd"
 
 project/assembly_name="LP"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/attachmentgui/plugin.cfg")
+
 [filesystem]
 
 import/blender/enabled=false

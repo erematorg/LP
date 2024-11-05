@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://b770i6xirvt7d"]
+
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_part.gd" id="1_o4cwo"]
+[ext_resource type="Texture2D" uid="uid://bq3jwty518rk2" path="res://entities/Ant/sprites/ant_hind_leg.png" id="2_i3268"]
+[ext_resource type="Texture2D" uid="uid://bvbqpdi5bgj6s" path="res://entities/Ant/sprites/ant_hind_leg_thumbnail.png" id="2_rh401"]
+
+[node name="AntFoot" type="Bone2D"]
+script = ExtResource("1_o4cwo")
+thumbnail = ExtResource("2_rh401")
+preview_name = "Hind Leg"
+entity_type = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-8, 2)
+texture = ExtResource("2_i3268")
+
+[node name="Bone2D" type="Bone2D" parent="."]
+position = Vector2(-8, -5)
+auto_calculate_length_and_angle = false
+length = 13.0
+bone_angle = -240.0
