@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvbqpdi5bgj6s"
-path="res://.godot/imported/ant_hind_leg_thumbnail.png-492d78ca261a1d9524d820e03112fe90.ctex"
+path="res://.godot/imported/ant_hind_leg_thumbnail.png-a1148033d958469c4aca995322364a42.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Entities/Ant/sprites/ant_hind_leg_thumbnail.png"
-dest_files=["res://.godot/imported/ant_hind_leg_thumbnail.png-492d78ca261a1d9524d820e03112fe90.ctex"]
+source_file="res://entities/Ant/sprites/ant_hind_leg_thumbnail.png"
+dest_files=["res://.godot/imported/ant_hind_leg_thumbnail.png-a1148033d958469c4aca995322364a42.ctex"]
 
 [params]
 

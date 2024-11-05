@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dpaua4n1als26"
-path="res://.godot/imported/ant_front_leg.png-0342e212354feaffa68c3b7da19bb495.ctex"
+path="res://.godot/imported/ant_front_leg.png-5aa9f018232d5d93aab19b14e1e92da9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Entities/Ant/sprites/ant_front_leg.png"
-dest_files=["res://.godot/imported/ant_front_leg.png-0342e212354feaffa68c3b7da19bb495.ctex"]
+source_file="res://entities/Ant/sprites/ant_front_leg.png"
+dest_files=["res://.godot/imported/ant_front_leg.png-5aa9f018232d5d93aab19b14e1e92da9.ctex"]
 
 [params]
 
