@@ -44,7 +44,7 @@ func drop_entity():
 		entity.recently_moved = false
 		# Find closest socket if none is remembered
 		var target_socket = entity.closest_socket if entity.closest_socket else attachment_tracker.find_closest_socket(entity, max_line_dist)
-		if not target_socket or target_socket.enabled:
+		if not target_socket or not target_socket.enabled:
 			continue
 		if target_socket.get_parent() == entity or entity.get_parent() == target_socket:
 			continue

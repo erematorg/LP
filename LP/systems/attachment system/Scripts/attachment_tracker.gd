@@ -177,7 +177,7 @@ func find_closest_socket(entity: EntityPart, distance) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = distance
 	for socket : AttachmentSocket in socket_stack_pairs:
-		if socket.enabled or socket.my_entity:
+		if not socket.enabled or socket.my_entity:
 			continue
 		var dist = entity.global_position.distance_to(socket.global_position)
 		if dist < closest_dist:

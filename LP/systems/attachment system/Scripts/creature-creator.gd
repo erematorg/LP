@@ -45,9 +45,10 @@ func new_entity_in_scene(entity : EntityPart):
 func new_socket_in_scene(socket : AttachmentSocket):
 	if not socket:
 		return
-	socket.init_cc(self)
 	add_new_node(self, socket)
 	attachment_tracker.new_socket(socket)
+	socket.request_entity_reparent.connect(find_close_entity)
+	socket.request_ik_update.connect(attachment_tracker.update_ik_types)
 
 
 func new_component_in_scene(component : String):
@@ -110,13 +111,14 @@ func add_new_node(parent, child):
 	parent.add_child(child)
 	child.owner = self
 
-func find_close_entity(socket : AttachmentSocket, source_entity):
+
+func find_close_entity(socket : AttachmentSocket):
 	var closest_bone
 	var closest_dist = INF
 	for entity in entity_tracker.entities:
-		if source_entity == entity:
+		if entity == socket.my_entity:
 			continue
-		var dist = global_position.distance_to(entity.global_position)
+		var dist = socket.global_position.distance_to(entity.global_position)
 		if dist < closest_dist:
 			closest_bone = entity
 			closest_dist = dist
