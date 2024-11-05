@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://tjw6nojtcd"]
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_part.gd" id="1_fxuv8"]
-[ext_resource type="Texture2D" uid="uid://c6y48n3xrgq6n" path="res://Entities/Ant/sprites/ant_abdomen_thumbnail.png" id="2_8jphx"]
-[ext_resource type="Texture2D" uid="uid://cyk8k08sg2yod" path="res://Entities/Ant/sprites/ant_abdomen.png" id="2_ehi13"]
+[ext_resource type="Texture2D" uid="uid://c6y48n3xrgq6n" path="res://entities/Ant/sprites/ant_abdomen_thumbnail.png" id="2_8jphx"]
+[ext_resource type="Texture2D" uid="uid://cyk8k08sg2yod" path="res://entities/Ant/sprites/ant_abdomen.png" id="2_ehi13"]
 
 [node name="AntAbdomen" type="Bone2D"]
 process_mode = 3
