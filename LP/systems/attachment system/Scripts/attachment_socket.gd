@@ -1,5 +1,5 @@
 @tool
-@icon("res://systems/attachment system/socket.png")
+@icon("res://addons/attachmentgui/Sprites/socket.png")
 extends Node2D
 class_name AttachmentSocket
 
@@ -22,7 +22,6 @@ signal request_entity_reparent(socket)
 var my_entity : EntityPart
 
 #Visuals
-var socket_icon = preload("res://systems/attachment system/socket.png")
 const GREEN_SOCKET_SMALL = preload("res://addons/attachmentgui/Sprites/green_socket_small.png")
 const RED_SOCKET_SMALL = preload("res://addons/attachmentgui/Sprites/red_socket_small.png")
 const GRAY_SOCKET_SMALL = preload("res://addons/attachmentgui/Sprites/gray_socket_small.png")
