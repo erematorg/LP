@@ -20,19 +20,22 @@ func inject_attachment_gui(gui : AttachmentGui):
 	if not gui or not m_tracker or not line_tracker:
 		push_error("Lacking required dependencies! - CretureCreator inject_attachment_gui")
 		return
-	if not gui.spawn_entity.is_connected(new_entity_in_scene):
-		gui.spawn_entity.connect(new_entity_in_scene)
-	if not gui.spawn_socket.is_connected(new_socket_in_scene):
-		gui.spawn_socket.connect(new_socket_in_scene)
-	if not gui.spawn_component.is_connected(new_component_in_scene):
-		gui.spawn_component.connect(new_component_in_scene)
-	m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
+	connect_signals(gui)
 	find_old_parts()
 	attachment_tracker.ensure_socket_stack_pairs()
 	attachment_tracker.update_stacks_with_occupied_parts()
 	line_tracker.init_linetracker(snap_distance, show_line_distance)
 	entity_tracker.init_tracker(creature_root, attachment_tracker, snap_distance, show_line_distance)
 
+func connect_signals(gui):
+	if not gui.spawn_entity.is_connected(new_entity_in_scene):
+		gui.spawn_entity.connect(new_entity_in_scene)
+	if not gui.spawn_socket.is_connected(new_socket_in_scene):
+		gui.spawn_socket.connect(new_socket_in_scene)
+	if not gui.spawn_component.is_connected(new_component_in_scene):
+		gui.spawn_component.connect(new_component_in_scene)
+	if not m_tracker.stopped_dragging.is_connected(entity_tracker.drop_entity):
+		m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
 
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
