@@ -20,22 +20,19 @@ func inject_attachment_gui(gui : AttachmentGui):
 	if not gui or not m_tracker or not line_tracker:
 		push_error("Lacking required dependencies! - CretureCreator inject_attachment_gui")
 		return
-	connect_signals(gui)
-	find_old_parts()
-	attachment_tracker.ensure_socket_stack_pairs()
-	attachment_tracker.update_stacks_with_occupied_parts()
-	line_tracker.init_linetracker(snap_distance, show_line_distance)
-	entity_tracker.init_tracker(creature_root, attachment_tracker, snap_distance, show_line_distance)
-
-func connect_signals(gui):
 	if not gui.spawn_entity.is_connected(new_entity_in_scene):
 		gui.spawn_entity.connect(new_entity_in_scene)
 	if not gui.spawn_socket.is_connected(new_socket_in_scene):
 		gui.spawn_socket.connect(new_socket_in_scene)
 	if not gui.spawn_component.is_connected(new_component_in_scene):
 		gui.spawn_component.connect(new_component_in_scene)
-	if not m_tracker.stopped_dragging.is_connected(entity_tracker.drop_entity):
-		m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
+	m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
+	find_old_parts()
+	attachment_tracker.ensure_socket_stack_pairs()
+	attachment_tracker.update_stacks_with_occupied_parts()
+	line_tracker.init_linetracker(snap_distance, show_line_distance)
+	entity_tracker.init_tracker(creature_root, attachment_tracker, snap_distance, show_line_distance)
+
 
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
@@ -116,15 +113,24 @@ func add_new_node(parent, child):
 
 
 func find_close_entity(socket : AttachmentSocket):
-	var closest_bone
+	var closest_bone = null
 	var closest_dist = INF
+	var socket_pos = socket.global_position  # Cache the socket position
+
 	for entity in entity_tracker.entities:
+		# Skip if the entity is the same as the socket's entity
 		if entity == socket.my_entity:
 			continue
-		var dist = socket.global_position.distance_to(entity.global_position)
+		
+		# Calculate distance to current entity
+		var dist = socket_pos.distance_to(entity.global_position)
+		
+		# Update closest entity if this one is closer
 		if dist < closest_dist:
 			closest_bone = entity
 			closest_dist = dist
+
+	# Attach to the closest entity if found
 	if closest_bone:
 		socket.reparent(closest_bone)
 		attachment_tracker.new_socket(socket)

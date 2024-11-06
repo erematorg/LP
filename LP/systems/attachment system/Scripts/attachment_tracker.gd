@@ -15,13 +15,24 @@ func new_socket(socket : AttachmentSocket):
 	ensure_socket_stack_pairs()
 
 
-func remove_socket(socket : AttachmentSocket):
+func remove_socket(socket: AttachmentSocket):
+	# Clear the entity association
 	socket.my_entity = null
 	socket.update_state()
-	print("User removed an entity: " + socket.name)
-	remove_stack_for_socket(socket)
-	socket_stack_pairs.erase(socket)
+	
+	# Log the removal for debugging
+	print("User removed a socket: " + socket.name)
+	
+	# Remove the socket from stack pairs if it exists
+	if socket in socket_stack_pairs:
+		remove_stack_for_socket(socket)
+		socket_stack_pairs.erase(socket)
+	else:
+		print("Attempted to remove a non-existent socket from stack pairs: " + socket.name)
+	
+	# Ensure integrity of socket-stack pairs after removal
 	ensure_socket_stack_pairs()
+
 
 
 func add_stack_for_socket(socket: AttachmentSocket):

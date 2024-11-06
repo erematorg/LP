@@ -36,37 +36,47 @@ func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
 
-func load_resources_from_folder(receiver : AttachmentGui, target : String, folder_path : String = entities_folder):
+func load_resources_from_folder(receiver: AttachmentGui, target: String, folder_path: String = entities_folder):
 	var dir = DirAccess.open(folder_path)
 	dock_gui = receiver
+
+	# Early exit if any critical argument is null or directory is invalid
 	if receiver == null or dock_gui == null or not dir:
-		push_error("Dock/Receiver/FolderPath is null - AttachmentEditor")
+		push_error("Dock/Receiver/FolderPath is null or invalid - AttachmentEditor")
 		return
+	
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	var files_found = 0
 
 	# Loop through the directory entries
 	while file_name != "":
+		# Avoid processing special entries
 		if file_name == "." or file_name == "..":
-			print("avoiding special folder: " + file_name )
+			file_name = dir.get_next()
 			continue
-		var file_path = folder_path + "/"+ file_name
-		
+
+		var file_path = folder_path + "/" + file_name
+
 		if dir.current_is_dir():
 			# Recursive call for directories
 			var secondary_dir = DirAccess.open(file_path)
 			if secondary_dir and secondary_dir.get_files().size() > 0:
-				receiver.add_grid_label(file_name + ":")  # Add the folder name as a label
-			load_resources_from_folder(dock_gui, target, file_path)  # Pass target as well for consistency
+				receiver.add_grid_label(file_name + ":")  # Add folder name as a label
+			load_resources_from_folder(dock_gui, target, file_path)
 		else:
-			# If it's a file, check if it's a target resource
+			# Process only files that match the target resource type
 			if file_name.ends_with(target):
 				receiver.add_resource_item(file_path, file_name)
 				files_found += 1
 
+		# Move to the next file
 		file_name = dir.get_next()
 	dir.list_dir_end()
-	print("Found " + str(files_found) + " files in " + folder_path)
+
+	# Log the number of found files
+	print("Found " + str(files_found) + " file(s) in " + folder_path)
+	
+	# If no files were found in a subfolder, add an "-Empty-" label
 	if files_found < 1 and folder_path != entities_folder:
 		receiver.add_grid_label("-Empty-", false)
