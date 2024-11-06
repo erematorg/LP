@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c28ujm2n8ylju"
-path="res://.godot/imported/limb1.png-ab134404537e2a7a1bff87898004e5aa.ctex"
+uid="uid://clieye2k0uu6n"
+path="res://.godot/imported/socket.png-27e6a1a78a15fc154a9c405038f82846.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://systems/attachment system/limb1.png"
-dest_files=["res://.godot/imported/limb1.png-ab134404537e2a7a1bff87898004e5aa.ctex"]
+source_file="res://addons/attachmentgui/Sprites/socket.png"
+dest_files=["res://.godot/imported/socket.png-27e6a1a78a15fc154a9c405038f82846.ctex"]
 
 [params]
 

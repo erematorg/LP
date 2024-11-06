@@ -15,26 +15,33 @@ func new_socket(socket : AttachmentSocket):
 	ensure_socket_stack_pairs()
 
 
-func remove_socket(socket : AttachmentSocket):
-	socket.my_entity = null
+func remove_socket(socket: AttachmentSocket):
+	# Clear the entity association
 	socket.update_state()
-	print("User removed an entity: " + socket.name)
-	remove_stack_for_socket(socket)
-	socket_stack_pairs.erase(socket)
+	
+	# Log the removal for debugging
+	print("User removed a socket: " + socket.name)
+	
+	# Remove the socket from stack pairs if it exists
+	if socket in socket_stack_pairs:
+		remove_stack_for_socket(socket)
+		socket_stack_pairs.erase(socket)
+	else:
+		print("Attempted to remove a non-existent socket from stack pairs: " + socket.name)
+	# Ensure integrity of socket-stack pairs after removal
 	ensure_socket_stack_pairs()
 
 
 func add_stack_for_socket(socket: AttachmentSocket):
 	# Only create a stack if the socket doesn't already have one
 	var new_stack
-	print("New socket with type: " + str(socket.IK_type))
 	if socket.IK_type == AttachmentSocket.IK_chain_type.CCDIK:
 		new_stack = SkeletonModification2DCCDIK.new()
 	elif socket.IK_type == AttachmentSocket.IK_chain_type.FABRIK:
 		new_stack = SkeletonModification2DFABRIK.new()
 	skeleton.get_modification_stack().add_modification(new_stack)
 	socket_stack_pairs[socket] = new_stack
-	print("Added new stack for socket:", socket.name)
+	print("Added new stack for socket:", socket.name + "with type: " + str(socket.IK_type))
 
 
 # Function to maintain pairs and keep them synchronized
@@ -138,14 +145,12 @@ func update_ccdik(first_bone, stack : SkeletonModification2DCCDIK, chain_length 
 	var current_bone : Bone2D = first_bone
 	for i in range(chain_length):
 		if current_bone:
-			#Set value of new joint
+			#Set value of new joint and assign next bone
 			stack.set_ccdik_joint_bone_index(i, current_bone.get_index_in_skeleton())
-			#Check that we set the value correctly!
 			if stack.get_ccdik_joint_bone_index(i) == -1:
 				push_warning("Chain Length is wrong!")
 				stack.ccdik_data_chain_length = 0
 				break
-			# Move to the next bone in the chain
 			current_bone = next_bone_in_chain(current_bone)
 
 
@@ -168,10 +173,10 @@ func update_fabrik(first_bone, stack : SkeletonModification2DFABRIK, chain_lengt
 			#Check that we set the value correctly!
 			if stack.get_fabrik_joint_bone_index(i) == -1:
 				push_warning("Chain indicies are wrong!")
-				##No need to break for FABRIK
 			# Move to the next bone in the chain
 			current_bone = next_bone_in_chain(current_bone)
-	
+
+
  #Find the closest socket to a given entity
 func find_closest_socket(entity: EntityPart, distance) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null

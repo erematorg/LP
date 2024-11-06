@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://cnyo8q1t475w6"]
 
 [ext_resource type="Texture2D" uid="uid://cdvqfoaf2fmfq" path="res://addons/attachmentgui/Sprites/button01.png" id="1_rb5mb"]
-[ext_resource type="Script" path="res://addons/attachmentgui/attachment_gui_dock_control.gd" id="1_rn36r"]
+[ext_resource type="Script" path="res://addons/attachmentgui/AttachmentGui.gd" id="1_rn36r"]
 [ext_resource type="PackedScene" uid="uid://054muqtx37p3" path="res://addons/attachmentgui/Scenes/CreatureCreate.tscn" id="2_6gnth"]
 [ext_resource type="LabelSettings" uid="uid://drwy0e5elc4qn" path="res://addons/attachmentgui/attachment_gui_mainlabel.tres" id="4_3i1o5"]
 

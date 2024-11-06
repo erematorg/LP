@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3 uid="uid://054muqtx37p3"]
 
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/creature-creator.gd" id="1_ahjc5"]
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/line_tracker.gd" id="3_3v5u3"]
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/mouse_tracker.gd" id="3_dgbmd"]
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/attachment_tracker.gd" id="4_0b8n6"]
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_tracker.gd" id="5_5eww6"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/CreatureCreator.gd" id="1_ahjc5"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/LineTracker.gd" id="3_3v5u3"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/MouseTracker.gd" id="3_dgbmd"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/AttachmentTracker.gd" id="4_0b8n6"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/EntityTracker.gd" id="5_5eww6"]
 
 [sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
 

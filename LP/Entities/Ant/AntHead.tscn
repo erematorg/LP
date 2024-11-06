@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://be3w0u2k78xif"]
 
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_part.gd" id="1_g7lo0"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/EntityPart.gd" id="1_g7lo0"]
 [ext_resource type="Texture2D" uid="uid://ct4luom1jnwpb" path="res://entities/Ant/sprites/ant_head_thumbnail.png" id="2_q4wvk"]
 [ext_resource type="Texture2D" uid="uid://ls2u242lw7bo" path="res://entities/Ant/sprites/ant_head.png" id="2_u0p7p"]
 

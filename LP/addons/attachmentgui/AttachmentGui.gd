@@ -31,6 +31,7 @@ const ATTACHMENT_GUI_SMALLLABEL = preload("res://addons/attachmentgui/attachment
 const BLACKOUTLINEARM = preload("res://addons/attachmentgui/Sprites/blackoutlinearm.png")
 const DNA = preload("res://addons/attachmentgui/Sprites/dna.png")
 
+
 func _ready() -> void:
 	path_label.text = "PATH:"
 	current_scene_label.text = "SCENE:"
@@ -38,6 +39,7 @@ func _ready() -> void:
 	socket_button.disabled = false
 	parts_panel.visible = false
 	components_panel.visible = false
+
 
 func ensure_components():
 	if attachment_editor == null:
@@ -58,17 +60,19 @@ func ensure_components():
 		push_error("Warning: No reference to parts_container")
 
 
-#Open the file dialog to select/create a new creature scene
+## Open the file dialog to select/create a new creature scene
 func _on_new_button_pressed() -> void:
 	ensure_components()
 	file_dialog.popup_centered()
+
 
 ## Selecting a creature scene!
 func _on_select_button_pressed() -> void:
 	ensure_components()
 	select_dialog.popup_centered()
 
-#When pressing 'Edit' open the new template scene
+
+## When pressing 'Edit' open the new template scene
 func _on_edit_button_pressed() -> void:
 	stage = 0
 	ensure_components()
@@ -165,6 +169,7 @@ func add_component_to_list(path, button, name):
 	# Connect the button to a function that will handle instantiating the resource
 	button.pressed.connect(self.add_component_instance.bind(path))
 	components_container.add_child(button)
+	
 	
 func add_part_to_list(path, button, name):
 	# Connect the button to a function that will handle instantiating the resource
