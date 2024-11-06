@@ -27,6 +27,8 @@ func inject_attachment_gui(gui : AttachmentGui):
 	line_tracker.init_linetracker(snap_distance, show_line_distance)
 	entity_tracker.init_tracker(creature_root, attachment_tracker, snap_distance, show_line_distance)
 
+
+## Add and make sure signals are connected properly
 func connect_signals(gui):
 	if not gui.spawn_entity.is_connected(new_entity_in_scene):
 		gui.spawn_entity.connect(new_entity_in_scene)
@@ -37,11 +39,12 @@ func connect_signals(gui):
 	if not m_tracker.stopped_dragging.is_connected(entity_tracker.drop_entity):
 		m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
 
+
+## New bodypart/entity in the scene
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
 		return
 	add_new_node(creature_root, entity)
-	entity.inject_creature_creator(self)
 	entity_tracker.new_entity(entity)
 
 
@@ -78,6 +81,7 @@ func find_old_parts():
 	var root = get_tree().root
 	search_for_parts(root)
 
+
 #Recursive searching function
 func search_for_parts(node: Node) -> void:
 	if node is EntityPart:
@@ -109,7 +113,7 @@ func _process(delta: float) -> void:
 			if entity.entity_type == closest_socket.accepted_type or closest_socket.accepted_type == EntityPart.type.ANY:
 				line_tracker.draw_line_between(entity, closest_socket)
 
-	
+
 func add_new_node(parent, child):
 	parent.add_child(child)
 	child.owner = self

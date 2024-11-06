@@ -6,7 +6,6 @@ var dock
 var editor : EditorInterface
 var entities_folder : String = "res://entities/"
 var components_folder : String = "res://components/"
-var dock_gui
 
 
 func _enter_tree() -> void:
@@ -38,7 +37,7 @@ func get_open_scene() -> Node:
 
 func load_resources_from_folder(receiver: AttachmentGui, target: String, folder_path: String = entities_folder):
 	var dir = DirAccess.open(folder_path)
-	dock_gui = receiver
+	var dock_gui = receiver
 
 	# Early exit if any critical argument is null or directory is invalid
 	if receiver == null or dock_gui == null or not dir:
