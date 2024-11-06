@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dw64e23on1uke"]
 
-[ext_resource type="Script" path="res://systems/attachment system/Scripts/entity_part.gd" id="1_46a6d"]
+[ext_resource type="Script" path="res://systems/attachment system/Scripts/EntityPart.gd" id="1_46a6d"]
 [ext_resource type="Texture2D" uid="uid://7dadsdp5s4ge" path="res://addons/attachmentgui/Sprites/blackoutlinearm.png" id="2_gb14t"]
 
 [node name="Human" type="Bone2D"]
