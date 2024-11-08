@@ -85,10 +85,11 @@ func apply_radiative_cooling():
 			var temp = temperature_grid[row][col]
 			var heat_capacity = heat_capacity_grid[row][col]
 
-			# Adjust radiative cooling rate based on temperature
-			var cooling_factor = cooling_rate * (1 + (temp / max_temperature) * 0.5)
+			# Cooling rate depends on the temperature
+			var dynamic_cooling_rate = cooling_rate * (1.0 + (temp / max_temperature)**2)  # Faster cooling for higher temperatures
+			var cooling_factor = dynamic_cooling_rate * (1 + (temp / max_temperature) * 0.5)
 			temperature_grid[row][col] -= cooling_factor / heat_capacity
-			temperature_grid[row][col] = max(temperature_grid[row][col], min_temperature)
+			temperature_grid[row][col] = max(temperature_grid[row][col], min_temperature)  # Ensure minimum temperature is respected
 
 ### Thermal Conduction
 func apply_thermal_conduction():
@@ -100,14 +101,15 @@ func apply_thermal_conduction():
 			for neighbor_temp in get_neighbors(row, col):
 				var temp_diff = neighbor_temp - current_temp
 
-				# Increase conduction rate for larger temperature differences
-				var dynamic_diffusion = diffusion_rate * (1.0 + abs(temp_diff) / max_temperature)
+				# Diffusion rate depends on the current temperature
+				var dynamic_diffusion = diffusion_rate * (1.0 + abs(current_temp - ambient_temperature) / max_temperature)
 				temp_gradient_sum += dynamic_diffusion * temp_diff
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(current_temp)
 			new_temp_grid[row][col] += temp_gradient_sum / heat_capacity_grid[row][col]
 
 	temperature_grid = new_temp_grid
+
 
 ### Advanced Convection
 func apply_convection():
