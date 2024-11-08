@@ -79,5 +79,5 @@ func load_resources_from_folder(receiver: AttachmentGui, target: String, folder_
 	print("Found " + str(files_found) + " file(s) in " + folder_path)
 	
 	# If no files were found in a subfolder, add an "-Empty-" label
-	if files_found < 1 and folder_path != entities_folder:
+	if files_found < 1 and folder_path != folder_path:
 		receiver.add_grid_label("-Empty-", false)

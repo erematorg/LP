@@ -255,6 +255,7 @@ text = "Components:"
 label_settings = SubResource("LabelSettings_v55td")
 
 [node name="CosmeticsPanel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -277,6 +278,8 @@ offset_bottom = 1.0
 [node name="BoxContainer" type="VBoxContainer" parent="CosmeticsPanel/ScrollContainer"]
 clip_contents = true
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="CosmeticsPanel"]
 layout_mode = 0

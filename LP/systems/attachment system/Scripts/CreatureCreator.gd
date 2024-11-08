@@ -36,6 +36,8 @@ func connect_signals(gui):
 		gui.spawn_socket.connect(new_socket_in_scene)
 	if not gui.spawn_component.is_connected(new_component_in_scene):
 		gui.spawn_component.connect(new_component_in_scene)
+	if not gui.spawn_cosmetic.is_connected(new_cosmetic_in_scene):
+		gui.spawn_cosmetic.connect(new_cosmetic_in_scene)
 	if not m_tracker.stopped_dragging.is_connected(entity_tracker.drop_entity):
 		m_tracker.stopped_dragging.connect(entity_tracker.drop_entity)
 
@@ -74,6 +76,10 @@ func new_component_in_scene(component : String):
 	add_new_node(component_node, new_node)
 	new_node.name = script.get_global_name()+"_node"
 	print("New node created and script attached from path:", component)
+
+
+func new_cosmetic_in_scene(cosmetic : Sprite2D):
+	add_new_node(self, cosmetic)
 
 
 # Call a recursive function to search for parts if this is a previous scene
