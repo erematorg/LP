@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ct4luom1jnwpb"
-path="res://.godot/imported/ant_head_thumbnail.png-f210ec343c6f1e0ea9d10ba06df94ec6.ctex"
+uid="uid://c6y48n3xrgq6n"
+path="res://.godot/imported/ant_abdomen_thumbnail.png-05c448652b165ee5632bf5975ec50076.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://entities/Ant/sprites/ant_head_thumbnail.png"
-dest_files=["res://.godot/imported/ant_head_thumbnail.png-f210ec343c6f1e0ea9d10ba06df94ec6.ctex"]
+source_file="res://entities/parts/ant/sprites/ant_abdomen_thumbnail.png"
+dest_files=["res://.godot/imported/ant_abdomen_thumbnail.png-05c448652b165ee5632bf5975ec50076.ctex"]
 
 [params]
 

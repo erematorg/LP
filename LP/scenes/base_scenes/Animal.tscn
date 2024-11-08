@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://blhnneu4tokc2"]
 
 [ext_resource type="Script" path="res://systems/systemic_interaction_framework/Animal.gd" id="1_hxlhs"]
-[ext_resource type="Script" path="res://components/DNAComponent.gd" id="2_hqtl3"]
-[ext_resource type="Script" path="res://components/MovementComponent.gd" id="3_j4fx2"]
-[ext_resource type="Script" path="res://components/HealthComponent.gd" id="3_u0uve"]
+[ext_resource type="Script" path="res://entities/components/DNAComponent.gd" id="2_hqtl3"]
+[ext_resource type="Script" path="res://entities/components/MovementComponent.gd" id="3_j4fx2"]
+[ext_resource type="Script" path="res://entities/components/HealthComponent.gd" id="3_u0uve"]
 
 [node name="Animal" type="Node2D"]
 script = ExtResource("1_hxlhs")
