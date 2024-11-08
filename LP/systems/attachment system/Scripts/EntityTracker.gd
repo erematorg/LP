@@ -44,8 +44,10 @@ func last_anchor() -> EntityPart:
 func place_entity(entity : EntityPart):
 	var anchor = last_anchor()
 	if anchor:
-		entity.global_position = anchor.global_position
-		entity.position.x += 16 #rough estimate of sprite width
+		# Position our new entity at the end of `anchor` bone
+		var bone_length = anchor.get_length()
+		entity.global_position = anchor.global_transform * Vector2(bone_length, 0)
+	entity.rest = entity.transform
 
 
 func remove_entity(entity : EntityPart):
