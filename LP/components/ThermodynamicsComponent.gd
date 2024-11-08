@@ -25,7 +25,6 @@ var heat_sources : Dictionary = {}
 func set_grid(temp_grid: Array, capacity_grid: Array):
 	temperature_grid = temp_grid
 	heat_capacity_grid = capacity_grid
-	# Initialize density based on temperature
 	density_grid = []
 	for row in range(temp_grid.size()):
 		var row_density = []
@@ -89,27 +88,33 @@ func apply_thermal_conduction():
 
 	temperature_grid = new_temp_grid
 
-### Convection
+### Advanced Convection
 func apply_convection():
 	var new_temp_grid = temperature_grid.duplicate(true)
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
-			var convection_sum = 0.0
 			var current_density = density_grid[row][col]
+			var convection_sum = 0.0
 
-			# Compare densities for convection flow
+			# Upward convection
 			if row > 0:
 				var neighbor_density = density_grid[row - 1][col]
-				convection_sum += (temperature_grid[row - 1][col] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
+				if current_density > neighbor_density:
+					convection_sum += convection_rate * (temperature_grid[row - 1][col] - temperature_grid[row][col])
+
+			# Downward convection
 			if row < temperature_grid.size() - 1:
 				var neighbor_density = density_grid[row + 1][col]
-				convection_sum += (temperature_grid[row + 1][col] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
+				if current_density < neighbor_density:
+					convection_sum += convection_rate * (temperature_grid[row + 1][col] - temperature_grid[row][col])
+
+			# Horizontal convection (left and right)
 			if col > 0:
 				var neighbor_density = density_grid[row][col - 1]
-				convection_sum += (temperature_grid[row][col - 1] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
+				convection_sum += convection_rate * (temperature_grid[row][col - 1] - temperature_grid[row][col]) * (current_density - neighbor_density)
 			if col < temperature_grid[row].size() - 1:
 				var neighbor_density = density_grid[row][col + 1]
-				convection_sum += (temperature_grid[row][col + 1] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
+				convection_sum += convection_rate * (temperature_grid[row][col + 1] - temperature_grid[row][col]) * (current_density - neighbor_density)
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(temperature_grid[row][col])
 			new_temp_grid[row][col] += convection_sum / heat_capacity_grid[row][col]
@@ -135,6 +140,7 @@ func enforce_boundary_conditions():
 		temperature_grid[row][0] -= cooling_rate * edge_insulation * (temperature_grid[row][0] - ambient_temperature) / max_temperature
 		temperature_grid[row][temperature_grid[row].size() - 1] -= cooling_rate * edge_insulation * (temperature_grid[row][temperature_grid[row].size() - 1] - ambient_temperature) / max_temperature
 
+### Temperature Clamping
 func clamp_temperature_bounds():
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
@@ -168,6 +174,7 @@ func get_neighbors(row: int, col: int) -> Array:
 func is_within_bounds(row: int, col: int) -> bool:
 	return row >= 0 and row < temperature_grid.size() and col >= 0 and col < temperature_grid[row].size()
 
+### Update State
 func update_state():
 	apply_heat_sources()
 	apply_radiative_cooling()
