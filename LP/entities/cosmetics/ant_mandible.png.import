@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bq3jwty518rk2"
-path="res://.godot/imported/ant_hind_leg.png-57872b237fe2733cec65909d356d004f.ctex"
+uid="uid://bgxwt6v3ai1f1"
+path="res://.godot/imported/ant_mandible.png-f2f80e9f573d2dadf88820c58b676a60.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://entities/Ant/sprites/ant_hind_leg.png"
-dest_files=["res://.godot/imported/ant_hind_leg.png-57872b237fe2733cec65909d356d004f.ctex"]
+source_file="res://entities/cosmetics/ant_mandible.png"
+dest_files=["res://.godot/imported/ant_mandible.png-f2f80e9f573d2dadf88820c58b676a60.ctex"]
 
 [params]
 
