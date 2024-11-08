@@ -48,9 +48,30 @@ func apply_heat_sources():
 		var intensity = source_data["intensity"]
 		var energy = source_data["energy"]
 
-		# Apply heat based on heat capacity and intensity
+		# Apply heat to the current cell
 		heat_capacity_grid[row][col] = calc_heat_capacity(temperature_grid[row][col])
 		temperature_grid[row][col] += intensity / heat_capacity_grid[row][col]
+
+		# Distribute heat to neighboring cells, ensuring we stay within bounds
+		for neighbor_index in range(get_neighbors(row, col).size()):
+			var neighbor_temp = get_neighbors(row, col)[neighbor_index]
+			
+			# Determine neighbor position
+			var n_row = row
+			var n_col = col
+			if neighbor_index == 0 and row > 0:  # Top neighbor
+				n_row = row - 1
+			elif neighbor_index == 1 and row < temperature_grid.size() - 1:  # Bottom neighbor
+				n_row = row + 1
+			elif neighbor_index == 2 and col > 0:  # Left neighbor
+				n_col = col - 1
+			elif neighbor_index == 3 and col < temperature_grid[row].size() - 1:  # Right neighbor
+				n_col = col + 1
+
+			# Apply heat to the neighbor
+			if is_within_bounds(n_row, n_col):
+				heat_capacity_grid[n_row][n_col] = calc_heat_capacity(temperature_grid[n_row][n_col])
+				temperature_grid[n_row][n_col] += (intensity * 0.1) / heat_capacity_grid[n_row][n_col]  # Spread 10% of intensity
 
 		# Exponential decay for the energy of heat sources
 		heat_sources[position]["energy"] *= 0.98  # Decay factor of 2%
@@ -134,11 +155,20 @@ func apply_inertia():
 func enforce_boundary_conditions():
 	var edge_insulation = 0.5
 	for col in range(temperature_grid[0].size()):
-		temperature_grid[0][col] -= cooling_rate * edge_insulation * (temperature_grid[0][col] - ambient_temperature) / max_temperature
-		temperature_grid[temperature_grid.size() - 1][col] -= cooling_rate * edge_insulation * (temperature_grid[temperature_grid.size() - 1][col] - ambient_temperature) / max_temperature
+		# Top boundary
+		var gradient_top = abs(temperature_grid[0][col] - temperature_grid[1][col])
+		temperature_grid[0][col] -= cooling_rate * edge_insulation * gradient_top / max_temperature
+		# Bottom boundary
+		var gradient_bottom = abs(temperature_grid[temperature_grid.size() - 1][col] - temperature_grid[temperature_grid.size() - 2][col])
+		temperature_grid[temperature_grid.size() - 1][col] -= cooling_rate * edge_insulation * gradient_bottom / max_temperature
+
 	for row in range(temperature_grid.size()):
-		temperature_grid[row][0] -= cooling_rate * edge_insulation * (temperature_grid[row][0] - ambient_temperature) / max_temperature
-		temperature_grid[row][temperature_grid[row].size() - 1] -= cooling_rate * edge_insulation * (temperature_grid[row][temperature_grid[row].size() - 1] - ambient_temperature) / max_temperature
+		# Left boundary
+		var gradient_left = abs(temperature_grid[row][0] - temperature_grid[row][1])
+		temperature_grid[row][0] -= cooling_rate * edge_insulation * gradient_left / max_temperature
+		# Right boundary
+		var gradient_right = abs(temperature_grid[row][temperature_grid[row].size() - 1] - temperature_grid[row][temperature_grid[row].size() - 2])
+		temperature_grid[row][temperature_grid[row].size() - 1] -= cooling_rate * edge_insulation * gradient_right / max_temperature
 
 ### Temperature Clamping
 func clamp_temperature_bounds():
