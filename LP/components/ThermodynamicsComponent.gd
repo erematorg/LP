@@ -9,10 +9,13 @@ class_name ThermodynamicsComponent
 @export var convection_rate := 0.05
 @export var inertia := 0.9
 @export var ambient_temperature := 25
+@export var expansion_coefficient := 0.001  # Coefficient for density change
+@export var base_density := 1.0  # Density at ambient temperature
 
 # Externally attached grids
 var temperature_grid : Array = []
 var heat_capacity_grid : Array = []
+var density_grid : Array = []  # Dynamic densities
 
 # Heat sources dictionary
 var heat_sources : Dictionary = {}
@@ -22,6 +25,13 @@ var heat_sources : Dictionary = {}
 func set_grid(temp_grid: Array, capacity_grid: Array):
 	temperature_grid = temp_grid
 	heat_capacity_grid = capacity_grid
+	# Initialize density based on temperature
+	density_grid = []
+	for row in range(temp_grid.size()):
+		var row_density = []
+		for col in range(temp_grid[row].size()):
+			row_density.append(calc_density(temp_grid[row][col]))
+		density_grid.append(row_density)
 
 ### Heat Source Management
 # Add a heat source with initial energy
@@ -49,7 +59,6 @@ func apply_heat_sources():
 			heat_sources.erase(position)
 
 ### Radiative Cooling
-# Cool grid cells based on radiative cooling
 func apply_radiative_cooling():
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
@@ -62,7 +71,6 @@ func apply_radiative_cooling():
 			temperature_grid[row][col] = max(temperature_grid[row][col], min_temperature)
 
 ### Thermal Conduction
-# Distribute heat between neighboring cells for conduction
 func apply_thermal_conduction():
 	var new_temp_grid = temperature_grid.duplicate(true)
 	for row in range(temperature_grid.size()):
@@ -76,27 +84,32 @@ func apply_thermal_conduction():
 				var dynamic_diffusion = diffusion_rate * (1.0 + abs(temp_diff) / max_temperature)
 				temp_gradient_sum += dynamic_diffusion * temp_diff
 
-			# Calculate updated temperature with conductivity adjustment
 			heat_capacity_grid[row][col] = calc_heat_capacity(current_temp)
 			new_temp_grid[row][col] += temp_gradient_sum / heat_capacity_grid[row][col]
 
 	temperature_grid = new_temp_grid
 
 ### Convection
-# Move heat vertically and horizontally within the grid
 func apply_convection():
 	var new_temp_grid = temperature_grid.duplicate(true)
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
 			var convection_sum = 0.0
+			var current_density = density_grid[row][col]
+
+			# Compare densities for convection flow
 			if row > 0:
-				convection_sum += (temperature_grid[row - 1][col] - temperature_grid[row][col]) * convection_rate
+				var neighbor_density = density_grid[row - 1][col]
+				convection_sum += (temperature_grid[row - 1][col] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
 			if row < temperature_grid.size() - 1:
-				convection_sum += (temperature_grid[row + 1][col] - temperature_grid[row][col]) * convection_rate
+				var neighbor_density = density_grid[row + 1][col]
+				convection_sum += (temperature_grid[row + 1][col] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
 			if col > 0:
-				convection_sum += (temperature_grid[row][col - 1] - temperature_grid[row][col]) * convection_rate
+				var neighbor_density = density_grid[row][col - 1]
+				convection_sum += (temperature_grid[row][col - 1] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
 			if col < temperature_grid[row].size() - 1:
-				convection_sum += (temperature_grid[row][col + 1] - temperature_grid[row][col]) * convection_rate
+				var neighbor_density = density_grid[row][col + 1]
+				convection_sum += (temperature_grid[row][col + 1] - temperature_grid[row][col]) * convection_rate * (current_density - neighbor_density)
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(temperature_grid[row][col])
 			new_temp_grid[row][col] += convection_sum / heat_capacity_grid[row][col]
@@ -104,7 +117,6 @@ func apply_convection():
 	temperature_grid = new_temp_grid
 
 ### Inertia
-# Gradually apply thermal inertia for smooth temperature changes
 func apply_inertia():
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
@@ -114,7 +126,6 @@ func apply_inertia():
 			)
 
 ### Boundary Conditions
-# Enforce cooling at grid edges to simulate interaction with ambient environment
 func enforce_boundary_conditions():
 	var edge_insulation = 0.5
 	for col in range(temperature_grid[0].size()):
@@ -124,22 +135,24 @@ func enforce_boundary_conditions():
 		temperature_grid[row][0] -= cooling_rate * edge_insulation * (temperature_grid[row][0] - ambient_temperature) / max_temperature
 		temperature_grid[row][temperature_grid[row].size() - 1] -= cooling_rate * edge_insulation * (temperature_grid[row][temperature_grid[row].size() - 1] - ambient_temperature) / max_temperature
 
-# Clamp temperature values to stay within defined min and max
 func clamp_temperature_bounds():
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
-			temperature_grid[row][col] = clamp(temperature_grid[row][col], min_temperature, max_temperature)
+			var temp = temperature_grid[row][col]
+			if temp < min_temperature:
+				temperature_grid[row][col] = min_temperature
+				heat_capacity_grid[row][col] = calc_heat_capacity(min_temperature)
+			elif temp > max_temperature:
+				temperature_grid[row][col] = max_temperature
+				heat_capacity_grid[row][col] = calc_heat_capacity(max_temperature)
 
 ### Utility Functions
-# Calculate dynamic heat capacity based on current temperature
 func calc_heat_capacity(temperature: float) -> float:
 	return 1.0 + 0.5 / (1.0 + exp(-(temperature - 50) * 0.1))
 
-# Calculate dynamic thermal conductivity based on temperature
-func calc_conductivity(temperature: float) -> float:
-	return 0.1 * (1.0 + 0.01 * temperature / max_temperature)
+func calc_density(temperature: float) -> float:
+	return base_density * (1.0 - expansion_coefficient * (temperature - ambient_temperature))
 
-# Get neighboring temperatures for conduction and convection
 func get_neighbors(row: int, col: int) -> Array:
 	var neighbors = []
 	if row > 0:
@@ -152,11 +165,9 @@ func get_neighbors(row: int, col: int) -> Array:
 		neighbors.append(temperature_grid[row][col + 1])
 	return neighbors
 
-# Check if cell is within grid bounds
 func is_within_bounds(row: int, col: int) -> bool:
 	return row >= 0 and row < temperature_grid.size() and col >= 0 and col < temperature_grid[row].size()
 
-### Update thermal state by applying all processes
 func update_state():
 	apply_heat_sources()
 	apply_radiative_cooling()
@@ -165,3 +176,7 @@ func update_state():
 	apply_inertia()
 	enforce_boundary_conditions()
 	clamp_temperature_bounds()
+	# Update densities
+	for row in range(temperature_grid.size()):
+		for col in range(temperature_grid[row].size()):
+			density_grid[row][col] = calc_density(temperature_grid[row][col])
