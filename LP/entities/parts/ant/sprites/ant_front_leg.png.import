@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://doa43c0sdbdvp"
-path="res://.godot/imported/ant_front_leg_thumbnail.png-86b16b14255eac228e5b42a6fba7b911.ctex"
+uid="uid://dpaua4n1als26"
+path="res://.godot/imported/ant_front_leg.png-e673c8a7ae8efc53d3821be79bcf65f6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://entities/Ant/sprites/ant_front_leg_thumbnail.png"
-dest_files=["res://.godot/imported/ant_front_leg_thumbnail.png-86b16b14255eac228e5b42a6fba7b911.ctex"]
+source_file="res://entities/parts/ant/sprites/ant_front_leg.png"
+dest_files=["res://.godot/imported/ant_front_leg.png-e673c8a7ae8efc53d3821be79bcf65f6.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://okq47grrune"
-path="res://.godot/imported/ant_midsection.png-d4535cd7d6c61f9c0f85d071b09c1934.ctex"
+uid="uid://bgy331qvc86ml"
+path="res://.godot/imported/ant_midsection_thumbnail.png-6e0b78710d21269d484d88349e24696e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://entities/Ant/sprites/ant_midsection.png"
-dest_files=["res://.godot/imported/ant_midsection.png-d4535cd7d6c61f9c0f85d071b09c1934.ctex"]
+source_file="res://entities/parts/ant/sprites/ant_midsection_thumbnail.png"
+dest_files=["res://.godot/imported/ant_midsection_thumbnail.png-6e0b78710d21269d484d88349e24696e.ctex"]
 
 [params]
 
