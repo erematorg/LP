@@ -17,13 +17,16 @@ var current_creature_scene : PackedScene
 @export var path_label : Label
 @export var current_scene_label : Label
 
-#Body parts / Entitites
-var stage : int = 0
+#Body parts / Entitites / Cosmetics
+var active_container
 @onready var parts_panel: Panel = $PartsPanel
 @export var parts_container : BoxContainer
-#Components
+
 @onready var components_panel: Panel = $ComponentsPanel
 @export var components_container : BoxContainer
+
+@onready var cosmetics_panel: Panel = $CosmeticsPanel
+@export var cosmetics_container : BoxContainer
 
 const LIMB_SOCKET = preload("res://systems/attachment system/limb_socket.tscn")
 const ATTACHMENT_GUI_MAINLABEL = preload("res://addons/attachmentgui/attachment_gui_mainlabel.tres")
@@ -39,6 +42,7 @@ func _ready() -> void:
 	socket_button.disabled = false
 	parts_panel.visible = false
 	components_panel.visible = false
+	cosmetics_panel.visible = false
 
 
 func ensure_components():
@@ -58,6 +62,10 @@ func ensure_components():
 		push_error("Warning: No reference to current_scene_label")
 	if parts_container == null:
 		push_error("Warning: No reference to parts_container")
+	if components_container == null:
+		push_error("Warning: No reference to components_container")
+	if cosmetics_container == null:
+		push_error("Warning: No reference to cosmetics_container")
 
 
 ## Open the file dialog to select/create a new creature scene
@@ -74,7 +82,6 @@ func _on_select_button_pressed() -> void:
 
 ## When pressing 'Edit' open the new template scene
 func _on_edit_button_pressed() -> void:
-	stage = 0
 	ensure_components()
 	clear_containers()
 	if !path_label.text.ends_with(".tscn"):
@@ -90,9 +97,12 @@ func _on_edit_button_pressed() -> void:
 		return
 
 	current_scene_label.text = str(rootNode.name)
-	attachment_editor.load_resources_from_folder(self, ".tscn") #load parts
-	stage += 1
+	active_container = parts_container
+	attachment_editor.load_resources_from_folder(self, ".tscn", attachment_editor.parts_folder) #load parts
+	active_container = components_container
 	attachment_editor.load_resources_from_folder(self, ".gd", attachment_editor.components_folder) #load components
+	active_container = cosmetics_container
+	attachment_editor.load_resources_from_folder(self, ".tscn", attachment_editor.cosmetics_folder)
 	rootNode.inject_attachment_gui(self)
 	components_panel.visible = true
 	socket_button.disabled = false
@@ -158,23 +168,14 @@ func add_resource_item(file_path: String, file_name : String):
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	button.tooltip_text = file_path
-	if stage == 0:
-		add_part_to_list(file_path, button, file_name)
-	elif stage == 1:
-		add_component_to_list(file_path, button, file_name)
+	add_to_container(file_path, button, file_name)
 	change_button_icon_and_text(button, file_path, file_name)
 
 
-func add_component_to_list(path, button, name):
+func add_to_container(path, button, name):
 	# Connect the button to a function that will handle instantiating the resource
 	button.pressed.connect(self.add_component_instance.bind(path))
-	components_container.add_child(button)
-	
-	
-func add_part_to_list(path, button, name):
-	# Connect the button to a function that will handle instantiating the resource
-	button.pressed.connect(self.resource_button_pressed.bind(path))
-	parts_container.add_child(button) #Add button to the grid container
+	active_container.add_child(button)
 
 
 func change_button_icon_and_text(button : Button, path : String, name : String):
@@ -200,10 +201,7 @@ func change_button_icon_and_text(button : Button, path : String, name : String):
 #Adding a new label means we are entering a new subfolder or showing "Empty"
 func add_grid_label(label, header : bool = true):
 	var label_to_add = Label.new()
-	if stage == 0:
-		parts_container.add_child(label_to_add)
-	elif stage == 1:
-		components_container.add_child(label_to_add)
+	active_container.add_child(label_to_add)
 	if header:
 		label_to_add.label_settings = ATTACHMENT_GUI_MAINLABEL
 	else:
@@ -254,6 +252,12 @@ func _on_selection(index: int) -> void:
 		0:
 			components_panel.visible = true
 			parts_panel.visible = false
+			cosmetics_container.visible = false
 		1: 
 			parts_panel.visible = true
 			components_panel.visible = false
+			cosmetics_container.visible = false
+		2:
+			parts_panel.visible = false
+			components_panel.visible = false
+			cosmetics_container.visible = true

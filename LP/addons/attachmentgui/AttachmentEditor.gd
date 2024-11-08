@@ -5,7 +5,9 @@ class_name AttachmentEditor
 var dock
 var editor : EditorInterface
 var entities_folder : String = "res://entities/"
-var components_folder : String = "res://components/"
+var parts_folder : String = "res://entities/parts/"
+var components_folder : String = "res://entities/components/"
+var cosmetics_folder : String = "res://entities/cosmetics/"
 
 
 func _enter_tree() -> void:
@@ -35,7 +37,7 @@ func get_open_scene() -> Node:
 	return editor.get_edited_scene_root()
 
 
-func load_resources_from_folder(receiver: AttachmentGui, target: String, folder_path: String = entities_folder):
+func load_resources_from_folder(receiver: AttachmentGui, target: String, folder_path: String):
 	var dir = DirAccess.open(folder_path)
 	var dock_gui = receiver
 
