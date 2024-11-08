@@ -101,15 +101,14 @@ func apply_thermal_conduction():
 			for neighbor_temp in get_neighbors(row, col):
 				var temp_diff = neighbor_temp - current_temp
 
-				# Diffusion rate depends on the current temperature
-				var dynamic_diffusion = diffusion_rate * (1.0 + abs(current_temp - ambient_temperature) / max_temperature)
+				# Dynamic diffusion rate depends on the current temperature
+				var dynamic_diffusion = diffusion_rate * (1.0 + (abs(current_temp - neighbor_temp) / max_temperature))
 				temp_gradient_sum += dynamic_diffusion * temp_diff
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(current_temp)
 			new_temp_grid[row][col] += temp_gradient_sum / heat_capacity_grid[row][col]
 
 	temperature_grid = new_temp_grid
-
 
 ### Advanced Convection
 func apply_convection():
@@ -186,7 +185,8 @@ func clamp_temperature_bounds():
 
 ### Utility Functions
 func calc_heat_capacity(temperature: float) -> float:
-	return 1.0 + 0.5 / (1.0 + exp(-(temperature - 50) * 0.1))
+	# Dynamic heat capacity: Higher temperatures reduce specific heat slightly
+	return 1.0 + 0.5 * (1.0 - (temperature / max_temperature))
 
 func calc_density(temperature: float) -> float:
 	return base_density * (1.0 - expansion_coefficient * (temperature - ambient_temperature))
