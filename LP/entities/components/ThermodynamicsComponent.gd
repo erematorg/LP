@@ -11,11 +11,13 @@ class_name ThermodynamicsComponent
 @export var ambient_temperature := 25
 @export var expansion_coefficient := 0.001  # Coefficient for density change
 @export var base_density := 1.0  # Density at ambient temperature
+@export var pressure_coefficient := 1.0  # Proportional constant for pressure calculation
 
 # Externally attached grids
 var temperature_grid : Array = []
 var heat_capacity_grid : Array = []
 var density_grid : Array = []  # Dynamic densities
+var pressure_grid : Array = []
 
 # Heat sources dictionary
 var heat_sources : Dictionary = {}
@@ -26,11 +28,15 @@ func set_grid(temp_grid: Array, capacity_grid: Array):
 	temperature_grid = temp_grid
 	heat_capacity_grid = capacity_grid
 	density_grid = []
+	pressure_grid = []
 	for row in range(temp_grid.size()):
 		var row_density = []
+		var row_pressure = []
 		for col in range(temp_grid[row].size()):
 			row_density.append(calc_density(temp_grid[row][col]))
+			row_pressure.append(0.0)  # Initialize pressure as 0
 		density_grid.append(row_density)
+		pressure_grid.append(row_pressure)
 
 ### Heat Source Management
 # Add a heat source with initial energy
@@ -52,7 +58,7 @@ func apply_heat_sources():
 		heat_capacity_grid[row][col] = calc_heat_capacity(temperature_grid[row][col])
 		temperature_grid[row][col] += intensity / heat_capacity_grid[row][col]
 
-		# Distribute heat to neighboring cells, ensuring we stay within bounds
+		# Distribute heat to neighboring cells
 		for neighbor_index in range(get_neighbors(row, col).size()):
 			var neighbor_temp = get_neighbors(row, col)[neighbor_index]
 			
@@ -73,8 +79,8 @@ func apply_heat_sources():
 				heat_capacity_grid[n_row][n_col] = calc_heat_capacity(temperature_grid[n_row][n_col])
 				temperature_grid[n_row][n_col] += (intensity * 0.1) / heat_capacity_grid[n_row][n_col]  # Spread 10% of intensity
 
-		# Exponential decay for the energy of heat sources
-		heat_sources[position]["energy"] *= 0.98  # Decay factor of 2%
+		# Exponential decay for energy
+		heat_sources[position]["energy"] *= 0.98
 		if heat_sources[position]["energy"] <= 0.1:
 			heat_sources.erase(position)
 
@@ -84,12 +90,9 @@ func apply_radiative_cooling():
 		for col in range(temperature_grid[row].size()):
 			var temp = temperature_grid[row][col]
 			var heat_capacity = heat_capacity_grid[row][col]
-
-			# Cooling rate depends on the temperature
-			var dynamic_cooling_rate = cooling_rate * (1.0 + (temp / max_temperature)**2)  # Faster cooling for higher temperatures
-			var cooling_factor = dynamic_cooling_rate * (1 + (temp / max_temperature) * 0.5)
-			temperature_grid[row][col] -= cooling_factor / heat_capacity
-			temperature_grid[row][col] = max(temperature_grid[row][col], min_temperature)  # Ensure minimum temperature is respected
+			var dynamic_cooling_rate = cooling_rate * (1.0 + (temp / max_temperature)**2)
+			temperature_grid[row][col] -= dynamic_cooling_rate / heat_capacity
+			temperature_grid[row][col] = max(temperature_grid[row][col], min_temperature)
 
 ### Thermal Conduction
 func apply_thermal_conduction():
@@ -100,9 +103,7 @@ func apply_thermal_conduction():
 			var temp_gradient_sum = 0.0
 			for neighbor_temp in get_neighbors(row, col):
 				var temp_diff = neighbor_temp - current_temp
-
-				# Dynamic diffusion rate depends on the current temperature
-				var dynamic_diffusion = diffusion_rate * (1.0 + (abs(current_temp - neighbor_temp) / max_temperature))
+				var dynamic_diffusion = diffusion_rate * (1.0 + abs(temp_diff) / max_temperature)
 				temp_gradient_sum += dynamic_diffusion * temp_diff
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(current_temp)
@@ -110,38 +111,44 @@ func apply_thermal_conduction():
 
 	temperature_grid = new_temp_grid
 
-### Advanced Convection
+### Convection with Pressure Dynamics
 func apply_convection():
 	var new_temp_grid = temperature_grid.duplicate(true)
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
-			var current_density = density_grid[row][col]
 			var convection_sum = 0.0
 
-			# Upward convection
+			# Pressure-driven convection
 			if row > 0:
-				var neighbor_density = density_grid[row - 1][col]
-				if current_density > neighbor_density:
-					convection_sum += convection_rate * (temperature_grid[row - 1][col] - temperature_grid[row][col])
-
-			# Downward convection
+				var pressure_diff = pressure_grid[row - 1][col] - pressure_grid[row][col]
+				convection_sum += convection_rate * pressure_diff
 			if row < temperature_grid.size() - 1:
-				var neighbor_density = density_grid[row + 1][col]
-				if current_density < neighbor_density:
-					convection_sum += convection_rate * (temperature_grid[row + 1][col] - temperature_grid[row][col])
-
-			# Horizontal convection (left and right)
+				var pressure_diff = pressure_grid[row + 1][col] - pressure_grid[row][col]
+				convection_sum += convection_rate * pressure_diff
 			if col > 0:
-				var neighbor_density = density_grid[row][col - 1]
-				convection_sum += convection_rate * (temperature_grid[row][col - 1] - temperature_grid[row][col]) * (current_density - neighbor_density)
+				var pressure_diff = pressure_grid[row][col - 1] - pressure_grid[row][col]
+				convection_sum += convection_rate * pressure_diff
 			if col < temperature_grid[row].size() - 1:
-				var neighbor_density = density_grid[row][col + 1]
-				convection_sum += convection_rate * (temperature_grid[row][col + 1] - temperature_grid[row][col]) * (current_density - neighbor_density)
+				var pressure_diff = pressure_grid[row][col + 1] - pressure_grid[row][col]
+				convection_sum += convection_rate * pressure_diff
+
+			var turbulence = randf() * convection_rate * 0.1
+			convection_sum += turbulence * (randf() - 0.5)
 
 			heat_capacity_grid[row][col] = calc_heat_capacity(temperature_grid[row][col])
 			new_temp_grid[row][col] += convection_sum / heat_capacity_grid[row][col]
 
 	temperature_grid = new_temp_grid
+
+### Pressure Calculation
+func calc_pressure(temperature: float, density: float) -> float:
+	return pressure_coefficient * density * temperature
+
+### Update Pressures
+func update_pressures():
+	for row in range(temperature_grid.size()):
+		for col in range(temperature_grid[row].size()):
+			pressure_grid[row][col] = calc_pressure(temperature_grid[row][col], density_grid[row][col])
 
 ### Inertia
 func apply_inertia():
@@ -156,18 +163,14 @@ func apply_inertia():
 func enforce_boundary_conditions():
 	var edge_insulation = 0.5
 	for col in range(temperature_grid[0].size()):
-		# Top boundary
 		var gradient_top = abs(temperature_grid[0][col] - temperature_grid[1][col])
 		temperature_grid[0][col] -= cooling_rate * edge_insulation * gradient_top / max_temperature
-		# Bottom boundary
 		var gradient_bottom = abs(temperature_grid[temperature_grid.size() - 1][col] - temperature_grid[temperature_grid.size() - 2][col])
 		temperature_grid[temperature_grid.size() - 1][col] -= cooling_rate * edge_insulation * gradient_bottom / max_temperature
 
 	for row in range(temperature_grid.size()):
-		# Left boundary
 		var gradient_left = abs(temperature_grid[row][0] - temperature_grid[row][1])
 		temperature_grid[row][0] -= cooling_rate * edge_insulation * gradient_left / max_temperature
-		# Right boundary
 		var gradient_right = abs(temperature_grid[row][temperature_grid[row].size() - 1] - temperature_grid[row][temperature_grid[row].size() - 2])
 		temperature_grid[row][temperature_grid[row].size() - 1] -= cooling_rate * edge_insulation * gradient_right / max_temperature
 
@@ -178,14 +181,11 @@ func clamp_temperature_bounds():
 			var temp = temperature_grid[row][col]
 			if temp < min_temperature:
 				temperature_grid[row][col] = min_temperature
-				heat_capacity_grid[row][col] = calc_heat_capacity(min_temperature)
 			elif temp > max_temperature:
 				temperature_grid[row][col] = max_temperature
-				heat_capacity_grid[row][col] = calc_heat_capacity(max_temperature)
 
 ### Utility Functions
 func calc_heat_capacity(temperature: float) -> float:
-	# Dynamic heat capacity: Higher temperatures reduce specific heat slightly
 	return 1.0 + 0.5 * (1.0 - (temperature / max_temperature))
 
 func calc_density(temperature: float) -> float:
@@ -211,11 +211,12 @@ func update_state():
 	apply_heat_sources()
 	apply_radiative_cooling()
 	apply_thermal_conduction()
+	update_pressures()
 	apply_convection()
 	apply_inertia()
 	enforce_boundary_conditions()
 	clamp_temperature_bounds()
-	# Update densities
+
 	for row in range(temperature_grid.size()):
 		for col in range(temperature_grid[row].size()):
 			density_grid[row][col] = calc_density(temperature_grid[row][col])
