@@ -10,25 +10,18 @@ class_name ThermodynamicsComponent
 @export var inertia := 0.9
 @export var ambient_temperature := 25
 
-# Fields for temperature and heat capacity
+# Externally attached grids
 var temperature_grid : Array = []
 var heat_capacity_grid : Array = []
 
 # Heat sources dictionary
 var heat_sources : Dictionary = {}
 
-# Initialize temperature and heat capacity grids
-func initialize_thermal_grid(cols: int, rows: int):
-	temperature_grid.clear()
-	heat_capacity_grid.clear()
-	for row in range(rows):
-		var temp_row = []
-		var capacity_row = []
-		for col in range(cols):
-			temp_row.append(0.0)
-			capacity_row.append(calc_heat_capacity(0.0))
-		temperature_grid.append(temp_row)
-		heat_capacity_grid.append(capacity_row)
+### Grid Management
+# Attach an external grid
+func set_grid(temp_grid: Array, capacity_grid: Array):
+	temperature_grid = temp_grid
+	heat_capacity_grid = capacity_grid
 
 ### Heat Source Management
 # Add a heat source with initial energy
