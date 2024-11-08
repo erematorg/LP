@@ -31,18 +31,21 @@ func new_entity(entity : EntityPart):
 	entities.push_back(entity)
 
 
-func place_entity(entity : EntityPart):
+func last_anchor() -> EntityPart:
 	var anchor : EntityPart
 	if previous_entity == null:
 		if entities.size() > 0:
 			anchor = entities.back()
-		else:
-			return
 	else:
 		anchor = previous_entity
+	return anchor
 
-	entity.global_position = anchor.global_position
-	entity.position.x += 16 #rough estimate of sprite width
+
+func place_entity(entity : EntityPart):
+	var anchor = last_anchor()
+	if anchor:
+		entity.global_position = anchor.global_position
+		entity.position.x += 16 #rough estimate of sprite width
 
 
 func remove_entity(entity : EntityPart):
