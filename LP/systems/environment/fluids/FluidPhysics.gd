@@ -10,6 +10,7 @@ var multimesh := MultiMesh.new()
 @export var rest_density := 1.5
 @export var stiffness := 200.0  # Pressure stiffness
 @export var viscosity := 0.1   # Viscosity factor
+@export var velocity_damping := 0.97  # Velocity reduction upon collision
 
 # Particle properties
 var velocities = []
@@ -123,6 +124,19 @@ func apply_viscosity_force(delta):
 				viscosity_force += velocity_diff * (1 - distance / interaction_radius)
 		velocities[i] += viscosity * viscosity_force * delta
 
+# Handle boundary collisions
+func handle_boundary_collision(index: int, pos: Vector2):
+	# Reflect velocity and apply damping if particle hits a boundary
+	if pos.x < -boundary_size or pos.x > boundary_size:
+		velocities[index].x = -velocities[index].x * velocity_damping
+	if pos.y < -boundary_size or pos.y > boundary_size:
+		velocities[index].y = -velocities[index].y * velocity_damping
+
+	# Clamp position to stay within the boundary
+	pos.x = clamp(pos.x, -boundary_size, boundary_size)
+	pos.y = clamp(pos.y, -boundary_size, boundary_size)
+	set_particle_pos(index, pos)
+
 # Main simulation loop
 func _process(delta):
 	update_neighbors()  # Update neighbors for all particles
@@ -130,8 +144,8 @@ func _process(delta):
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
 
-	# Update particle positions
+	# Update particle positions and handle boundary collisions
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 		pos_i += velocities[i] * delta
-		set_particle_pos(i, pos_i)
+		handle_boundary_collision(i, pos_i)
