@@ -1,10 +1,15 @@
-[gd_scene load_steps=7 format=3 uid="uid://054muqtx37p3"]
+[gd_scene load_steps=10 format=3 uid="uid://054muqtx37p3"]
 
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/CreatureCreator.gd" id="1_ahjc5"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/LineTracker.gd" id="3_3v5u3"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/MouseTracker.gd" id="3_dgbmd"]
+[ext_resource type="Texture2D" uid="uid://4mylvmah0i61" path="res://addons/attachmentgui/Sprites/platform.png" id="3_svr8h"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/AttachmentTracker.gd" id="4_0b8n6"]
 [ext_resource type="Script" path="res://systems/attachment system/Scripts/EntityTracker.gd" id="5_5eww6"]
+[ext_resource type="Texture2D" uid="uid://bes8uahpoe1he" path="res://addons/attachmentgui/Sprites/bg.png" id="6_bkra6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kvgow"]
+size = Vector2(123, 22)
 
 [sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
 
@@ -17,6 +22,24 @@ attachment_tracker = NodePath("AttachmentTracker")
 entity_tracker = NodePath("EntityTracker")
 component_node = NodePath("CreatureRoot/Components")
 metadata/_edit_lock_ = true
+
+[node name="Bg" type="Sprite2D" parent="."]
+modulate = Color(0.776471, 0.776471, 0.776471, 0.392157)
+texture = ExtResource("6_bkra6")
+metadata/_edit_lock_ = true
+
+[node name="PlatformSprite" type="Sprite2D" parent="."]
+modulate = Color(0.77084, 0.770839, 0.770839, 1)
+position = Vector2(-1, 50)
+texture = ExtResource("3_svr8h")
+metadata/_edit_lock_ = true
+
+[node name="StaticBody2D" type="StaticBody2D" parent="PlatformSprite"]
+visible = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformSprite/StaticBody2D"]
+position = Vector2(0.5, -1)
+shape = SubResource("RectangleShape2D_kvgow")
 
 [node name="MouseTracker" type="Node" parent="."]
 script = ExtResource("3_dgbmd")
