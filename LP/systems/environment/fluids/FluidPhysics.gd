@@ -6,11 +6,16 @@ var multimesh := MultiMesh.new()
 @export var particle_count := 50
 @export var boundary_size := 250
 @export var particle_size := 6.0
-@export var interaction_radius := 10.0  # Radius for neighbor detection
+@export var interaction_radius := 10.0
+@export var rest_density := 1.5
+@export var stiffness := 200.0  # Pressure stiffness
+@export var viscosity := 0.1   # Viscosity factor
 
 # Particle properties
 var velocities = []
 var neighbors = []
+var densities = []
+var pressures = []
 
 func _ready():
 	_detect_multimesh_instance()
@@ -38,10 +43,12 @@ func create_particle_mesh() -> Mesh:
 	particle_mesh.size = Vector2(particle_size, particle_size)
 	return particle_mesh
 
-# Initialize particle positions, velocities, and neighbors list
+# Initialize particle positions, velocities, neighbors, densities, and pressures
 func initialize_particles():
 	velocities.resize(particle_count)
 	neighbors.resize(particle_count)
+	densities.resize(particle_count)
+	pressures.resize(particle_count)
 
 	for i in range(particle_count):
 		var initial_pos = initialize_particle_position(i)
@@ -75,12 +82,56 @@ func update_neighbors():
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
 			if distance < interaction_radius:
-				neighbors[i].append(j)  # Add j to i's neighbor list
+				neighbors[i].append(j)
 
-# Debug neighbors for a specific particle (optional)
-func debug_neighbors(particle_index: int):
-	print("Neighbors of particle ", particle_index, ": ", neighbors[particle_index])
+# Calculate densities and pressures for each particle
+func calculate_density_and_pressure():
+	for i in range(particle_count):
+		var density = 0.0
+		for j in neighbors[i]:
+			var pos_i = multimesh.get_instance_transform_2d(i).origin
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius:
+				density += (1 - distance / interaction_radius) ** 2  # Simplified kernel
+		densities[i] = density
+		pressures[i] = stiffness * max(0, densities[i] - rest_density)  # Simplified pressure
+
+# Apply pressure forces to each particle
+func apply_pressure_force(delta):
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		var pressure_force = Vector2.ZERO
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius and distance > 0:
+				var direction = (pos_i - pos_j).normalized()
+				pressure_force += direction * (pressures[i] + pressures[j]) * (1 - distance / interaction_radius)
+		velocities[i] += pressure_force * delta
+
+# Apply viscosity forces to each particle
+func apply_viscosity_force(delta):
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		var viscosity_force = Vector2.ZERO
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius:
+				var velocity_diff = velocities[j] - velocities[i]
+				viscosity_force += velocity_diff * (1 - distance / interaction_radius)
+		velocities[i] += viscosity * viscosity_force * delta
 
 # Main simulation loop
 func _process(delta):
 	update_neighbors()  # Update neighbors for all particles
+	calculate_density_and_pressure()  # Compute densities and pressures
+	apply_pressure_force(delta)  # Apply pressure forces
+	apply_viscosity_force(delta)  # Apply viscosity forces
+
+	# Update particle positions
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		pos_i += velocities[i] * delta
+		set_particle_pos(i, pos_i)
