@@ -11,17 +11,20 @@ var multimesh := MultiMesh.new()
 @export var stiffness := 200.0  # Pressure stiffness
 @export var viscosity := 0.1   # Viscosity factor
 @export var velocity_damping := 0.97  # Velocity reduction upon collision
+@export var mouse_interaction_radius := 100.0  # Radius for particle interaction with mouse
 
 # Particle properties
 var velocities = []
 var neighbors = []
 var densities = []
 var pressures = []
+var prev_mouse_position = Vector2.ZERO
 
 func _ready():
 	_detect_multimesh_instance()
 	initialize_multimesh()
 	initialize_particles()
+	apply_shader()  # Apply shader to particles
 
 # Detect MultiMeshInstance2D node in the scene
 func _detect_multimesh_instance():
@@ -43,6 +46,19 @@ func create_particle_mesh() -> Mesh:
 	var particle_mesh := QuadMesh.new()
 	particle_mesh.size = Vector2(particle_size, particle_size)
 	return particle_mesh
+
+# Apply a shader to the particles to visualize them better
+func apply_shader():
+	# Load the shader file
+	var shader = load("res://shaders/Fluids.gdshader") as Shader
+
+	# Create a ShaderMaterial and assign the shader to it
+	var material = ShaderMaterial.new()
+	material.shader = shader
+
+	# Assign the ShaderMaterial to the MultiMeshInstance2D to apply to all particles
+	if fluid_instance:
+		fluid_instance.material = material
 
 # Initialize particle positions, velocities, neighbors, densities, and pressures
 func initialize_particles():
@@ -137,12 +153,31 @@ func handle_boundary_collision(index: int, pos: Vector2):
 	pos.y = clamp(pos.y, -boundary_size, boundary_size)
 	set_particle_pos(index, pos)
 
+# Apply mouse interaction forces to particles
+func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
+	var cursor_dx = mouse_position.x - prev_mouse_position.x
+	var cursor_dy = mouse_position.y - prev_mouse_position.y
+
+	for i in range(particle_count):
+		var pos = multimesh.get_instance_transform_2d(i).origin
+		var distance = pos.distance_to(mouse_position)
+
+		if distance < mouse_interaction_radius:
+			var strength = max(0, 1 - distance / mouse_interaction_radius)
+			velocities[i].x += strength * cursor_dx
+			velocities[i].y += strength * cursor_dy
+
 # Main simulation loop
 func _process(delta):
 	update_neighbors()  # Update neighbors for all particles
 	calculate_density_and_pressure()  # Compute densities and pressures
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
+
+	# Mouse interaction
+	var mouse_pos = get_global_mouse_position()
+	apply_mouse_force(mouse_pos, prev_mouse_position)
+	prev_mouse_position = mouse_pos
 
 	# Update particle positions and handle boundary collisions
 	for i in range(particle_count):

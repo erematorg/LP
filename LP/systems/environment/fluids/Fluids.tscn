@@ -6,3 +6,5 @@
 script = ExtResource("1_401x7")
 
 [node name="FluidMultiMeshInstance2D" type="MultiMeshInstance2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]
