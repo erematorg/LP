@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3 uid="uid://dbnfxlnew80xf"]
+
+[ext_resource type="Script" path="res://systems/environment/fluids/FluidPhysics.gd" id="1_401x7"]
+[ext_resource type="Shader" path="res://shaders/Fluids.gdshader" id="1_jifn0"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nd5kr"]
+shader = ExtResource("1_jifn0")
+
+[node name="Fluids" type="Node2D"]
+material = SubResource("ShaderMaterial_nd5kr")
+script = ExtResource("1_401x7")
+
+[node name="FluidMultiMeshInstance2D" type="MultiMeshInstance2D" parent="."]
