@@ -6,9 +6,11 @@ var multimesh := MultiMesh.new()
 @export var particle_count := 50
 @export var boundary_size := 250
 @export var particle_size := 6.0
+@export var interaction_radius := 10.0  # Radius for neighbor detection
 
 # Particle properties
 var velocities = []
+var neighbors = []
 
 func _ready():
 	_detect_multimesh_instance()
@@ -36,9 +38,10 @@ func create_particle_mesh() -> Mesh:
 	particle_mesh.size = Vector2(particle_size, particle_size)
 	return particle_mesh
 
-# Initialize particle positions and velocities
+# Initialize particle positions, velocities, and neighbors list
 func initialize_particles():
 	velocities.resize(particle_count)
+	neighbors.resize(particle_count)
 
 	for i in range(particle_count):
 		var initial_pos = initialize_particle_position(i)
@@ -60,3 +63,24 @@ func set_particle_pos(index: int, new_pos: Vector2):
 	var local_transform := Transform2D()
 	local_transform.origin = new_pos
 	multimesh.set_instance_transform_2d(index, local_transform)
+
+# Perform a basic neighbor search
+func update_neighbors():
+	for i in range(particle_count):
+		neighbors[i] = []  # Reset neighbors list for particle i
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		for j in range(particle_count):
+			if i == j:
+				continue
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius:
+				neighbors[i].append(j)  # Add j to i's neighbor list
+
+# Debug neighbors for a specific particle (optional)
+func debug_neighbors(particle_index: int):
+	print("Neighbors of particle ", particle_index, ": ", neighbors[particle_index])
+
+# Main simulation loop
+func _process(delta):
+	update_neighbors()  # Update neighbors for all particles
