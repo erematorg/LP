@@ -13,20 +13,38 @@ var troposphere_instance : MultiMeshInstance2D
 @export var cols := 40
 @export var rows := 30
 
-# Thermodynamics component (only active if enabled)
+# Thermodynamics component and grids
 var thermodynamics_component : ThermodynamicsComponent
+var temperature_grid : Array = []
+var heat_capacity_grid : Array = []
 
 # Initialize scene
 func _ready():
+	# Initialize temperature and heat capacity grids
+	_initialize_grids()
 	_initialize_troposphere_multimesh()
-
-	# Initialize ThermodynamicsComponent if enabled
+	
+	# Configure thermodynamics if enabled
 	if thermodynamics_component_enabled:
 		thermodynamics_component = ThermodynamicsComponent.new()
 		add_child(thermodynamics_component)
-		thermodynamics_component.initialize_thermal_grid(cols, rows)
+		thermodynamics_component.set_grid(temperature_grid, heat_capacity_grid)
 
+	# Initial update for the multimesh colors based on temperature
 	_update_troposphere_multimesh_colors()
+
+# Initialize temperature and heat capacity grids
+func _initialize_grids():
+	temperature_grid.clear()
+	heat_capacity_grid.clear()
+	for row in range(rows):
+		var temp_row = []
+		var capacity_row = []
+		for col in range(cols):
+			temp_row.append(0.0)
+			capacity_row.append(1.0)  # Default heat capacity value
+		temperature_grid.append(temp_row)
+		heat_capacity_grid.append(capacity_row)
 
 # Initialize Troposphere MultiMesh for rendering the grid
 func _initialize_troposphere_multimesh():
@@ -53,25 +71,30 @@ func _input(event):
 		var row = int(mouse_pos.y / grid_size)
 		thermodynamics_component.add_heat_source(row, col, 50.0, 100.0)
 
-# Update temperature field
+# Update temperature grid and visuals
 func _process(delta):
 	if thermodynamics_component_enabled:
 		thermodynamics_component.update_state()
 	_update_troposphere_multimesh_colors()
 
-# Update Troposphere MultiMesh colors based on temperature
+# Update Troposphere MultiMesh colors based on temperature in thermodynamics_component
 func _update_troposphere_multimesh_colors():
 	for row in range(rows):
 		for col in range(cols):
 			var color: Color
 			if thermodynamics_component_enabled:
+				# Access the temperature value directly from the updated grid
 				var temp_value = thermodynamics_component.temperature_grid[row][col]
+				# Map the temperature to a color intensity for visualization
 				var color_intensity = int(255 * (temp_value / thermodynamics_component.max_temperature))
-				color = Color(color_intensity / 255.0, 0, 0)
+				color = Color(color_intensity / 255.0, 0, 0)  # Red intensity based on temperature
 			else:
 				# Default color when no thermodynamics component is active
-				color = Color(0.2, 0.2, 0.2)  # Neutral gray for visualizing the grid
+				color = Color(0.2, 0.2, 0.2)  # Neutral gray
 
+			# Apply color and position to MultiMesh instance
 			var instance_index = row * cols + col
-			troposphere_multimesh.set_instance_transform_2d(instance_index, Transform2D(0, Vector2(col * grid_size, row * grid_size)))
+			troposphere_multimesh.set_instance_transform_2d(
+				instance_index, Transform2D(0, Vector2(col * grid_size, row * grid_size))
+			)
 			troposphere_multimesh.set_instance_color(instance_index, color)
