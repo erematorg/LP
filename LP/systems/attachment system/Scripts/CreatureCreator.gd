@@ -46,7 +46,13 @@ func connect_signals(gui):
 func new_entity_in_scene(entity : EntityPart):
 	if not entity:
 		return
-	add_new_node(creature_root, entity)
+	entity.set_autocalculate_length_and_angle(false) #Do this as soon as possible to avoid warning
+	## We have to parent/reparent here, previous entity or skeleton root
+	var n_parent = entity_tracker.last_anchor()
+	if n_parent:
+		add_new_node(n_parent, entity)
+	else:
+		add_new_node(creature_root, entity)
 	entity_tracker.new_entity(entity)
 
 

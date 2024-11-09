@@ -5,6 +5,7 @@ class_name EntityTracker
 var attachment_tracker : AttachmentTracker
 var skeleton
 var entities : Array[EntityPart]
+var previous_entity : EntityPart
 var snap_dist
 var max_line_dist
 
@@ -14,22 +15,46 @@ func init_tracker(skel, attachtracker, snapdist, linedist):
 	attachment_tracker = attachtracker
 	snap_dist = snapdist
 	max_line_dist = linedist
+	previous_entity = null
 
 
 func new_entity(entity : EntityPart):
 	if not entity:
 		push_error("Entity is null!")
 		return
-	entities.push_back(entity)
 	if not entity.tree_exited.is_connected(remove_entity):
 		entity.tree_exited.connect(remove_entity.bind(entity))
 	if not entity.tree_entered.is_connected(recall_entity):
 		entity.tree_entered.connect(recall_entity.bind(entity))
+	place_entity(entity)
+	previous_entity = entity
+	entities.push_back(entity)
 
-	
+
+func last_anchor() -> EntityPart:
+	var anchor : EntityPart
+	if previous_entity == null:
+		if entities.size() > 0:
+			anchor = entities.back()
+	else:
+		anchor = previous_entity
+	return anchor
+
+
+func place_entity(entity : EntityPart):
+	var anchor = last_anchor()
+	if anchor:
+		# Position our new entity at the end of `anchor` bone
+		var bone_length = anchor.get_length()
+		entity.global_position = anchor.global_transform * Vector2(bone_length, 0)
+	entity.rest = entity.transform
+
+
 func remove_entity(entity : EntityPart):
 	print("User removed an entity: " + entity.name)
 	entities.erase(entity)
+	if entity == previous_entity:
+		previous_entity = null
 	
 	
 func recall_entity(entity : EntityPart):
