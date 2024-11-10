@@ -104,24 +104,32 @@ func build_grid():
 			grid[cell_key] = []
 		grid[cell_key].append(i)
 
-# Perform a grid-based neighbor search
+# Perform a grid-based neighbor search with optimization
 func update_neighbors():
 	for i in range(particle_count):
 		neighbors[i] = []  # Reset neighbors list for particle i
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var grid_x = int(pos_i.x / grid_size)
-		var grid_y = int(pos_i.y / grid_size)
-
-		# Check all adjacent grid cells
-		for dx in range(-1, 2):
-			for dy in range(-1, 2):
-				var cell_key = Vector2(grid_x + dx, grid_y + dy)
-				if grid.has(cell_key):
-					for j in grid[cell_key]:
-						if i != j:
-							var pos_j = multimesh.get_instance_transform_2d(j).origin
+	# Iterate only once over grid cells and add symmetrical neighbors
+	for cell_key in grid.keys():
+		var cell_particles = grid[cell_key]
+		for i in range(cell_particles.size()):
+			var pi = cell_particles[i]
+			var pos_i = multimesh.get_instance_transform_2d(pi).origin
+			for j in range(i + 1, cell_particles.size()):
+				var pj = cell_particles[j]
+				var pos_j = multimesh.get_instance_transform_2d(pj).origin
+				if pos_i.distance_to(pos_j) < interaction_radius:
+					neighbors[pi].append(pj)
+					neighbors[pj].append(pi)
+			# Check neighbors in adjacent cells
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					var neighbor_cell = Vector2(cell_key.x + dx, cell_key.y + dy)
+					if grid.has(neighbor_cell) and neighbor_cell != cell_key:
+						for pj in grid[neighbor_cell]:
+							var pos_j = multimesh.get_instance_transform_2d(pj).origin
 							if pos_i.distance_to(pos_j) < interaction_radius:
-								neighbors[i].append(j)
+								neighbors[pi].append(pj)
+								neighbors[pj].append(pi)
 
 # Cubic Spline Kernel function for density calculations
 func cubic_spline_kernel(r: float, h: float) -> float:
