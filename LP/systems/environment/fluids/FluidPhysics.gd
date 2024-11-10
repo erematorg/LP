@@ -14,6 +14,7 @@ var multimesh := MultiMesh.new()
 @export var cohesion := 0.15 # Cohesion factor
 @export var surface_tension := 0.1 # Surface tension factor
 @export var mouse_interaction_radius := 75 # Radius for particle interaction with mouse
+@export var grid_size := 20.0  # Size of each grid cell
 
 # Particle properties
 var velocities = []
@@ -21,6 +22,7 @@ var neighbors = []
 var densities = []
 var pressures = []
 var prev_mouse_position = Vector2.ZERO
+var grid = {}  # Grid structure for neighbor optimization
 
 func _ready():
 	_detect_multimesh_instance()
@@ -85,18 +87,37 @@ func set_particle_pos(index: int, new_pos: Vector2):
 	local_transform.origin = new_pos
 	multimesh.set_instance_transform_2d(index, local_transform)
 
-# Perform a basic neighbor search
+# Build the grid for neighbor search
+func build_grid():
+	grid.clear()
+	for i in range(particle_count):
+		var pos = multimesh.get_instance_transform_2d(i).origin
+		var grid_x = int(pos.x / grid_size)
+		var grid_y = int(pos.y / grid_size)
+		var cell_key = Vector2(grid_x, grid_y)
+
+		if not grid.has(cell_key):
+			grid[cell_key] = []
+		grid[cell_key].append(i)
+
+# Perform a grid-based neighbor search
 func update_neighbors():
 	for i in range(particle_count):
 		neighbors[i] = []  # Reset neighbors list for particle i
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		for j in range(particle_count):
-			if i == j:
-				continue
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius:
-				neighbors[i].append(j)
+		var grid_x = int(pos_i.x / grid_size)
+		var grid_y = int(pos_i.y / grid_size)
+
+		# Check all adjacent grid cells
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var cell_key = Vector2(grid_x + dx, grid_y + dy)
+				if grid.has(cell_key):
+					for j in grid[cell_key]:
+						if i != j:
+							var pos_j = multimesh.get_instance_transform_2d(j).origin
+							if pos_i.distance_to(pos_j) < interaction_radius:
+								neighbors[i].append(j)
 
 # Cubic Spline Kernel function for density calculations
 func cubic_spline_kernel(r: float, h: float) -> float:
@@ -199,6 +220,7 @@ func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
 
 # Main simulation loop
 func _process(delta):
+	build_grid()  # Build the neighbor grid
 	update_neighbors()  # Update neighbors for all particles
 	calculate_density_and_pressure()  # Compute densities and pressures
 	apply_pressure_force(delta)  # Apply pressure forces
