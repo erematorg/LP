@@ -23,7 +23,7 @@ outline_color = Color(0, 0, 0, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cc6ja"]
 bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 
-[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "file_dialog", "select_dialog", "path_label", "current_scene_label", "parts_container", "components_container", "cosmetics_container")]
+[node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "export_button", "file_dialog", "select_dialog", "path_label", "current_scene_label", "parts_container", "components_container", "cosmetics_container")]
 layout_mode = 3
 anchor_right = 0.499
 anchor_bottom = 1.0
@@ -36,6 +36,7 @@ TEMPLATE_SCENE = ExtResource("2_6gnth")
 new_button = NodePath("MainPanel/NewButton")
 edit_button = NodePath("MainPanel/EditButton")
 socket_button = NodePath("MainPanel/SocketButton")
+export_button = NodePath("MainPanel/ExportButton")
 file_dialog = NodePath("CreateFileDialog")
 select_dialog = NodePath("SelectFileDialog")
 path_label = NodePath("MainPanel/Path_Label")
@@ -290,4 +291,5 @@ popup/item_2/id = 2
 [connection signal="pressed" from="MainPanel/SelectButton" to="." method="_on_select_button_pressed"]
 [connection signal="pressed" from="MainPanel/EditButton" to="." method="_on_edit_button_pressed"]
 [connection signal="pressed" from="MainPanel/SocketButton" to="." method="_on_socket_button_pressed"]
+[connection signal="pressed" from="MainPanel/ExportButton" to="." method="_export_button_pressed"]
 [connection signal="item_selected" from="selection" to="." method="_on_selection"]

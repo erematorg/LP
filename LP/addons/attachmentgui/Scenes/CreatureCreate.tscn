@@ -13,14 +13,14 @@ size = Vector2(123, 22)
 
 [sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
 
-[node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("creature_root", "m_tracker", "line_tracker", "attachment_tracker", "entity_tracker", "component_node")]
+[node name="CreatureCreator" type="Node2D" node_paths=PackedStringArray("creature_skeleton", "m_tracker", "line_tracker", "attachment_tracker", "entity_tracker", "component_node")]
 script = ExtResource("1_ahjc5")
-creature_root = NodePath("CreatureRoot/Skeleton")
+creature_skeleton = NodePath("Skeleton")
 m_tracker = NodePath("MouseTracker")
 line_tracker = NodePath("LineTracker")
 attachment_tracker = NodePath("AttachmentTracker")
 entity_tracker = NodePath("EntityTracker")
-component_node = NodePath("CreatureRoot/Components")
+component_node = NodePath("Skeleton/Components")
 metadata/_edit_lock_ = true
 
 [node name="Bg" type="Sprite2D" parent="."]
@@ -49,16 +49,13 @@ script = ExtResource("3_3v5u3")
 
 [node name="AttachmentTracker" type="Node" parent="." node_paths=PackedStringArray("skeleton")]
 script = ExtResource("4_0b8n6")
-skeleton = NodePath("../CreatureRoot/Skeleton")
+skeleton = NodePath("../Skeleton")
 
 [node name="EntityTracker" type="Node" parent="."]
 script = ExtResource("5_5eww6")
 
-[node name="CreatureRoot" type="Node2D" parent="."]
-metadata/_edit_lock_ = true
-
-[node name="Skeleton" type="Skeleton2D" parent="CreatureRoot"]
+[node name="Skeleton" type="Skeleton2D" parent="."]
 modification_stack = SubResource("SkeletonModificationStack2D_gob83")
 metadata/_edit_lock_ = true
 
-[node name="Components" type="Node" parent="CreatureRoot"]
+[node name="Components" type="Node" parent="Skeleton"]
