@@ -203,12 +203,16 @@ func apply_surface_tension_force(delta):
 	for i in range(particle_count):
 		var surface_tension_force = Vector2.ZERO
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
+
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
+
 			if distance < interaction_radius and distance > 0:
 				var direction = (pos_j - pos_i).normalized()
-				surface_tension_force -= direction * (1 - distance / interaction_radius)
+				var curvature = (1 - distance / interaction_radius) ** 2  # Curvature factor
+				surface_tension_force -= direction * curvature
+
 		velocities[i] += surface_tension_force * surface_tension * delta
 
 # Apply restoring forces to maintain fluid structure
@@ -223,22 +227,35 @@ func apply_viscosity_force(delta):
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 		var viscosity_force = Vector2.ZERO
+
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius:
+
+			if distance < interaction_radius and distance > 0:
 				var velocity_diff = velocities[j] - velocities[i]
-				viscosity_force += velocity_diff * (1 - distance / interaction_radius)
+				viscosity_force += velocity_diff * cubic_spline_kernel(distance, interaction_radius)
+
 		velocities[i] += viscosity * viscosity_force * delta
 
 # Handle boundary collisions
 func handle_boundary_collision(index: int, pos: Vector2):
+	var vel = velocities[index]
+
+	# Compute reflection and damping dynamically based on velocity magnitude
 	if pos.x < -boundary_size or pos.x > boundary_size:
-		velocities[index].x = -velocities[index].x * velocity_damping
+		vel.x = -vel.x * velocity_damping  # Reflect along X-axis
+		vel *= 1.0 - abs(vel.x / vel.length()) * 0.1  # Reduce energy based on X-impact
+
 	if pos.y < -boundary_size or pos.y > boundary_size:
-		velocities[index].y = -velocities[index].y * velocity_damping
+		vel.y = -vel.y * velocity_damping  # Reflect along Y-axis
+		vel *= 1.0 - abs(vel.y / vel.length()) * 0.1  # Reduce energy based on Y-impact
+
+	# Clamp position to stay within bounds
 	pos.x = clamp(pos.x, -boundary_size, boundary_size)
 	pos.y = clamp(pos.y, -boundary_size, boundary_size)
+
+	velocities[index] = vel
 	set_particle_pos(index, pos)
 
 # Apply mouse interaction forces to particles
