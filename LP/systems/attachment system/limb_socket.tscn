@@ -6,8 +6,6 @@
 [node name="LimbSocket" type="Node2D"]
 script = ExtResource("1_akdwv")
 
-[node name="Marker2D" type="Marker2D" parent="."]
-
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture_filter = 1
 texture = ExtResource("2_7qfwg")

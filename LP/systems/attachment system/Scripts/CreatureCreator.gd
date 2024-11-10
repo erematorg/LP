@@ -110,7 +110,7 @@ func search_for_parts(node: Node) -> void:
 
 
 func will_process() -> bool:
-	return Engine.is_editor_hint() and exported == false and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_stack_pairs.is_empty())
+	return Engine.is_editor_hint() and exported == false and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_limb_pairs.is_empty())
 
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
