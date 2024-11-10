@@ -4,6 +4,7 @@
 
 [node name="Fluids" type="Node2D"]
 script = ExtResource("1_401x7")
+particle_count = 100
 
 [node name="FluidMultiMeshInstance2D" type="MultiMeshInstance2D" parent="."]
 
