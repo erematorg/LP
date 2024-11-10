@@ -7,11 +7,13 @@ var multimesh := MultiMesh.new()
 @export var boundary_size := 250
 @export var particle_size := 6.0
 @export var interaction_radius := 10.0
-@export var rest_density := 1.5
-@export var stiffness := 200.0  # Pressure stiffness
-@export var viscosity := 0.1   # Viscosity factor
-@export var velocity_damping := 0.97  # Velocity reduction upon collision
-@export var mouse_interaction_radius := 100.0  # Radius for particle interaction with mouse
+@export var rest_density := 3
+@export var stiffness := 500.0 # Pressure stiffness
+@export var viscosity := 0.1 # Viscosity factor
+@export var velocity_damping := 1.0 # Velocity reduction upon collision
+@export var cohesion := 0.15 # Cohesion factor
+@export var surface_tension := 0.1 # Surface tension factor
+@export var mouse_interaction_radius := 75 # Radius for particle interaction with mouse
 
 # Particle properties
 var velocities = []
@@ -49,14 +51,9 @@ func create_particle_mesh() -> Mesh:
 
 # Apply a shader to the particles to visualize them better
 func apply_shader():
-	# Load the shader file
 	var shader = load("res://shaders/Fluids.gdshader") as Shader
-
-	# Create a ShaderMaterial and assign the shader to it
 	var material = ShaderMaterial.new()
 	material.shader = shader
-
-	# Assign the ShaderMaterial to the MultiMeshInstance2D to apply to all particles
 	if fluid_instance:
 		fluid_instance.material = material
 
@@ -114,6 +111,32 @@ func calculate_density_and_pressure():
 		densities[i] = density
 		pressures[i] = stiffness * max(0, densities[i] - rest_density)  # Simplified pressure
 
+# Apply cohesion force for natural clustering
+func apply_cohesion_force(delta):
+	for i in range(particle_count):
+		var cohesion_force = Vector2.ZERO
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius and distance > 0:
+				var direction = (pos_j - pos_i).normalized()
+				cohesion_force += direction * (1 - distance / interaction_radius)
+		velocities[i] += cohesion_force * cohesion * delta
+
+# Apply surface tension force to enhance droplet behavior
+func apply_surface_tension_force(delta):
+	for i in range(particle_count):
+		var surface_tension_force = Vector2.ZERO
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius and distance > 0:
+				var direction = (pos_j - pos_i).normalized()
+				surface_tension_force -= direction * (1 - distance / interaction_radius)
+		velocities[i] += surface_tension_force * surface_tension * delta
+
 # Apply pressure forces to each particle
 func apply_pressure_force(delta):
 	for i in range(particle_count):
@@ -142,13 +165,10 @@ func apply_viscosity_force(delta):
 
 # Handle boundary collisions
 func handle_boundary_collision(index: int, pos: Vector2):
-	# Reflect velocity and apply damping if particle hits a boundary
 	if pos.x < -boundary_size or pos.x > boundary_size:
 		velocities[index].x = -velocities[index].x * velocity_damping
 	if pos.y < -boundary_size or pos.y > boundary_size:
 		velocities[index].y = -velocities[index].y * velocity_damping
-
-	# Clamp position to stay within the boundary
 	pos.x = clamp(pos.x, -boundary_size, boundary_size)
 	pos.y = clamp(pos.y, -boundary_size, boundary_size)
 	set_particle_pos(index, pos)
@@ -157,11 +177,9 @@ func handle_boundary_collision(index: int, pos: Vector2):
 func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
 	var cursor_dx = mouse_position.x - prev_mouse_position.x
 	var cursor_dy = mouse_position.y - prev_mouse_position.y
-
 	for i in range(particle_count):
 		var pos = multimesh.get_instance_transform_2d(i).origin
 		var distance = pos.distance_to(mouse_position)
-
 		if distance < mouse_interaction_radius:
 			var strength = max(0, 1 - distance / mouse_interaction_radius)
 			velocities[i].x += strength * cursor_dx
@@ -173,13 +191,13 @@ func _process(delta):
 	calculate_density_and_pressure()  # Compute densities and pressures
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
+	apply_cohesion_force(delta)
+	apply_surface_tension_force(delta)
 
-	# Mouse interaction
 	var mouse_pos = get_global_mouse_position()
 	apply_mouse_force(mouse_pos, prev_mouse_position)
 	prev_mouse_position = mouse_pos
 
-	# Update particle positions and handle boundary collisions
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 		pos_i += velocities[i] * delta
