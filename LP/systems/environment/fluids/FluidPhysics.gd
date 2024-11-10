@@ -13,6 +13,7 @@ var multimesh := MultiMesh.new()
 @export var velocity_damping := 1.0 # Velocity reduction upon collision
 @export var cohesion := 0.15 # Cohesion factor
 @export var surface_tension := 0.1 # Surface tension factor
+@export var restoring_factor := 0.02 # Restoring force strength
 @export var mouse_interaction_radius := 75 # Radius for particle interaction with mouse
 @export var grid_size := 20.0  # Size of each grid cell
 
@@ -21,6 +22,7 @@ var velocities = []
 var neighbors = []
 var densities = []
 var pressures = []
+var initial_positions = []  # Store the initial positions of particles
 var prev_mouse_position = Vector2.ZERO
 var grid = {}  # Grid structure for neighbor optimization
 
@@ -65,10 +67,12 @@ func initialize_particles():
 	neighbors.resize(particle_count)
 	densities.resize(particle_count)
 	pressures.resize(particle_count)
+	initial_positions.resize(particle_count)
 
 	for i in range(particle_count):
 		var initial_pos = initialize_particle_position(i)
 		set_particle_pos(i, initial_pos)
+		initial_positions[i] = initial_pos  # Store the initial position
 		velocities[i] = initialize_particle_velocity()
 
 # Generate a random initial position for each particle
@@ -143,6 +147,13 @@ func calculate_density_and_pressure():
 
 		densities[i] = max(densities[i], 0.001)  # Prevent division by zero
 		pressures[i] = stiffness * max(densities[i] - rest_density, 0)  # Calculate pressure
+
+# Apply restoring forces to maintain fluid structure
+func apply_restoring_force(delta):
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		var restoring_force = (initial_positions[i] - pos_i) * restoring_factor
+		velocities[i] += restoring_force * delta
 
 # Apply cohesion force for natural clustering
 func apply_cohesion_force(delta):
@@ -225,8 +236,9 @@ func _process(delta):
 	calculate_density_and_pressure()  # Compute densities and pressures
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
-	apply_cohesion_force(delta)
-	apply_surface_tension_force(delta)
+	apply_cohesion_force(delta)  # Apply cohesion forces
+	apply_surface_tension_force(delta)  # Apply surface tension forces
+	apply_restoring_force(delta)  # Apply restoring forces
 
 	var mouse_pos = get_global_mouse_position()
 	apply_mouse_force(mouse_pos, prev_mouse_position)
