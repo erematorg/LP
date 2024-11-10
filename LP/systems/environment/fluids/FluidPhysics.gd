@@ -132,6 +132,20 @@ func cubic_spline_kernel(r: float, h: float) -> float:
 		return (10.0 / (7.0 * PI * h * h)) * 0.25 * pow(2 - q, 3)
 	return 0.0
 
+# Cubic Spline Kernel gradient
+func cubic_spline_gradient(r: float, dx: float, dy: float, h: float) -> Vector2:
+	var q = r / h
+	if r == 0:
+		return Vector2.ZERO
+	var grad = Vector2(dx / r, dy / r)
+	if q < 1:
+		grad *= (10.0 / (7.0 * PI * h * h)) * (-3 * q + 2.25 * q * q)
+	elif q < 2:
+		grad *= (10.0 / (7.0 * PI * h * h)) * -0.75 * pow(2 - q, 2)
+	else:
+		grad = Vector2.ZERO
+	return grad
+
 # Calculate densities and pressures for each particle
 func calculate_density_and_pressure():
 	for i in range(particle_count):
@@ -148,12 +162,20 @@ func calculate_density_and_pressure():
 		densities[i] = max(densities[i], 0.001)  # Prevent division by zero
 		pressures[i] = stiffness * max(densities[i] - rest_density, 0)  # Calculate pressure
 
-# Apply restoring forces to maintain fluid structure
-func apply_restoring_force(delta):
+# Apply gradient-based pressure forces
+func apply_pressure_force(delta):
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var restoring_force = (initial_positions[i] - pos_i) * restoring_factor
-		velocities[i] += restoring_force * delta
+		var pressure_force = Vector2.ZERO
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var dx = pos_j.x - pos_i.x
+			var dy = pos_j.y - pos_i.y
+			var distance = pos_i.distance_to(pos_j)
+			if distance > 0 and distance < interaction_radius:  # Fixed condition
+				var grad = cubic_spline_gradient(distance, dx, dy, interaction_radius)
+				pressure_force += grad * (pressures[i] + pressures[j]) / (2 * densities[j])
+		velocities[i] += pressure_force * delta
 
 # Apply cohesion force for natural clustering
 func apply_cohesion_force(delta):
@@ -181,18 +203,12 @@ func apply_surface_tension_force(delta):
 				surface_tension_force -= direction * (1 - distance / interaction_radius)
 		velocities[i] += surface_tension_force * surface_tension * delta
 
-# Apply pressure forces to each particle
-func apply_pressure_force(delta):
+# Apply restoring forces to maintain fluid structure
+func apply_restoring_force(delta):
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var pressure_force = Vector2.ZERO
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius and distance > 0:
-				var direction = (pos_i - pos_j).normalized()
-				pressure_force += direction * (pressures[i] + pressures[j]) * (1 - distance / interaction_radius)
-		velocities[i] += pressure_force * delta
+		var restoring_force = (initial_positions[i] - pos_i) * restoring_factor
+		velocities[i] += restoring_force * delta
 
 # Apply viscosity forces to each particle
 func apply_viscosity_force(delta):
@@ -234,7 +250,7 @@ func _process(delta):
 	build_grid()  # Build the neighbor grid
 	update_neighbors()  # Update neighbors for all particles
 	calculate_density_and_pressure()  # Compute densities and pressures
-	apply_pressure_force(delta)  # Apply pressure forces
+	apply_pressure_force(delta)  # Apply gradient-based pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
 	apply_cohesion_force(delta)  # Apply cohesion forces
 	apply_surface_tension_force(delta)  # Apply surface tension forces
