@@ -3,7 +3,7 @@ extends Node2D
 var fluid_instance: MultiMeshInstance2D
 var multimesh := MultiMesh.new()
 
-@export var particle_count := 50
+@export var particle_count := 200
 @export var boundary_size := 250
 @export var particle_size := 6.0
 @export var interaction_radius := 10.0
@@ -98,18 +98,30 @@ func update_neighbors():
 			if distance < interaction_radius:
 				neighbors[i].append(j)
 
+# Cubic Spline Kernel function for density calculations
+func cubic_spline_kernel(r: float, h: float) -> float:
+	var q = r / h
+	if q < 1:
+		return (10.0 / (7.0 * PI * h * h)) * (1 - 1.5 * q * q + 0.75 * q * q * q)
+	elif q < 2:
+		return (10.0 / (7.0 * PI * h * h)) * 0.25 * pow(2 - q, 3)
+	return 0.0
+
 # Calculate densities and pressures for each particle
 func calculate_density_and_pressure():
 	for i in range(particle_count):
-		var density = 0.0
+		densities[i] = 0.0  # Reset density
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+
 		for j in neighbors[i]:
-			var pos_i = multimesh.get_instance_transform_2d(i).origin
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius:
-				density += (1 - distance / interaction_radius) ** 2  # Simplified kernel
-		densities[i] = density
-		pressures[i] = stiffness * max(0, densities[i] - rest_density)  # Simplified pressure
+
+			if distance < interaction_radius:  # Apply kernel
+				densities[i] += cubic_spline_kernel(distance, interaction_radius)
+
+		densities[i] = max(densities[i], 0.001)  # Prevent division by zero
+		pressures[i] = stiffness * max(densities[i] - rest_density, 0)  # Calculate pressure
 
 # Apply cohesion force for natural clustering
 func apply_cohesion_force(delta):
