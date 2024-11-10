@@ -190,13 +190,19 @@ func apply_cohesion_force(delta):
 	for i in range(particle_count):
 		var cohesion_force = Vector2.ZERO
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
+
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
+
 			if distance < interaction_radius and distance > 0:
 				var direction = (pos_j - pos_i).normalized()
-				cohesion_force += direction * (1 - distance / interaction_radius)
-		velocities[i] += cohesion_force * cohesion * delta
+
+				# Cohesion force strength increases near edges (stronger for sparse clusters)
+				var cohesion_strength = cohesion * pow(1 - distance / interaction_radius, 2)
+				cohesion_force += direction * cohesion_strength
+
+		velocities[i] += cohesion_force * delta
 
 # Apply surface tension force to enhance droplet behavior
 func apply_surface_tension_force(delta):
@@ -210,10 +216,12 @@ func apply_surface_tension_force(delta):
 
 			if distance < interaction_radius and distance > 0:
 				var direction = (pos_j - pos_i).normalized()
-				var curvature = (1 - distance / interaction_radius) ** 2  # Curvature factor
-				surface_tension_force -= direction * curvature
 
-		velocities[i] += surface_tension_force * surface_tension * delta
+				# Curvature ensures edge particles maintain cluster boundaries
+				var curvature = pow(1 - distance / interaction_radius, 3)
+				surface_tension_force -= direction * curvature * surface_tension
+
+		velocities[i] += surface_tension_force * delta
 
 # Apply restoring forces to maintain fluid structure
 func apply_restoring_force(delta):
