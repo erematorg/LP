@@ -7,25 +7,29 @@ class_name CreatureCreator
 @export var show_line_distance = 25.0
 
 # Dependencies
-@export var creature_root: Skeleton2D
+@export var creature_skeleton: Skeleton2D
 @export var m_tracker : MouseTracker
 @export var line_tracker : LineTracker
 @export var attachment_tracker : AttachmentTracker
 @export var entity_tracker : EntityTracker
 @export var component_node : Node
+var file_path
+var exported = false
 
 
 ## This is our "start/ready" function, called from the attachmentgui
-func inject_attachment_gui(gui : AttachmentGui):
+func inject_attachment_gui(gui : AttachmentGui, path : String):
 	if not gui or not m_tracker or not line_tracker:
 		push_error("Lacking required dependencies! - CretureCreator inject_attachment_gui")
 		return
+	file_path = path
+	print("Creature creator initiated for: " + file_path)
 	connect_signals(gui)
 	find_old_parts()
 	attachment_tracker.ensure_socket_stack_pairs()
 	attachment_tracker.update_stacks_with_occupied_parts()
 	line_tracker.init_linetracker(snap_distance, show_line_distance)
-	entity_tracker.init_tracker(creature_root, attachment_tracker, snap_distance, show_line_distance)
+	entity_tracker.init_tracker(creature_skeleton, attachment_tracker, snap_distance, show_line_distance)
 
 
 ## Add and make sure signals are connected properly
@@ -52,7 +56,7 @@ func new_entity_in_scene(entity : EntityPart):
 	if n_parent:
 		add_new_node(n_parent, entity)
 	else:
-		add_new_node(creature_root, entity)
+		add_new_node(creature_skeleton, entity)
 	entity_tracker.new_entity(entity)
 
 
@@ -106,7 +110,7 @@ func search_for_parts(node: Node) -> void:
 
 
 func will_process() -> bool:
-	return Engine.is_editor_hint() and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_stack_pairs.is_empty())
+	return Engine.is_editor_hint() and exported == false and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_stack_pairs.is_empty())
 
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:
@@ -153,3 +157,23 @@ func find_close_entity(socket : AttachmentSocket):
 	if closest_bone:
 		socket.reparent(closest_bone)
 		attachment_tracker.new_socket(socket)
+
+
+func prepare_for_export():
+	print("exporting...")
+# Free all nodes except `creature_root`
+	for node in get_children():
+		if node != creature_skeleton:
+			node.queue_free()
+	self.name = get_name_from_path()
+	exported = true
+	set_script(null)
+
+
+func get_name_from_path() -> String:
+	var name : String = file_path
+	var first_index = name.rfind("/") + 1
+	#.tscn is 5 letters so remove five from length
+	var name_with_extension = name.substr(first_index)
+	name = name_with_extension.substr(0, name_with_extension.length() - 5)
+	return name
