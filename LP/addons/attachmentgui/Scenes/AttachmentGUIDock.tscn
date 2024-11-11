@@ -25,10 +25,10 @@ bg_color = Color(0.176471, 0.196078, 0.223529, 1)
 
 [node name="AttachmentGuiDock" type="Control" node_paths=PackedStringArray("new_button", "edit_button", "socket_button", "export_button", "file_dialog", "select_dialog", "path_label", "current_scene_label", "parts_container", "components_container", "cosmetics_container")]
 layout_mode = 3
-anchor_right = 0.499
+anchor_right = 0.374
 anchor_bottom = 1.0
 offset_left = -1.0
-offset_right = 1.15198
+offset_right = -19.848
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rn36r")
@@ -58,10 +58,11 @@ filters = PackedStringArray("*.tscn")
 
 [node name="MainPanel" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
+anchors_preset = -1
+anchor_right = 1.044
 offset_left = -1.0
-offset_bottom = 256.0
+offset_right = -0.128021
+offset_bottom = 204.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_i810g")
 
@@ -100,10 +101,10 @@ icon = ExtResource("1_rb5mb")
 
 [node name="SocketButton" type="Button" parent="MainPanel"]
 layout_mode = 1
-offset_left = 305.0
-offset_top = 123.0
-offset_right = 419.0
-offset_bottom = 154.0
+offset_left = 243.0
+offset_top = 110.0
+offset_right = 357.0
+offset_bottom = 141.0
 tooltip_text = "Add a limb-socket into the scene"
 text = "Add Socket"
 icon = ExtResource("4_w7l0e")
@@ -121,10 +122,10 @@ icon = ExtResource("1_rb5mb")
 
 [node name="Path_Label" type="Label" parent="MainPanel"]
 layout_mode = 1
-offset_left = 305.0
-offset_top = 39.0
-offset_right = 368.0
-offset_bottom = 70.0
+offset_left = 261.0
+offset_top = 48.0
+offset_right = 324.0
+offset_bottom = 79.0
 text = "PATH:"
 label_settings = ExtResource("4_3i1o5")
 horizontal_alignment = 1
@@ -143,9 +144,9 @@ uppercase = true
 
 [node name="CurrentSceneLabel" type="Label" parent="MainPanel"]
 layout_mode = 1
-offset_left = 305.0
+offset_left = 261.0
 offset_top = 8.0
-offset_right = 379.0
+offset_right = 335.0
 offset_bottom = 39.0
 text = "SCENE:"
 label_settings = ExtResource("4_3i1o5")
@@ -154,10 +155,10 @@ uppercase = true
 
 [node name="SymmetryCheck" type="CheckButton" parent="MainPanel"]
 layout_mode = 1
-offset_left = 305.0
-offset_top = 173.0
-offset_right = 432.0
-offset_bottom = 204.0
+offset_left = 243.0
+offset_top = 161.0
+offset_right = 370.0
+offset_bottom = 192.0
 text = "Symmetry"
 
 [node name="PartsPanel" type="Panel" parent="."]
@@ -166,8 +167,8 @@ layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.401
-offset_top = 260.0
-offset_bottom = 541.152
+offset_top = 204.0
+offset_bottom = 485.152
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_h4040")
@@ -205,8 +206,10 @@ layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.401
-offset_top = 260.0
-offset_bottom = 402.152
+offset_left = 1.0
+offset_top = 204.0
+offset_right = 1.0
+offset_bottom = 346.152
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cc6ja")
@@ -238,8 +241,10 @@ layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.401
-offset_top = 260.0
-offset_bottom = 402.152
+offset_left = 2.0
+offset_top = 204.0
+offset_right = 2.0
+offset_bottom = 346.152
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cc6ja")
@@ -272,10 +277,10 @@ layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.002
 anchor_right = 0.002
-offset_left = 285.846
-offset_top = 260.0
-offset_right = 468.846
-offset_bottom = 300.0
+offset_left = 182.846
+offset_top = 204.0
+offset_right = 365.846
+offset_bottom = 244.0
 tooltip_text = "Switch between components and parts"
 selected = 0
 item_count = 3
