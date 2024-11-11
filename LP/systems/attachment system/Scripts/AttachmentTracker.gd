@@ -18,7 +18,7 @@ func new_socket(socket : AttachmentSocket):
 		return
 	if not socket.tree_exited.is_connected(remove_socket):
 		socket.tree_exited.connect(remove_socket.bind(socket))
-	add_stack_for_socket(socket)
+	setup_socket_data(socket)
 	ensure_socket_stack_pairs()
 	var stack : SkeletonModification2D = socket_limb_pairs[socket].stack
 	stack.target_nodepath = socket_limb_pairs[socket].target.get_path()
@@ -42,10 +42,15 @@ func remove_socket(socket: AttachmentSocket):
 	ensure_socket_stack_pairs() # double check
 
 
-func add_stack_for_socket(socket: AttachmentSocket):
+func setup_socket_data(socket: AttachmentSocket):
 	# Only create a stack if the socket doesn't already have one
 	var data = LimbData.new()
 	var new_stack
+	if socket.get_child_count() > 0:
+		print("Removing old tip and marker")
+		for child in socket.get_children():
+			if child is not Sprite2D and child is not Bone2D:
+				child.free()
 	#Determine stack type
 	if socket.IK_type == AttachmentSocket.IK_chain_type.CCDIK:
 		# Add CCDIK stack and tip
@@ -74,7 +79,7 @@ func ensure_socket_stack_pairs():
 	for socket : AttachmentSocket in socket_limb_pairs.keys():
 		var data = socket_limb_pairs[socket]
 		if data == null or not is_instance_valid(data):
-			add_stack_for_socket(socket)
+			setup_socket_data(socket)
 			push_warning("Socket lacked a stack, adding")
 	for i in mod_stack.modification_count:
 		var modification = mod_stack.get_modification(i)
@@ -90,7 +95,7 @@ func ensure_socket_stack_pairs():
 	if mod_stack.modification_count != socket_limb_pairs.size():
 		print("Warning: Modifications and sockets are not fully synchronized.")
 	else:
-		print("Corrected mod stack count")
+		print("Mod stack count is correct")
 
 
 func remove_stack_for_socket(socket: AttachmentSocket):
