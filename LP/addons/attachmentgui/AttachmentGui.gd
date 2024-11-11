@@ -13,6 +13,7 @@ var current_creature_scene : PackedScene
 @export var new_button : Button
 @export var edit_button : Button
 @export var socket_button : Button
+@export var export_button : Button
 @export var file_dialog : FileDialog
 @export var select_dialog : FileDialog
 @export var path_label : Label
@@ -39,6 +40,7 @@ func _ready() -> void:
 	current_scene_label.text = "SCENE:"
 	edit_button.disabled = true
 	socket_button.disabled = false
+	export_button.disabled = true
 	parts_panel.visible = false
 	components_panel.visible = false
 	cosmetics_panel.visible = false
@@ -85,10 +87,11 @@ func _on_edit_button_pressed() -> void:
 	clear_containers()
 	if !path_label.text.ends_with(".tscn"):
 		path_label.text = path_label.text+".tscn"
+	var path = path_label.text
 	if not current_creature_scene:
 		push_error("current_creature_scene is null!")
 		return
-	attachment_editor.edit_scene(current_creature_scene, path_label.text)
+	attachment_editor.edit_scene(current_creature_scene, path)
 	var rootNode = attachment_editor.get_open_scene()
 	if rootNode == null or rootNode is not CreatureCreator:
 		print("Root is either null or not creaturecreator - attachmentgui")
@@ -102,9 +105,10 @@ func _on_edit_button_pressed() -> void:
 	attachment_editor.load_resources_from_folder(self, ".gd", attachment_editor.components_folder) #load components
 	active_container = cosmetics_container
 	attachment_editor.load_resources_from_folder(self, ".tscn", attachment_editor.cosmetics_folder) #load cosmetics
-	rootNode.inject_attachment_gui(self)
+	rootNode.inject_attachment_gui(self, path) # this starts the creature creator essentially
 	components_panel.visible = true
 	socket_button.disabled = false
+	export_button.disabled = false
 
 
 #When selecting a path for the new creature, save it
@@ -250,7 +254,7 @@ func add_cosmetic_instance(resource : String):
 
 
 func clear_containers():
-	var children = parts_container.get_children() + components_container.get_children()
+	var children = parts_container.get_children() + components_container.get_children() + cosmetics_container.get_children()
 	for child in children:
 		child.free()
 
@@ -278,3 +282,13 @@ func _on_selection(index: int) -> void:
 			parts_panel.visible = false
 			components_panel.visible = false
 			cosmetics_panel.visible = true
+
+
+func _export_button_pressed() -> void:
+	var rootNode = attachment_editor.get_open_scene()
+	if rootNode == null or rootNode is not CreatureCreator:
+		print("Root is either null or not creaturecreator - attachmentgui")
+		current_scene_label.text = "NO SCENE FOUND"
+		return
+	rootNode.prepare_for_export()
+	
