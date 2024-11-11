@@ -2,6 +2,8 @@
 extends Control
 class_name AttachmentGui
 
+## This class sits on the attachment plugin itself and represents the gui for the plugin,
+
 signal spawn_entity(entity)
 signal spawn_socket(socket)
 signal spawn_component(component)

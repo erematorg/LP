@@ -2,6 +2,8 @@
 extends Node
 class_name AttachmentTracker
 
+##This class tracks sockets and their relevant Skeleton2dStack data
+
 #@export var socket_stack_pairs: Dictionary = {}
 var socket_limb_pairs : Dictionary = {}
 @export var skeleton : Skeleton2D

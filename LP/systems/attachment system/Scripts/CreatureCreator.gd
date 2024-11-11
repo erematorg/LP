@@ -2,6 +2,8 @@
 extends Node2D
 class_name CreatureCreator
 
+## This is the main builder/manager of the creature creator attachment plugin
+
 #Socket snap settings
 @export var snap_distance = 8.0
 @export var show_line_distance = 25.0

@@ -2,6 +2,8 @@
 extends EditorPlugin
 class_name AttachmentEditor
 
+## This class creates the attachment plugin and is then responsible for file handling.
+
 var dock
 var editor : EditorInterface
 var entities_folder : String = "res://entities/"
