@@ -57,6 +57,7 @@ func new_entity_in_scene(entity : EntityPart):
 	var n_parent = entity_tracker.last_anchor()
 	if n_parent:
 		add_new_node(n_parent, entity)
+		attachment_tracker.update_all_sockets()
 	else:
 		add_new_node(creature_skeleton, entity)
 	entity_tracker.new_entity(entity)
