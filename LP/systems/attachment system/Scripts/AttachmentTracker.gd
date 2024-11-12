@@ -25,7 +25,7 @@ func new_socket(socket : AttachmentSocket):
 	var stack : SkeletonModification2D = socket_limb_pairs[socket].stack
 	stack.target_nodepath = socket_limb_pairs[socket].target.get_path()
 	if stack is SkeletonModification2DCCDIK:
-		stack.tip_nodepath = socket_limb_pairs[socket].tip.get_path()
+		place_tip(socket)
 
 
 func remove_socket(socket: AttachmentSocket):
@@ -55,11 +55,7 @@ func setup_socket_data(socket: AttachmentSocket):
 				child.free()
 	#Determine stack type
 	if socket.IK_type == AttachmentSocket.IK_chain_type.CCDIK:
-		# Add CCDIK stack and tip
 		new_stack = SkeletonModification2DCCDIK.new()
-		data.tip = Node2D.new()
-		socket.add_child(data.tip)
-		data.tip.owner = get_tree().edited_scene_root
 	elif socket.IK_type == AttachmentSocket.IK_chain_type.FABRIK:
 		new_stack = SkeletonModification2DFABRIK.new()
 	#Add the stack
@@ -72,6 +68,39 @@ func setup_socket_data(socket: AttachmentSocket):
 	#add data to dictionary
 	socket_limb_pairs[socket] = data
 	print("Added new stack for socket:", socket.name + "with type: " + str(socket.IK_type))
+
+
+# Experimental function
+func update_all_sockets():
+	for s in socket_limb_pairs:
+		if socket_limb_pairs[s].stack is SkeletonModification2DCCDIK:
+			place_tip(s)
+
+
+func place_tip(socket : AttachmentSocket):
+	var data : LimbData = socket_limb_pairs[socket]
+	var stack = data.stack
+	var length
+
+	if not data.tip:
+		data.tip = Node2D.new()
+	if socket.my_entity:
+		length = get_chain_length(socket.my_entity)
+		var end_of_chain = get_child_in_chain(socket.my_entity, length-1)
+		if data.tip.get_parent() != null:
+			data.tip.reparent(end_of_chain)
+		else:
+			end_of_chain.add_child(data.tip)
+		var parent : Bone2D = data.tip.get_parent()
+		data.tip.global_position = parent.global_transform * Vector2(parent.get_length(), 0)
+	else:
+		if data.tip.get_parent() != null:
+			data.tip.reparent(socket)
+		else:
+			socket.add_child(data.tip)
+	if data.tip.owner != get_tree().edited_scene_root or data.tip.owner == null:
+		data.tip.owner = get_tree().edited_scene_root
+	stack.tip_nodepath = socket_limb_pairs[socket].tip.get_path()
 
 
 # Function to maintain pairs and keep them synchronized
@@ -91,7 +120,9 @@ func ensure_socket_stack_pairs():
 				exists = true
 				break
 		if not exists:
+			mod_stack.delete_modification(i)
 			modification.free()
+
 
 	# Warning if still not matched, but shouldn’t happen with this setup
 	if mod_stack.modification_count != socket_limb_pairs.size():
@@ -240,3 +271,21 @@ func get_chain_length(bone: Bone2D) -> int:
 		if child is Bone2D:
 			length += get_chain_length(child)  # Add child chain lengths recursively
 	return length
+	
+	
+# Helper function to get a specific Bone2D in a chain by index
+func get_child_in_chain(bone: Bone2D, target_index: int, current_index: int = 0) -> Bone2D:
+	if current_index == target_index:
+		return bone
+
+	# Increment for each child found in the chain
+	for i in range(bone.get_child_count()):
+		var child = bone.get_child(i)
+		if child is Bone2D:
+			# Recursively search in the child, passing updated index count
+			var result = get_child_in_chain(child, target_index, current_index + 1)
+			if result:  # If a result was found in the recursion, return it
+				return result
+
+	# If not found, return null
+	return null
