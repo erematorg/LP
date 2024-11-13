@@ -50,6 +50,7 @@ func change_state():
 	if not enabled:
 		if get_parent() != get_tree().edited_scene_root and is_instance_valid(get_tree().edited_scene_root):
 			reparent(get_tree().edited_scene_root)
+			my_entity = null
 	else:
 		request_entity_reparent.emit(self)
 	update_state()

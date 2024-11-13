@@ -81,6 +81,7 @@ func drop_entity():
 		if entity.entity_type == target_socket.accepted_type: 
 			try_snap(target_socket, entity)
 	attachment_tracker.update_stacks_with_occupied_parts()
+	attachment_tracker.update_all_sockets()
 	
 	
 func try_snap(target_socket : AttachmentSocket, entity : EntityPart):
