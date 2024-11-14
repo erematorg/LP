@@ -2,6 +2,8 @@
 extends Node2D
 class_name CreatureCreator
 
+## This is the main builder/manager of the creature creator attachment plugin
+
 #Socket snap settings
 @export var snap_distance = 8.0
 @export var show_line_distance = 25.0
@@ -55,6 +57,7 @@ func new_entity_in_scene(entity : EntityPart):
 	var n_parent = entity_tracker.last_anchor()
 	if n_parent:
 		add_new_node(n_parent, entity)
+		attachment_tracker.update_all_sockets()
 	else:
 		add_new_node(creature_skeleton, entity)
 	entity_tracker.new_entity(entity)
@@ -110,7 +113,7 @@ func search_for_parts(node: Node) -> void:
 
 
 func will_process() -> bool:
-	return Engine.is_editor_hint() and exported == false and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_stack_pairs.is_empty())
+	return Engine.is_editor_hint() and exported == false and not (entity_tracker.entities.is_empty() or attachment_tracker.socket_limb_pairs.is_empty())
 
 # Update positions of all entities and sockets, drawing lines between them
 func _process(delta: float) -> void:

@@ -2,17 +2,30 @@
 extends Node
 class_name AttachmentTracker
 
-@export var socket_stack_pairs: Dictionary = {}
+##This class tracks sockets and their relevant Skeleton2dStack data
+
+#@export var socket_stack_pairs: Dictionary = {}
+var socket_limb_pairs : Dictionary = {}
 @export var skeleton : Skeleton2D
+
+#This class only exists here to track/synd sockets and limbs
+class LimbData:
+	var stack : SkeletonModification2D
+	var target : Marker2D
+	var tip : Node2D #optional for ccdik
 
 
 func new_socket(socket : AttachmentSocket):
-	if not socket or socket_stack_pairs.has(socket):
+	if not socket or socket_limb_pairs.has(socket):
 		return
 	if not socket.tree_exited.is_connected(remove_socket):
 		socket.tree_exited.connect(remove_socket.bind(socket))
-	add_stack_for_socket(socket)
+	setup_socket_data(socket)
 	ensure_socket_stack_pairs()
+	var stack : SkeletonModification2D = socket_limb_pairs[socket].stack
+	stack.target_nodepath = socket_limb_pairs[socket].target.get_path()
+	if stack is SkeletonModification2DCCDIK:
+		place_tip(socket)
 
 
 func remove_socket(socket: AttachmentSocket):
@@ -23,50 +36,105 @@ func remove_socket(socket: AttachmentSocket):
 	print("User removed a socket: " + socket.name)
 	
 	# Remove the socket from stack pairs if it exists
-	if socket in socket_stack_pairs:
+	if socket in socket_limb_pairs:
 		remove_stack_for_socket(socket)
-		socket_stack_pairs.erase(socket)
+		socket_limb_pairs.erase(socket)
 	else:
 		print("Attempted to remove a non-existent socket from stack pairs: " + socket.name)
-	# Ensure integrity of socket-stack pairs after removal
-	ensure_socket_stack_pairs()
+	ensure_socket_stack_pairs() # double check
 
 
-func add_stack_for_socket(socket: AttachmentSocket):
+func setup_socket_data(socket: AttachmentSocket):
 	# Only create a stack if the socket doesn't already have one
+	var data = LimbData.new()
 	var new_stack
+	if socket.get_child_count() > 0:
+		print("Removing old tip and marker")
+		for child in socket.get_children():
+			if child is not Sprite2D and child is not Bone2D:
+				child.free()
+	#Determine stack type
 	if socket.IK_type == AttachmentSocket.IK_chain_type.CCDIK:
 		new_stack = SkeletonModification2DCCDIK.new()
 	elif socket.IK_type == AttachmentSocket.IK_chain_type.FABRIK:
 		new_stack = SkeletonModification2DFABRIK.new()
+	#Add the stack
 	skeleton.get_modification_stack().add_modification(new_stack)
-	socket_stack_pairs[socket] = new_stack
+	data.stack = new_stack
+	#Add target
+	data.target = Marker2D.new()
+	socket.add_child(data.target)
+	data.target.owner = get_tree().edited_scene_root
+	#add data to dictionary
+	socket_limb_pairs[socket] = data
 	print("Added new stack for socket:", socket.name + "with type: " + str(socket.IK_type))
+
+
+# Experimental function
+func update_all_sockets():
+	for s in socket_limb_pairs:
+		if socket_limb_pairs[s].stack is SkeletonModification2DCCDIK:
+			place_tip(s)
+
+
+func place_tip(socket : AttachmentSocket):
+	var data : LimbData = socket_limb_pairs[socket]
+	var stack = data.stack
+	var length
+
+	if not data.tip:
+		data.tip = Node2D.new()
+	if socket.my_entity:
+		length = get_chain_length(socket.my_entity)
+		var end_of_chain = get_child_in_chain(socket.my_entity, length-1)
+		if data.tip.get_parent() != null:
+			data.tip.reparent(end_of_chain)
+		else:
+			end_of_chain.add_child(data.tip)
+		var parent : Bone2D = data.tip.get_parent()
+		data.tip.global_position = parent.global_transform * Vector2(parent.get_length(), 0)
+	else:
+		if data.tip.get_parent() != null:
+			data.tip.reparent(socket)
+		else:
+			socket.add_child(data.tip)
+	if data.tip.owner != get_tree().edited_scene_root or data.tip.owner == null:
+		data.tip.owner = get_tree().edited_scene_root
+	stack.tip_nodepath = socket_limb_pairs[socket].tip.get_path()
 
 
 # Function to maintain pairs and keep them synchronized
 func ensure_socket_stack_pairs():
 	var mod_stack = skeleton.get_modification_stack()
 	# Check for stale pairs (remove stacks if their socket no longer exists)
-	for socket : AttachmentSocket in socket_stack_pairs.keys():
-		var stack = socket_stack_pairs[socket]
-		if stack == null or not is_instance_valid(stack):
-			add_stack_for_socket(socket)
+	for socket : AttachmentSocket in socket_limb_pairs.keys():
+		var data = socket_limb_pairs[socket]
+		if data == null or not is_instance_valid(data):
+			setup_socket_data(socket)
 			push_warning("Socket lacked a stack, adding")
 	for i in mod_stack.modification_count:
-		if not socket_stack_pairs.values().has(mod_stack.get_modification(i)):
-			mod_stack.get_modification(i).free()
+		var modification = mod_stack.get_modification(i)
+		var exists = false
+		for limb_data in socket_limb_pairs.values():
+			if limb_data.stack == modification:
+				exists = true
+				break
+		if not exists:
+			mod_stack.delete_modification(i)
+			modification.free()
+
+
 	# Warning if still not matched, but shouldn’t happen with this setup
-	if mod_stack.modification_count != socket_stack_pairs.size():
+	if mod_stack.modification_count != socket_limb_pairs.size():
 		print("Warning: Modifications and sockets are not fully synchronized.")
 	else:
-		print("Corrected mod stack count")
+		print("Mod stack count is correct")
 
 
 func remove_stack_for_socket(socket: AttachmentSocket):
 	# Remove the stack if it exists in the dictionary
-	if socket_stack_pairs.has(socket):
-		var stack_to_remove: SkeletonModification2D = socket_stack_pairs[socket]
+	if socket_limb_pairs.has(socket):
+		var stack_to_remove: SkeletonModification2D = socket_limb_pairs[socket].stack
 		var modification_stack = skeleton.get_modification_stack()
 		for i in skeleton.get_modification_stack().modification_count:
 			var current_stack = modification_stack.get_modification(i)
@@ -76,15 +144,16 @@ func remove_stack_for_socket(socket: AttachmentSocket):
 				print("Removed stack for socket:", socket.name)
 				break  # Exit loop after deletion to avoid errors
 		# Remove the socket entry from the dictionary
-		socket_stack_pairs.erase(socket)
+		socket_limb_pairs.erase(socket)
 	else:
 		push_error("Socket not found in socket_stack_pairs. No stack to remove.")
+		
 
 
 func update_ik_types():
 	# Loop through each socket-modification pair in the dictionary
-	for socket : AttachmentSocket in socket_stack_pairs.keys():
-		var current_stack : SkeletonModification2D = socket_stack_pairs[socket]
+	for socket : AttachmentSocket in socket_limb_pairs.keys():
+		var current_stack : SkeletonModification2D = socket_limb_pairs[socket].stack
 		## Check if the stack type matches the socket's IK_type
 		var correct_stack_type = null
 		match socket.IK_type:
@@ -101,17 +170,20 @@ func update_ik_types():
 			for i in modification_stack.modification_count:
 				var i_stack = modification_stack.get_modification(i)
 				if i_stack == current_stack:
+					if correct_stack_type == SkeletonModification2DFABRIK and modification_stack == SkeletonModification2DCCDIK:
+						socket_limb_pairs[socket].tip.free() #Delete tip if ccdik to fabrik conversion
 					modification_stack.delete_modification(i)
 					modification_stack.add_modification(correct_stack_type)
-					socket_stack_pairs[socket] = correct_stack_type
+					socket_limb_pairs[socket].stack = correct_stack_type
+
 					print("Stack updated")
 	update_stacks_with_occupied_parts()
 
 
 # Update each socket-modification stack with the occupied part’s skeleton index
 func update_stacks_with_occupied_parts():
-	for socket in socket_stack_pairs:
-		var stack = socket_stack_pairs[socket]
+	for socket in socket_limb_pairs:
+		var stack = socket_limb_pairs[socket].stack
 		if not stack:
 			continue
 		if socket.my_entity == null:
@@ -181,7 +253,7 @@ func update_fabrik(first_bone, stack : SkeletonModification2DFABRIK, chain_lengt
 func find_closest_socket(entity: EntityPart, distance) -> AttachmentSocket:
 	var closest_socket: AttachmentSocket = null
 	var closest_dist = distance
-	for socket : AttachmentSocket in socket_stack_pairs:
+	for socket : AttachmentSocket in socket_limb_pairs:
 		if not socket.enabled or socket.my_entity:
 			continue
 		var dist = entity.global_position.distance_to(socket.global_position)
@@ -199,3 +271,21 @@ func get_chain_length(bone: Bone2D) -> int:
 		if child is Bone2D:
 			length += get_chain_length(child)  # Add child chain lengths recursively
 	return length
+	
+	
+# Helper function to get a specific Bone2D in a chain by index
+func get_child_in_chain(bone: Bone2D, target_index: int, current_index: int = 0) -> Bone2D:
+	if current_index == target_index:
+		return bone
+
+	# Increment for each child found in the chain
+	for i in range(bone.get_child_count()):
+		var child = bone.get_child(i)
+		if child is Bone2D:
+			# Recursively search in the child, passing updated index count
+			var result = get_child_in_chain(child, target_index, current_index + 1)
+			if result:  # If a result was found in the recursion, return it
+				return result
+
+	# If not found, return null
+	return null
