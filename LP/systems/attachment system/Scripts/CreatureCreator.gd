@@ -18,6 +18,8 @@ class_name CreatureCreator
 var file_path
 var exported = false
 
+### Added by Lim
+var num_of_limbs = 0
 
 ## This is our "start/ready" function, called from the attachmentgui
 func inject_attachment_gui(gui : AttachmentGui, path : String):
@@ -50,6 +52,10 @@ func connect_signals(gui):
 
 ## New bodypart/entity in the scene
 func new_entity_in_scene(entity : EntityPart):
+	
+	### Added by Lim
+	num_of_limbs += 1
+	
 	if not entity:
 		return
 	entity.set_autocalculate_length_and_angle(false) #Do this as soon as possible to avoid warning
@@ -161,17 +167,38 @@ func find_close_entity(socket : AttachmentSocket):
 		socket.reparent(closest_bone)
 		attachment_tracker.new_socket(socket)
 
+### Added By Lim
+func create_collision_shape_for_creature():
+	var length = num_of_limbs
+	var collision_shape = CollisionShape2D.new()
+	collision_shape.shape = RectangleShape2D.new()
+	(collision_shape.shape as RectangleShape2D).size = Vector2(16 * length, 10)
+	return collision_shape
 
 func prepare_for_export():
-	print("exporting...")
+	print("exporting... done")
 # Free all nodes except `creature_root`
 	for node in get_children():
 		if node != creature_skeleton:
 			node.queue_free()
+	
+	### Added By Lim
+	# create a new Rigidbody2D creature
+	var creature = RigidBody2D.new()
+	creature.name = get_name_from_path()
+	add_new_node(self, creature)
+	# create a new Collision shape for the creature
+	var collision_shape = create_collision_shape_for_creature()
+	add_new_node(self, collision_shape)
+	# reparent the creature skeleton and the collision shape into the Rigidbody2D creature
+	creature_skeleton.reparent(creature)
+	collision_shape.reparent(creature)
+	# adjust the position of the collision shape to match the skeleton
+	collision_shape.position.x = collision_shape.shape.size.x/2
+	
 	self.name = get_name_from_path()
 	exported = true
 	set_script(null)
-
 
 func get_name_from_path() -> String:
 	var name : String = file_path
