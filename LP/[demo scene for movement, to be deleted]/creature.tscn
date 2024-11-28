@@ -1,0 +1,61 @@
+[gd_scene load_steps=10 format=3 uid="uid://1m3lv0822qeq"]
+
+[ext_resource type="Script" path="res://entities/components/MovementComponent.gd" id="1_oh5hq"]
+[ext_resource type="PackedScene" uid="uid://b770i6xirvt7d" path="res://entities/parts/ant/AntFoot.tscn" id="2_t40wn"]
+[ext_resource type="Script" path="res://entities/components/HealthComponent.gd" id="3_pmlrg"]
+[ext_resource type="Script" path="res://entities/components/GrowthComponent.gd" id="4_pgx8p"]
+[ext_resource type="PackedScene" uid="uid://tjw6nojtcd" path="res://entities/parts/ant/AntAbdomen.tscn" id="5_jo6t7"]
+[ext_resource type="Script" path="res://entities/components/DNAComponent.gd" id="5_xc83q"]
+[ext_resource type="PackedScene" uid="uid://be3w0u2k78xif" path="res://entities/parts/ant/AntHead.tscn" id="7_d6no8"]
+
+[sub_resource type="SkeletonModificationStack2D" id="SkeletonModificationStack2D_gob83"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xyqrh"]
+size = Vector2(32, 10)
+
+[node name="creature" type="Node2D"]
+metadata/_edit_lock_ = true
+
+[node name="creature" type="RigidBody2D" parent="."]
+
+[node name="Skeleton" type="Skeleton2D" parent="creature"]
+modification_stack = SubResource("SkeletonModificationStack2D_gob83")
+metadata/_edit_lock_ = true
+
+[node name="Components" type="Node" parent="creature/Skeleton"]
+
+[node name="DNAComponent_node" type="Node" parent="creature/Skeleton/Components"]
+script = ExtResource("5_xc83q")
+
+[node name="GrowthComponent_node" type="Node" parent="creature/Skeleton/Components"]
+script = ExtResource("4_pgx8p")
+
+[node name="HealthComponent_node" type="Node" parent="creature/Skeleton/Components"]
+script = ExtResource("3_pmlrg")
+
+[node name="MovementComponent_node" type="Node" parent="creature/Skeleton/Components"]
+script = ExtResource("1_oh5hq")
+
+[node name="AntAbdomen" parent="creature/Skeleton" instance=ExtResource("5_jo6t7")]
+rest = Transform2D(1, 0, 0, 1, 0, 0)
+auto_calculate_length_and_angle = false
+length = 16.0
+bone_angle = 0.0
+
+[node name="AntFoot" parent="creature/Skeleton/AntAbdomen" instance=ExtResource("2_t40wn")]
+position = Vector2(16, 0)
+rest = Transform2D(1, 0, 0, 1, 16, 0)
+auto_calculate_length_and_angle = false
+length = 16.0
+bone_angle = 0.0
+
+[node name="AntHead" parent="creature/Skeleton/AntAbdomen/AntFoot" instance=ExtResource("7_d6no8")]
+position = Vector2(16, 0)
+rest = Transform2D(1, 0, 0, 1, 16, 0)
+auto_calculate_length_and_angle = false
+length = 16.0
+bone_angle = 0.0
+
+[node name="@CollisionShape2D@71862" type="CollisionShape2D" parent="creature"]
+position = Vector2(16, 0)
+shape = SubResource("RectangleShape2D_xyqrh")
