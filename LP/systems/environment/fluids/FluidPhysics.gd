@@ -193,6 +193,32 @@ func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
 			velocities[i].x += strength * cursor_dx
 			velocities[i].y += strength * cursor_dy
 
+func split_clipped_particles():
+	for i in range(particle_count):
+		for j in neighbors[i]:
+			var pos_i = multimesh.get_instance_transform_2d(i).origin
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+
+			if distance < particle_size * 1.5:  # Threshold for overlap
+				resolve_clipping(i, j, distance)
+
+func resolve_clipping(index_a: int, index_b: int, distance: float):
+	if distance > 0:  # Avoid division by zero
+		var pos_a = multimesh.get_instance_transform_2d(index_a).origin
+		var pos_b = multimesh.get_instance_transform_2d(index_b).origin
+		var direction = (pos_b - pos_a).normalized()
+		var overlap = particle_size * 1.5 - distance
+		var separation = direction * overlap * 0.5
+
+		# Distribute separation
+		pos_a -= separation
+		pos_b += separation
+
+		set_particle_pos(index_a, pos_a)
+		set_particle_pos(index_b, pos_b)
+
+
 # Main simulation loop
 func _process(delta):
 	update_grid()  # Update the grid for this frame
@@ -211,3 +237,6 @@ func _process(delta):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 		pos_i += velocities[i] * delta
 		handle_boundary_collision(i, pos_i)
+
+	# Resolve any overlapping particles
+	split_clipped_particles()
