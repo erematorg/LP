@@ -3,7 +3,7 @@ extends Node2D
 var fluid_instance: MultiMeshInstance2D
 var multimesh := MultiMesh.new()
 
-@export var particle_count := 50
+@export var particle_count := 150
 @export var boundary_size := 250
 @export var particle_size := 6.0
 @export var interaction_radius := 10.0
@@ -218,6 +218,19 @@ func resolve_clipping(index_a: int, index_b: int, distance: float):
 		set_particle_pos(index_a, pos_a)
 		set_particle_pos(index_b, pos_b)
 
+func apply_repulsion_force(delta):
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance > 0 and distance < interaction_radius:
+				var direction = (pos_i - pos_j).normalized()
+				var overlap = interaction_radius - distance
+				var repulsion_force = direction * overlap * 100.0  # Adjust strength as needed
+				velocities[i] += repulsion_force * delta
+
 
 # Main simulation loop
 func _process(delta):
@@ -226,6 +239,7 @@ func _process(delta):
 	calculate_density_and_pressure()  # Compute densities and pressures
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
+	apply_repulsion_force(delta)  # Apply repulsion force
 
 	# Mouse interaction
 	var mouse_pos = get_global_mouse_position()
