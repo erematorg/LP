@@ -12,6 +12,11 @@ var multimesh := MultiMesh.new()
 @export var viscosity := 0.1   # Viscosity factor
 @export var velocity_damping := 0.97  # Velocity reduction upon collision
 @export var mouse_interaction_radius := 100.0  # Radius for particle interaction with mouse
+@export var particle_mass := 1.0  # Mass per particle
+@export var gravity: Vector2 = Vector2(0, 9.8)  # Gravity in the downward direction
+@export var surface_tension_coefficient: float = 0.1
+
+
 
 # Grid properties for optimization
 var grid_size: float
@@ -23,6 +28,7 @@ var velocities = []
 var neighbors = []
 var densities = []
 var pressures = []
+var forces = []
 var prev_mouse_position = Vector2.ZERO
 
 func _ready():
@@ -66,18 +72,22 @@ func apply_shader():
 func calculate_grid_size():
 	grid_size = max(10.0, interaction_radius)
 
-# Initialize particle positions, velocities, neighbors, densities, and pressures
+# Initialize particle positions, velocities, neighbors, densities, pressures, and forces
 func initialize_particles():
 	velocities.resize(particle_count)
 	neighbors.resize(particle_count)
 	densities.resize(particle_count)
 	pressures.resize(particle_count)
+	forces.resize(particle_count)
 	grid_positions.resize(particle_count)
 
 	for i in range(particle_count):
 		var initial_pos = initialize_particle_position(i)
 		set_particle_pos(i, initial_pos)
 		velocities[i] = initialize_particle_velocity()
+		densities[i] = rest_density
+		pressures[i] = 0.0
+		forces[i] = Vector2.ZERO
 
 # Generate a random initial position for each particle
 func initialize_particle_position(_index: int) -> Vector2:
@@ -110,21 +120,54 @@ func update_grid():
 func get_grid_cell(pos: Vector2) -> Vector2:
 	return Vector2(floor(pos.x / grid_size), floor(pos.y / grid_size))
 
+func poly6_kernel(distance: float, radius: float) -> float:
+	if distance > radius:
+		return 0.0
+	var q = radius - distance
+	return 315 / (64 * PI * pow(radius, 9)) * pow(q, 3)
+
+func spiky_gradient_kernel(distance: float, radius: float) -> float:
+	if distance > radius:
+		return 0.0
+	var q = radius - distance
+	return -45 / (PI * pow(radius, 6)) * pow(q, 2)
+
+func apply_surface_tension_force():
+	for i in range(particle_count):
+		var pos_i = multimesh.get_instance_transform_2d(i).origin
+		var surface_tension_force = Vector2.ZERO
+		for j in neighbors[i]:
+			var pos_j = multimesh.get_instance_transform_2d(j).origin
+			var distance = pos_i.distance_to(pos_j)
+			if distance < interaction_radius and distance > 0:
+				var direction = (pos_j - pos_i).normalized()
+				var weight = poly6_kernel(distance, interaction_radius)
+				surface_tension_force -= direction * surface_tension_coefficient * weight
+		forces[i] += surface_tension_force
+
+
 # Perform neighbor search using the grid
 func update_neighbors():
 	for i in range(particle_count):
-		neighbors[i] = []
+		neighbors[i] = []  # Reset neighbors
 		var grid_pos = grid_positions[i]
-		for x in range(-1, 2):
-			for y in range(-1, 2):
-				var neighbor_cell = grid_pos + Vector2(x, y)
+
+		# Iterate over neighboring grid cells
+		for x_offset in [-1, 0, 1]:
+			for y_offset in [-1, 0, 1]:
+				var neighbor_cell = grid_pos + Vector2(x_offset, y_offset)
 				if grid.has(neighbor_cell):
 					for j in grid[neighbor_cell]:
 						if i != j:
-							neighbors[i].append(j)
+							var pos_i = multimesh.get_instance_transform_2d(i).origin
+							var pos_j = multimesh.get_instance_transform_2d(j).origin
+							var distance_squared = pos_i.distance_squared_to(pos_j)
+							if distance_squared < interaction_radius * interaction_radius:
+								neighbors[i].append(j)
+		#print("Particle[", i, "] neighbors: ", len(neighbors[i]))
 
 # Calculate densities and pressures for each particle
-func calculate_density_and_pressure():
+func calculate_density():
 	for i in range(particle_count):
 		var density = 0.0
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
@@ -133,10 +176,14 @@ func calculate_density_and_pressure():
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
 			if distance < interaction_radius:
-				density += (1 - distance / interaction_radius) ** 2  # Simplified kernel
+				density += particle_mass * poly6_kernel(distance, interaction_radius)
 
 		densities[i] = density
-		pressures[i] = stiffness * max(0, densities[i] - rest_density)  # Simplified pressure
+		#print("Density[", i, "]: ", density)
+
+func calculate_pressure():
+	for i in range(particle_count):
+		pressures[i] = stiffness * max(0, densities[i] - rest_density)
 
 # Apply pressure forces to each particle
 func apply_pressure_force(delta):
@@ -147,11 +194,13 @@ func apply_pressure_force(delta):
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
 			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius and distance > 0:
+			if distance > 0 and distance < interaction_radius:
 				var direction = (pos_i - pos_j).normalized()
-				pressure_force += direction * (pressures[i] + pressures[j]) * (1 - distance / interaction_radius)
+				var force_magnitude = (pressures[i] + pressures[j]) / (2 * densities[j]) * spiky_gradient_kernel(distance, interaction_radius)
+				pressure_force += direction * force_magnitude
 
-		velocities[i] += pressure_force * delta
+		forces[i] += pressure_force
+		#print("Pressure Force[", i, "]: ", pressure_force)
 
 # Apply viscosity forces to each particle
 func apply_viscosity_force(delta):
@@ -170,14 +219,29 @@ func apply_viscosity_force(delta):
 
 # Handle boundary collisions
 func handle_boundary_collision(index: int, pos: Vector2):
+	# Detect boundary collisions
 	if pos.x < -boundary_size or pos.x > boundary_size:
 		velocities[index].x = -velocities[index].x * velocity_damping
-	if pos.y < -boundary_size or pos.y > boundary_size:
-		velocities[index].y = -velocities[index].y * velocity_damping
+		# Debug X boundary collision
+		#print("Boundary Collision X for Particle[", index, "]: Velocity: ", velocities[index])
 
+	if pos.y < -boundary_size or pos.y > boundary_size:
+		velocities[index].y = -velocities[index].y * velocity_damping * 0.5
+		# Debug Y boundary collision
+		#print("Boundary Collision Y for Particle[", index, "]: Velocity: ", velocities[index])
+
+	# Clamp the position to remain within boundaries
 	pos.x = clamp(pos.x, -boundary_size, boundary_size)
 	pos.y = clamp(pos.y, -boundary_size, boundary_size)
+
+	# Update the particle position
 	set_particle_pos(index, pos)
+
+# Place after other functions but before _process
+#func track_velocity():
+	#if particle_count > 0:  # Check a single particle as an example
+		#print("Velocity[0]: ", velocities[0])
+
 
 # Apply mouse interaction forces to particles
 func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
@@ -228,15 +292,23 @@ func apply_repulsion_force(delta):
 			if distance > 0 and distance < interaction_radius:
 				var direction = (pos_i - pos_j).normalized()
 				var overlap = interaction_radius - distance
-				var repulsion_force = direction * overlap * 100.0  # Adjust strength as needed
-				velocities[i] += repulsion_force * delta
+				var repulsion_force = direction * overlap * 50.0  # Reduced strength
+				velocities[i] += repulsion_force * delta * 0.5  # Scale down effect
+
+func apply_gravity():
+	for i in range(particle_count):
+		velocities[i] += gravity
 
 
 # Main simulation loop
 func _process(delta):
+	#track_velocity()  # Track the first particle's velocity
 	update_grid()  # Update the grid for this frame
 	update_neighbors()  # Find neighbors using the grid
-	calculate_density_and_pressure()  # Compute densities and pressures
+	calculate_density()  # Compute densities
+	calculate_pressure()  # Compute pressures based on updated densities
+	apply_gravity()  # Apply gravity to particles
+	apply_surface_tension_force()  # Apply surface tension forces
 	apply_pressure_force(delta)  # Apply pressure forces
 	apply_viscosity_force(delta)  # Apply viscosity forces
 	apply_repulsion_force(delta)  # Apply repulsion force
