@@ -1,12 +1,23 @@
-[gd_scene load_steps=2 format=3 uid="uid://dbnfxlnew80xf"]
+[gd_scene load_steps=3 format=3 uid="uid://dbnfxlnew80xf"]
 
 [ext_resource type="Script" path="res://systems/environment/fluids/FluidPhysics.gd" id="1_401x7"]
 
+[sub_resource type="GDScript" id="GDScript_2r63t"]
+resource_name = "fps"
+script/source = "extends Label
+func _process(_delta):
+	text=str( Engine.get_frames_per_second())
+"
+
 [node name="Fluids" type="Node2D"]
 script = ExtResource("1_401x7")
-particle_count = 123
 gravity = Vector2(0, 20)
 
 [node name="FluidMultiMeshInstance2D" type="MultiMeshInstance2D" parent="."]
 
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="Label" type="Label" parent="."]
+offset_right = 40.0
+offset_bottom = 23.0
+script = SubResource("GDScript_2r63t")

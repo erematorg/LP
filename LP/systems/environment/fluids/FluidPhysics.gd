@@ -3,10 +3,10 @@ extends Node2D
 var fluid_instance: MultiMeshInstance2D
 var multimesh := MultiMesh.new()
 
-@export var particle_count := 150
+@export var particle_count := 200
 @export var boundary_size := 250
 @export var particle_size := 6.0
-@export var interaction_radius := 10.0
+@export var interaction_radius := 25.00
 @export var rest_density := 1.5
 @export var stiffness := 200.0  # Pressure stiffness
 @export var viscosity := 0.1   # Viscosity factor
@@ -74,25 +74,22 @@ func calculate_grid_size():
 
 # Initialize particle positions, velocities, neighbors, densities, pressures, and forces
 func initialize_particles():
-	velocities.resize(particle_count)
-	neighbors.resize(particle_count)
-	densities.resize(particle_count)
-	pressures.resize(particle_count)
-	forces.resize(particle_count)
-	grid_positions.resize(particle_count)
-
 	for i in range(particle_count):
+		velocities.append(Vector2.ZERO)
+		neighbors.append([])
+		densities.append(rest_density)
+		pressures.append(0.0)
+		forces.append(Vector2.ZERO)
+		grid_positions.append(Vector2.ZERO)
+
 		var initial_pos = initialize_particle_position(i)
 		set_particle_pos(i, initial_pos)
 		velocities[i] = initialize_particle_velocity()
-		densities[i] = rest_density
-		pressures[i] = 0.0
-		forces[i] = Vector2.ZERO
 
 # Generate a random initial position for each particle
 func initialize_particle_position(_index: int) -> Vector2:
-	var random_x = randf_range(-boundary_size, boundary_size)
-	var random_y = randf_range(-boundary_size, boundary_size)
+	var random_x = randf_range(-boundary_size / 2, boundary_size / 2)
+	var random_y = randf_range(-boundary_size / 2, boundary_size / 2)
 	return Vector2(random_x, random_y)
 
 # Generate a random initial velocity for each particle
@@ -110,7 +107,9 @@ func update_grid():
 	grid.clear()
 	for i in range(particle_count):
 		var pos = multimesh.get_instance_transform_2d(i).origin
-		var grid_pos = get_grid_cell(pos)
+		var cell_x = int(pos.x / grid_size)
+		var cell_y = int(pos.y / grid_size)
+		var grid_pos = Vector2(cell_x, cell_y)
 		grid_positions[i] = grid_pos
 		if not grid.has(grid_pos):
 			grid[grid_pos] = []
@@ -151,6 +150,7 @@ func update_neighbors():
 	for i in range(particle_count):
 		neighbors[i] = []  # Reset neighbors
 		var grid_pos = grid_positions[i]
+		var radius_squared = interaction_radius * interaction_radius
 
 		# Iterate over neighboring grid cells
 		for x_offset in [-1, 0, 1]:
@@ -162,24 +162,26 @@ func update_neighbors():
 							var pos_i = multimesh.get_instance_transform_2d(i).origin
 							var pos_j = multimesh.get_instance_transform_2d(j).origin
 							var distance_squared = pos_i.distance_squared_to(pos_j)
-							if distance_squared < interaction_radius * interaction_radius:
+							if distance_squared < radius_squared:
 								neighbors[i].append(j)
 		#print("Particle[", i, "] neighbors: ", len(neighbors[i]))
 
 # Calculate densities and pressures for each particle
 func calculate_density():
+	var radius_squared = interaction_radius * interaction_radius
 	for i in range(particle_count):
 		var density = 0.0
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius:
-				density += particle_mass * poly6_kernel(distance, interaction_radius)
+			var distance_squared = pos_i.distance_squared_to(pos_j)
+			if distance_squared < radius_squared:
+				density += particle_mass * poly6_kernel(sqrt(distance_squared), interaction_radius)
 
 		densities[i] = density
-		#print("Density[", i, "]: ", density)
+
+		#print("Particle[", i, "] neighbors: ", neighbors[i].size())
 
 func calculate_pressure():
 	for i in range(particle_count):
@@ -220,24 +222,23 @@ func apply_viscosity_force(delta):
 # Handle boundary collisions
 func handle_boundary_collision(index: int, pos: Vector2):
 	# Detect boundary collisions
-	if pos.x < -boundary_size or pos.x > boundary_size:
+	if pos.x < -boundary_size:
+		pos.x = -boundary_size
 		velocities[index].x = -velocities[index].x * velocity_damping
-		# Debug X boundary collision
-		#print("Boundary Collision X for Particle[", index, "]: Velocity: ", velocities[index])
+	elif pos.x > boundary_size:
+		pos.x = boundary_size
+		velocities[index].x = -velocities[index].x * velocity_damping
 
-	if pos.y < -boundary_size or pos.y > boundary_size:
+	if pos.y < -boundary_size:
+		pos.y = -boundary_size
 		velocities[index].y = -velocities[index].y * velocity_damping * 0.5
-		# Debug Y boundary collision
-		#print("Boundary Collision Y for Particle[", index, "]: Velocity: ", velocities[index])
-
-	# Clamp the position to remain within boundaries
-	pos.x = clamp(pos.x, -boundary_size, boundary_size)
-	pos.y = clamp(pos.y, -boundary_size, boundary_size)
+	elif pos.y > boundary_size:
+		pos.y = boundary_size
+		velocities[index].y = -velocities[index].y * velocity_damping * 0.5
 
 	# Update the particle position
 	set_particle_pos(index, pos)
 
-# Place after other functions but before _process
 #func track_velocity():
 	#if particle_count > 0:  # Check a single particle as an example
 		#print("Velocity[0]: ", velocities[0])
@@ -283,13 +284,15 @@ func resolve_clipping(index_a: int, index_b: int, distance: float):
 		set_particle_pos(index_b, pos_b)
 
 func apply_repulsion_force(delta):
+	var radius_squared = interaction_radius * interaction_radius
 	for i in range(particle_count):
 		var pos_i = multimesh.get_instance_transform_2d(i).origin
 
 		for j in neighbors[i]:
 			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance > 0 and distance < interaction_radius:
+			var distance_squared = pos_i.distance_squared_to(pos_j)
+			if distance_squared < radius_squared and distance_squared > 0:
+				var distance = sqrt(distance_squared)
 				var direction = (pos_i - pos_j).normalized()
 				var overlap = interaction_radius - distance
 				var repulsion_force = direction * overlap * 50.0  # Reduced strength
