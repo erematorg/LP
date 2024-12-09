@@ -66,7 +66,7 @@ func create_particle_mesh() -> Mesh:
 	return particle_mesh
 
 func apply_shader():
-	var shader = load("res://Fluids.gdshader") as Shader
+	var shader = load("res://shaders/Fluids.gdshader") as Shader
 	var pmaterial = ShaderMaterial.new()
 	pmaterial.shader = shader
 	material = pmaterial
@@ -184,8 +184,8 @@ func find_neighbors(particle):
 			var neighbor_cell = Vector2(cell_x + dx, cell_y + dy)
 			if grid.has(neighbor_cell):
 				for neighbor in grid[neighbor_cell]:
-					# Skip self and ensure correct distance check
-					if particle != neighbor:
+					# Ensure correct distance check
+					if pos != neighbor["position"]:  # Compare positions instead of particles
 						var dist_sq = pos.distance_squared_to(neighbor["position"])
 						if dist_sq < smoothing_length_squared:
 							neighbors.append(neighbor)
