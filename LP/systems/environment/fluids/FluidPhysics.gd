@@ -1,331 +1,399 @@
-extends Node2D
+extends MultiMeshInstance2D
 
-var fluid_instance: MultiMeshInstance2D
-var multimesh := MultiMesh.new()
+class_name Fluids #Temporary name until separation of concerns for fluids & physics
 
-@export var particle_count := 200
-@export var boundary_size := 250
-@export var particle_size := 6.0
-@export var interaction_radius := 25.00
-@export var rest_density := 1.5
-@export var stiffness := 200.0  # Pressure stiffness
-@export var viscosity := 0.1   # Viscosity factor
-@export var velocity_damping := 0.97  # Velocity reduction upon collision
-@export var mouse_interaction_radius := 100.0  # Radius for particle interaction with mouse
-@export var particle_mass := 1.0  # Mass per particle
-@export var gravity: Vector2 = Vector2(0, 9.8)  # Gravity in the downward direction
-@export var surface_tension_coefficient: float = 0.1
+# --- Editable Parameters ---
+@export var particle_count: int = 210  # Number of particles
+@export var spawn_size: Vector2 = Vector2(200.0, 100.0)  # Area where particles spawn
+@export var smoothing_length: float = 7  # Smoothing length for particle interactions
+@export var particle_size: float = 4  # Size of each particle
+@export var gravity: Vector2 = Vector2(0, 980)  # Gravity vector (cm/s²)
+@export var rest_density: float = 1000.0  # Water's rest density (kg/m³)
+@export var surface_tension_coefficient: float = 0.1  # Surface tension coefficient (N/m)
+@export var particle_mass: float = 1.0  # Mass per particle (kg)
+@export var stiffness_constant: float = 1000  # Stiffness for incompressibility
+@export var viscosity_coefficient: float = 0.001  # Dynamic viscosity (Pa·s)
+@export var min_velocity: float = 0.5  # Minimum velocity magnitude
+@export var grid_cell_size: float = 12  # Size of grid cells for particle sorting
+@export var repulsion_strength: float = -1100.0  # Repulsion to avoid particle overlap
+@export var spring_constant: float = 50.0  # Spring constant for restoring force
+@export var rest_distance: float = 140  # Rest distance for particles
 
+@export var timestep: float = 0.125  # Time step for each simulation frame
+@export var boundary_bounce_amount: float = 0.8  # Damping for boundary collisions
+@export var velocity_damping: float = 0.99  # Damping of velocity over time
 
+@export var external_objects: Array[Polygon2D] = []  # List of external polygons (polygons entering the fluid)
 
-# Grid properties for optimization
-var grid_size: float
-var grid = {}
-var grid_positions = []
-
-# Particle properties
-var velocities = []
-var neighbors = []
-var densities = []
-var pressures = []
-var forces = []
-var prev_mouse_position = Vector2.ZERO
-
+# --- Non-editable Variables ---
+@onready var fluid_instance: MultiMeshInstance2D = self  # Reference to the MultiMeshInstance2D node
+@onready var polygon: PackedVector2Array = $Polygon2D.polygon  # Polygon representing the boundary
+var avg_velocity: Vector2 = Vector2.ZERO  # Average velocity for freeze state detection
+var particles = []  # List holding all particles
+var grid: Dictionary = {}  # Spatial grid for neighbor search
+var frozen = false  # Flag to indicate if simulation is frozen
+var external_polgons: Array[PackedVector2Array]
+var smoothing_length_squared = smoothing_length* smoothing_length
+var neighbor_counter:float = 0.0
 func _ready():
+	multimesh = MultiMesh.new()
+	_initialize()
+func _initialize():
 	_detect_multimesh_instance()
-	calculate_grid_size()  # Calculate adaptive grid size
 	initialize_multimesh()
 	initialize_particles()
-	apply_shader()  # Apply shader to particles
+	apply_shader() 
+	smoothing_length_squared = smoothing_length* smoothing_length
 
-# Detect MultiMeshInstance2D node in the scene
 func _detect_multimesh_instance():
-	for child in get_children():
-		if child is MultiMeshInstance2D and child.name == "FluidMultiMeshInstance2D":
-			fluid_instance = child
-			print("Detected FluidMultiMeshInstance2D.")
+	if !fluid_instance:
+		for child in get_children():
+			if child is MultiMeshInstance2D and child.name == "FluidMultiMeshInstance2D":
+				fluid_instance = child
+			
 
-# Initialize the MultiMesh with particle mesh and set instance count
 func initialize_multimesh():
-	if fluid_instance:
-		fluid_instance.multimesh = multimesh
+	if fluid_instance.multimesh.instance_count == 0:
 		multimesh.transform_format = MultiMesh.TRANSFORM_2D
 		multimesh.mesh = create_particle_mesh()
+		fluid_instance.multimesh = multimesh
 		fluid_instance.multimesh.instance_count = particle_count
 
-# Create a mesh for each particle
+
 func create_particle_mesh() -> Mesh:
 	var particle_mesh := QuadMesh.new()
 	particle_mesh.size = Vector2(particle_size, particle_size)
 	return particle_mesh
 
-# Apply a shader to the particles to visualize them better
 func apply_shader():
-	# Load the shader file
-	var shader = load("res://shaders/Fluids.gdshader") as Shader
-	var material = ShaderMaterial.new()
-	material.shader = shader
-	if fluid_instance:
-		fluid_instance.material = material
+	var shader = load("res://Fluids.gdshader") as Shader
+	var pmaterial = ShaderMaterial.new()
+	pmaterial.shader = shader
+	material = pmaterial
 
-# Calculate adaptive grid size based on interaction radius
-func calculate_grid_size():
-	grid_size = max(10.0, interaction_radius)
-
-# Initialize particle positions, velocities, neighbors, densities, pressures, and forces
 func initialize_particles():
+	particles.clear()
+
 	for i in range(particle_count):
-		velocities.append(Vector2.ZERO)
-		neighbors.append([])
-		densities.append(rest_density)
-		pressures.append(0.0)
-		forces.append(Vector2.ZERO)
-		grid_positions.append(Vector2.ZERO)
+		var particle = {
+			"position": Vector2(randf_range(0, spawn_size.x), randf_range(0, spawn_size.y)),
+			"velocity": gravity,
+			"force": Vector2.ZERO,
+			"density": rest_density,
+			"pressure": 0.0,
+			"mass": particle_mass,
+			"previous_velocity":gravity,
+			"neighbors": [0,0,0,0,0,0,0,0]
+		}
+		particles.append(particle)
 
-		var initial_pos = initialize_particle_position(i)
-		set_particle_pos(i, initial_pos)
-		velocities[i] = initialize_particle_velocity()
+func _physics_process(delta):
+	
+	grid.clear()
+	split_clipped_particles()
+	assign_particles_to_grid()
+	if polygon != $Polygon2D.polygon:
+		frozen = false
+		
+		polygon = $Polygon2D.polygon
+	external_polgons.clear()
+	for external_object in external_objects:
 
-# Generate a random initial position for each particle
-func initialize_particle_position(_index: int) -> Vector2:
-	var random_x = randf_range(-boundary_size / 2, boundary_size / 2)
-	var random_y = randf_range(-boundary_size / 2, boundary_size / 2)
-	return Vector2(random_x, random_y)
+		external_polgons.append(Transform2D(0,external_object.position)*external_object.polygon)
+	calculate_neighbors(delta)
+	sph_simulation_step(delta*timestep)
+func calculate_neighbors(delta_time):
+	neighbor_counter -= delta_time
+	if neighbor_counter > 0.0:
+		return
+	neighbor_counter = delta_time*.5
 
-# Generate a random initial velocity for each particle
-func initialize_particle_velocity() -> Vector2:
-	return Vector2(randf_range(-30, 30), randf_range(-30, 30))
+	for particle in particles:
+		particle["neighbors"] = find_neighbors(particle)
 
-# Set the position of a specific particle in the MultiMesh
+func apply_external_forces(particle):
+	for i in range(external_polgons.size()):
+		
+		if Geometry2D.is_point_in_polygon(particle["position"], external_polgons[i]):
+			if "solid" in external_objects[i] and external_objects[i].solid == false:
+				var direction = particle["position"].direction_to(to_local(external_objects[i].global_position))
+				
+				particle["force"] = (direction+external_objects[i].velocity.normalized())*external_objects[i].force*100
+				continue
+			var force = repulsion_strength*100
+			
+			var nearest_edge = find_nearest_polygon_edge(particle["position"],external_polgons[i])
+			var normal = Vector2.ZERO
+			if nearest_edge.size() == 2:
+				normal = (nearest_edge[1] - nearest_edge[0]).normalized()
+				particle["force"] += (normal+external_objects[i].velocity.normalized())*force*100
+
+func sph_simulation_step(delta_time):
+	
+	avg_velocity = Vector2.ZERO
+	for particle in particles:
+		
+		var neighbors = particle["neighbors"]
+		compute_density(particle, neighbors, particle["mass"])
+		compute_pressure(particle)
+		particle["force"] = 0.01*particle["force"]
+		compute_pressure_force(particle, neighbors)
+		compute_viscosity_force(particle, neighbors)
+		particle["force"] += compute_restoring_force(particle, neighbors)
+	
+		apply_repulsion_force(particle, neighbors)
+		compute_surface_tension_force(particle, neighbors)
+		apply_gravity(particle)
+		apply_external_forces(particle)
+		avg_velocity += particle["velocity"]
+	
+	avg_velocity /= particle_count
+	# Update frozen state based on avg_velocity
+	frozen = avg_velocity.length() < 0.15
+	for i in range(particles.size()):
+		var particle = particles[i]
+		
+		integrate(particle, delta_time)
+		
+		handle_boundaries(particle, delta_time)
+		if !frozen:
+			set_particle_pos(i, particle["position"])
+
 func set_particle_pos(index: int, new_pos: Vector2):
 	var local_transform := Transform2D()
 	local_transform.origin = new_pos
 	multimesh.set_instance_transform_2d(index, local_transform)
 
-# Update grid with particle positions
-func update_grid():
-	grid.clear()
-	for i in range(particle_count):
-		var pos = multimesh.get_instance_transform_2d(i).origin
-		var cell_x = int(pos.x / grid_size)
-		var cell_y = int(pos.y / grid_size)
-		var grid_pos = Vector2(cell_x, cell_y)
-		grid_positions[i] = grid_pos
-		if not grid.has(grid_pos):
-			grid[grid_pos] = []
-		grid[grid_pos].append(i)
+func assign_particles_to_grid():
+	for particle in particles:
+		var cell_x = int(particle["position"].x / grid_cell_size)
+		var cell_y = int(particle["position"].y / grid_cell_size)
+		var cell_key = Vector2(cell_x, cell_y)
+		if not grid.has(cell_key):
+			grid[cell_key] = []
+		grid[cell_key].append(particle)
 
-# Get grid cell for a given position
-func get_grid_cell(pos: Vector2) -> Vector2:
-	return Vector2(floor(pos.x / grid_size), floor(pos.y / grid_size))
+func find_neighbors(particle):
+	var neighbors = []
+	var pos = particle["position"]
+	var cell_x = int(pos.x / grid_cell_size)
+	var cell_y = int(pos.y / grid_cell_size)
 
-func poly6_kernel(distance: float, radius: float) -> float:
-	if distance > radius:
-		return 0.0
-	var q = radius - distance
-	return 315 / (64 * PI * pow(radius, 9)) * pow(q, 3)
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			var neighbor_cell = Vector2(cell_x + dx, cell_y + dy)
+			if grid.has(neighbor_cell):
+				for neighbor in grid[neighbor_cell]:
+					# Skip self and ensure correct distance check
+					if particle != neighbor:
+						var dist_sq = pos.distance_squared_to(neighbor["position"])
+						if dist_sq < smoothing_length_squared:
+							neighbors.append(neighbor)
+							# Early exit when limit is reached
+							if neighbors.size() >= 8:
+								return neighbors
+	return neighbors
 
-func spiky_gradient_kernel(distance: float, radius: float) -> float:
-	if distance > radius:
-		return 0.0
-	var q = radius - distance
-	return -45 / (PI * pow(radius, 6)) * pow(q, 2)
+func compute_density(particle, neighbors, mass):
+	var density = kernel_function(0) * mass  # Self-contribution
+	for neighbor in neighbors:
+		var distance = particle["position"].distance_to(neighbor["position"])
+		if distance > 0:
+			density += mass * kernel_function(distance)
+	particle["density"] = max(density, 10)
 
-func apply_surface_tension_force():
-	for i in range(particle_count):
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var surface_tension_force = Vector2.ZERO
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius and distance > 0:
-				var direction = (pos_j - pos_i).normalized()
-				var weight = poly6_kernel(distance, interaction_radius)
-				surface_tension_force -= direction * surface_tension_coefficient * weight
-		forces[i] += surface_tension_force
+func compute_pressure(particle):
+	if particle["density"] > rest_density:
+		particle["pressure"] = stiffness_constant * ((particle["density"] / rest_density) - 1)
+	else:
+		particle["pressure"] = 0.0
+		
+func compute_pressure_force(particle, neighbors):
+	var force = Vector2.ZERO
+	for neighbor in neighbors:
+		var offset = particle["position"] - neighbor["position"]
+		var distance = offset.length()
+		if distance > 0:
+			var direction = offset.normalized()
+			var density = max(neighbor["density"], rest_density * 0.9)
+			var pressure_term = (particle["pressure"] + neighbor["pressure"]) / (2 * density)
+			force += direction * pressure_term * grad_kernel_function(distance)
+	particle["force"] += force
+	
+func compute_viscosity_force(particle, neighbors):
+	var force = Vector2.ZERO
+	for neighbor in neighbors:
+		var velocity_diff = neighbor["velocity"] - particle["velocity"]
+		var distance = particle["position"].distance_to(neighbor["position"])
+		var density = max(neighbor["density"], rest_density * 0.9)
+		force += viscosity_coefficient * neighbor["mass"] * (velocity_diff / density) * laplacian_kernel_function(distance)
+	particle["force"] += force
 
+func compute_restoring_force(particle, neighbors):
+	var force = Vector2.ZERO
+	for neighbor in neighbors:
+		var distance = particle["position"].distance_to(neighbor["position"])
+		if distance != rest_distance:
+			var magnitude = spring_constant * (rest_distance-distance)
+			var direction = (particle["position"] - neighbor["position"]).normalized()
+			
+			
+			force += direction * magnitude * velocity_damping
+	return force
 
-# Perform neighbor search using the grid
-func update_neighbors():
-	for i in range(particle_count):
-		neighbors[i] = []  # Reset neighbors
-		var grid_pos = grid_positions[i]
-		var radius_squared = interaction_radius * interaction_radius
+func apply_repulsion_force(particle, neighbors):
+	for neighbor in neighbors:
+		var distance = particle["position"].distance_to(neighbor["position"])
+		if distance > 0 and distance < smoothing_length:
+			distance = max(distance, 0.001)  # Avoid near-zero distances
+			var direction = (neighbor["position"] - particle["position"]).normalized()
+			var overlap = rest_distance - distance
+			var magnitude = repulsion_strength * overlap / (distance + 0.001)
+			particle["force"] += direction * magnitude
+			
+func apply_gravity(particle):
+	particle["force"] += gravity * particle["mass"] * particle["density"] / velocity_damping
 
-		# Iterate over neighboring grid cells
-		for x_offset in [-1, 0, 1]:
-			for y_offset in [-1, 0, 1]:
-				var neighbor_cell = grid_pos + Vector2(x_offset, y_offset)
-				if grid.has(neighbor_cell):
-					for j in grid[neighbor_cell]:
-						if i != j:
-							var pos_i = multimesh.get_instance_transform_2d(i).origin
-							var pos_j = multimesh.get_instance_transform_2d(j).origin
-							var distance_squared = pos_i.distance_squared_to(pos_j)
-							if distance_squared < radius_squared:
-								neighbors[i].append(j)
-		#print("Particle[", i, "] neighbors: ", len(neighbors[i]))
+func integrate(particle, delta_time):
+	particle["velocity"] += (particle["force"] / particle["density"]) * delta_time
+	particle["velocity"] *= velocity_damping  * (1.0 if !frozen else delta_time)
+	 # Enforce minimum velocity
 
-# Calculate densities and pressures for each particle
-func calculate_density():
-	var radius_squared = interaction_radius * interaction_radius
-	for i in range(particle_count):
-		var density = 0.0
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
+	particle["velocity"] = particle["velocity"].clamp(Vector2(-100,-100),Vector2(100,100))
+	
+	var movement = particle["velocity"] * delta_time
+	
+	
+	particle["position"] += movement
 
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance_squared = pos_i.distance_squared_to(pos_j)
-			if distance_squared < radius_squared:
-				density += particle_mass * poly6_kernel(sqrt(distance_squared), interaction_radius)
+func kernel_function(distance):
+	var q = distance / smoothing_length
+	if q < 1:
+		return 15 / (7 * PI * pow(smoothing_length, 2)) * pow(1 - q, 2)
+	elif q < 2:
+		return 15 / (7 * PI * pow(smoothing_length, 2)) * pow(2 - q, 2)
+	else:
+		return 0
 
-		densities[i] = density
+func grad_kernel_function(distance):
+	var q = distance / smoothing_length
+	if q < 1:
+		return -45 / (PI * pow(smoothing_length, 6)) * pow(1 - q, 2)
+	elif q < 2:
+		return -45 / (PI * pow(smoothing_length, 6)) * (2 - q)
+	else:
+		return 0
 
-		#print("Particle[", i, "] neighbors: ", neighbors[i].size())
+func laplacian_kernel_function(distance):
+	var q = distance / smoothing_length
+	if q < 1:
+		return 45 / (PI * pow(smoothing_length, 6)) * (1 - q)
+	elif q < 2:
+		return 45 / (PI * pow(smoothing_length, 6)) * (2 - q)
+	else:
+		return 0
 
-func calculate_pressure():
-	for i in range(particle_count):
-		pressures[i] = stiffness * max(0, densities[i] - rest_density)
+func compute_surface_curvature(particle, neighbors):
+	var curvature = 0.0
+	for neighbor in neighbors:
+		var distance = particle["position"].distance_to(neighbor["position"])
+		if distance > 0:
+			curvature += kernel_function(distance) * neighbor["mass"] / neighbor["density"]
+	return curvature
 
-# Apply pressure forces to each particle
-func apply_pressure_force(delta):
-	for i in range(particle_count):
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var pressure_force = Vector2.ZERO
+func is_surface_particle(particle, neighbors):
+	var gradient = compute_color_field_gradient(particle, neighbors)
+	return gradient.length() > 0.1  
 
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance > 0 and distance < interaction_radius:
-				var direction = (pos_i - pos_j).normalized()
-				var force_magnitude = (pressures[i] + pressures[j]) / (2 * densities[j]) * spiky_gradient_kernel(distance, interaction_radius)
-				pressure_force += direction * force_magnitude
+func compute_surface_tension_force(particle, neighbors):
+	var gradient = compute_color_field_gradient(particle, neighbors)
+	if gradient.length() > 0.01:  # Threshold for normalization
+		var curvature = compute_surface_curvature(particle, neighbors)
+		var force = -surface_tension_coefficient * curvature * gradient.normalized()
+		particle["force"] += force
 
-		forces[i] += pressure_force
-		#print("Pressure Force[", i, "]: ", pressure_force)
+func compute_color_field_gradient(particle, neighbors):
+	var gradient = Vector2.ZERO
+	for neighbor in neighbors:
+		var distance = particle["position"].distance_to(neighbor["position"])
+		if distance > 0:
+			var direction = (neighbor["position"] - particle["position"]).normalized()
+			gradient += direction * neighbor["mass"] / neighbor["density"] * grad_kernel_function(distance)
+	return gradient
 
-# Apply viscosity forces to each particle
-func apply_viscosity_force(delta):
-	for i in range(particle_count):
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		var viscosity_force = Vector2.ZERO
+func compute_boundary_force(particle):
+	var predicted_pos: Vector2 = particle["position"]
+	if not Geometry2D.is_point_in_polygon(predicted_pos, polygon):
+		var nearest_edge = find_nearest_polygon_edge(predicted_pos,polygon)
+		if nearest_edge.size() == 2:
+			var normal = (nearest_edge[1] - nearest_edge[0]).normalized().orthogonal()
+			var overlap = Geometry2D.get_closest_point_to_segment(predicted_pos, nearest_edge[0], nearest_edge[1]) - predicted_pos
+			return normal * (repulsion_strength * max(0.0, smoothing_length - overlap.length()))
+	return Vector2.ZERO
 
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
-			if distance < interaction_radius:
-				var velocity_diff = velocities[j] - velocities[i]
-				viscosity_force += velocity_diff * (1 - distance / interaction_radius)
+func handle_boundaries(particle, delta_time):
+	
+	var predicted_pos: Vector2 = particle["position"] + particle["velocity"] * delta_time
 
-		velocities[i] += viscosity * viscosity_force * delta
+	# Check if the particle is outside the polygon
+	
+	for polyindex in range(external_objects.size()):
+		if "solid" in external_objects[polyindex] and !external_objects[polyindex].solid:
+			continue
+		if Geometry2D.is_point_in_polygon(particle["position"],external_polgons[polyindex]):
+			var nearest_edge = find_nearest_polygon_edge(particle["position"],external_polgons[polyindex])
+			if nearest_edge.size() == 2:
+				var closest_point = Geometry2D.get_closest_point_to_segment(particle["position"], nearest_edge[0], nearest_edge[1])
+				particle["position"] = closest_point
+	if not Geometry2D.is_point_in_polygon(predicted_pos, polygon):
+		# Handle collision normally
+		var nearest_edge = find_nearest_polygon_edge(predicted_pos,polygon)
+		if nearest_edge.size() == 2:
+			var normal = (nearest_edge[1] - nearest_edge[0]).normalized().orthogonal()
+			var dot = particle["velocity"].dot(normal) 
+			var tangent = particle["velocity"] - dot * normal *0.4
+			var tangential_force = Vector2(normal.y, 0) * randf_range(-0.5, 0.5) * repulsion_strength * 0.1
+			# Reflect velocity and slightly dampen
+			particle["velocity"] = tangent + normal*dot * -boundary_bounce_amount + tangential_force
 
-# Handle boundary collisions
-func handle_boundary_collision(index: int, pos: Vector2):
-	# Detect boundary collisions
-	if pos.x < -boundary_size:
-		pos.x = -boundary_size
-		velocities[index].x = -velocities[index].x * velocity_damping
-	elif pos.x > boundary_size:
-		pos.x = boundary_size
-		velocities[index].x = -velocities[index].x * velocity_damping
-
-	if pos.y < -boundary_size:
-		pos.y = -boundary_size
-		velocities[index].y = -velocities[index].y * velocity_damping * 0.5
-	elif pos.y > boundary_size:
-		pos.y = boundary_size
-		velocities[index].y = -velocities[index].y * velocity_damping * 0.5
-
-	# Update the particle position
-	set_particle_pos(index, pos)
-
-#func track_velocity():
-	#if particle_count > 0:  # Check a single particle as an example
-		#print("Velocity[0]: ", velocities[0])
-
-
-# Apply mouse interaction forces to particles
-func apply_mouse_force(mouse_position: Vector2, prev_mouse_position: Vector2):
-	var cursor_dx = mouse_position.x - prev_mouse_position.x
-	var cursor_dy = mouse_position.y - prev_mouse_position.y
-
-	for i in range(particle_count):
-		var pos = multimesh.get_instance_transform_2d(i).origin
-		var distance = pos.distance_to(mouse_position)
-
-		if distance < mouse_interaction_radius:
-			var strength = max(0, 1 - distance / mouse_interaction_radius)
-			velocities[i].x += strength * cursor_dx
-			velocities[i].y += strength * cursor_dy
-
+			# Snap particle back inside
+			var closest_point = Geometry2D.get_closest_point_to_segment(predicted_pos, nearest_edge[0], nearest_edge[1])
+			particle["position"] = closest_point 
+			
+	
+func find_nearest_polygon_edge(point: Vector2,poly) -> Array:
+	var nearest_edge: Array = []
+	var min_distance = INF
+	
+	for i in range(polygon.size()):
+		var start_point = poly[i% poly.size()]
+		var end_point = poly[(i + 1) % poly.size()]  # Wrap around for the last edge
+		var closest_point = Geometry2D.get_closest_point_to_segment(point, start_point, end_point)
+		var distance = closest_point.distance_to(point)
+		
+		if distance < min_distance:
+			min_distance = distance
+			nearest_edge = [start_point, end_point]
+	
+	return nearest_edge
 func split_clipped_particles():
-	for i in range(particle_count):
-		for j in neighbors[i]:
-			var pos_i = multimesh.get_instance_transform_2d(i).origin
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance = pos_i.distance_to(pos_j)
+	var threshold_sq = (particle_size * 2) * (particle_size * 2)  # Precompute the squared threshold
+	for cell_particles in grid.values():
+		var count = cell_particles.size()
+		for i in range(count):
+			var particle_a = cell_particles[i]
+			for j in range(i + 1, count):
+				var particle_b = cell_particles[j]
+				var dist_sq = particle_a["position"].distance_squared_to(particle_b["position"])
+				if dist_sq < threshold_sq:
+					# Calculate actual distance only when needed
+					resolve_clipping(particle_a, particle_b, sqrt(dist_sq))
 
-			if distance < particle_size * 1.5:  # Threshold for overlap
-				resolve_clipping(i, j, distance)
-
-func resolve_clipping(index_a: int, index_b: int, distance: float):
+func resolve_clipping(particle_a, particle_b, distance):
 	if distance > 0:  # Avoid division by zero
-		var pos_a = multimesh.get_instance_transform_2d(index_a).origin
-		var pos_b = multimesh.get_instance_transform_2d(index_b).origin
-		var direction = (pos_b - pos_a).normalized()
-		var overlap = particle_size * 1.5 - distance
-		var separation = direction * overlap * 0.5
-
+		var direction = (particle_b["position"] - particle_a["position"]).normalized()
+		var overlap = particle_size * 2- distance
+		var separation = direction * overlap
 		# Distribute separation
-		pos_a -= separation
-		pos_b += separation
-
-		set_particle_pos(index_a, pos_a)
-		set_particle_pos(index_b, pos_b)
-
-func apply_repulsion_force(delta):
-	var radius_squared = interaction_radius * interaction_radius
-	for i in range(particle_count):
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-
-		for j in neighbors[i]:
-			var pos_j = multimesh.get_instance_transform_2d(j).origin
-			var distance_squared = pos_i.distance_squared_to(pos_j)
-			if distance_squared < radius_squared and distance_squared > 0:
-				var distance = sqrt(distance_squared)
-				var direction = (pos_i - pos_j).normalized()
-				var overlap = interaction_radius - distance
-				var repulsion_force = direction * overlap * 50.0  # Reduced strength
-				velocities[i] += repulsion_force * delta * 0.5  # Scale down effect
-
-func apply_gravity():
-	for i in range(particle_count):
-		velocities[i] += gravity
-
-
-# Main simulation loop
-func _process(delta):
-	#track_velocity()  # Track the first particle's velocity
-	update_grid()  # Update the grid for this frame
-	update_neighbors()  # Find neighbors using the grid
-	calculate_density()  # Compute densities
-	calculate_pressure()  # Compute pressures based on updated densities
-	apply_gravity()  # Apply gravity to particles
-	apply_surface_tension_force()  # Apply surface tension forces
-	apply_pressure_force(delta)  # Apply pressure forces
-	apply_viscosity_force(delta)  # Apply viscosity forces
-	apply_repulsion_force(delta)  # Apply repulsion force
-
-	# Mouse interaction
-	var mouse_pos = get_global_mouse_position()
-	apply_mouse_force(mouse_pos, prev_mouse_position)
-	prev_mouse_position = mouse_pos
-
-	# Update particle positions and handle boundary collisions
-	for i in range(particle_count):
-		var pos_i = multimesh.get_instance_transform_2d(i).origin
-		pos_i += velocities[i] * delta
-		handle_boundary_collision(i, pos_i)
-
-	# Resolve any overlapping particles
-	split_clipped_particles()
+		particle_a["position"] -= separation
+		particle_b["position"] += separation
