@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3 uid="uid://bwdmevhblevg"]
+
+[ext_resource type="PackedScene" uid="uid://1m3lv0822qeq" path="res://creature.tscn" id="1_yde71"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_jbejq"]
+friction = 0.3
+rough = true
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_28wpt"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_6kmwb"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_0wp5w"]
+friction = 0.1
+
+[node name="sample scene" type="Node2D"]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+modulate = Color(0.254902, 0.254902, 0.254902, 1)
+position = Vector2(289, 483)
+scale = Vector2(31.9395, 14.0952)
+physics_material_override = SubResource("PhysicsMaterial_jbejq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+shape = SubResource("RectangleShape2D_28wpt")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D"]
+scale = Vector2(20, 20)
+texture = SubResource("CanvasTexture_6kmwb")
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="."]
+position = Vector2(994, 500)
+scale = Vector2(41.4173, 15.7672)
+physics_material_override = SubResource("PhysicsMaterial_0wp5w")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
+shape = SubResource("RectangleShape2D_28wpt")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D3"]
+scale = Vector2(20, 20)
+texture = SubResource("CanvasTexture_6kmwb")
+
+[node name="StaticBody2D4" type="StaticBody2D" parent="."]
+position = Vector2(994, 500)
+rotation = -0.191392
+scale = Vector2(41.4173, 15.7672)
+physics_material_override = SubResource("PhysicsMaterial_0wp5w")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D4"]
+shape = SubResource("RectangleShape2D_28wpt")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D4"]
+scale = Vector2(20, 20)
+texture = SubResource("CanvasTexture_6kmwb")
+
+[node name="CreatureCreator" parent="." instance=ExtResource("1_yde71")]
+position = Vector2(250, 210)
