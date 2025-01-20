@@ -1,9 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://sa0vd70lwphd"]
-
-[ext_resource type="Script" path="res://systems/weather_system/weather_types/WeatherSnow.gd" id="1_fqyw1"]
-
-[node name="SnowWeather" type="Node2D"]
-script = ExtResource("1_fqyw1")
-initial_gravity_time = 1.0
-initial_gravity = 700.0
-gravity = 20.0
