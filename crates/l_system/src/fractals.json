@@ -1,0 +1,15 @@
+{
+  "templates": {
+    "branching_tree": {
+      "axiom": "F",
+      "rules": {
+        "F": "F[+F]F[-F]F"
+      },
+      "parameters": {
+        "angle_range": [20, 30],
+        "iterations_range": [3, 5],
+        "scaling_factor_range": [0.7, 0.9]
+      }
+    }
+  }
+}
