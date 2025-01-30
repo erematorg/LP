@@ -15,9 +15,6 @@ struct LSystemScaling(pub f32);
 #[derive(Resource)]
 struct LSystemSegmentLength(pub f32);
 
-#[derive(Resource)]
-struct LSystemThickness(pub f32); // NEW - Stores base thickness
-
 /// Spawns the camera
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -30,29 +27,23 @@ fn draw_lsystem(
     angle: Res<LSystemAngle>,
     scaling_factor: Res<LSystemScaling>,
     segment_length: Res<LSystemSegmentLength>,
-    thickness: Res<LSystemThickness>, // NEW
 ) {
     let rotation_angle = angle.0;
     let line_length = segment_length.0 * scaling_factor.0;
-    let mut depth = 0; // Track iteration depth
 
     let interpreter_output = crate::interpreter::interpret(&symbols.0, rotation_angle, line_length)
         .expect("Failed to interpret L-System symbols");
 
     for (start, end) in interpreter_output.positions {
-        let taper_factor = 1.0 - (depth as f32 / 10.0); // Adjust taper based on depth
-        let dynamic_thickness = thickness.0 * taper_factor.max(0.5); // Prevents too-thin branches
-
+        let shape = shapes::Line(start, end);
         commands.spawn((
             ShapeBundle {
-                path: GeometryBuilder::build_as(&shapes::Line(start, end)),
+                path: GeometryBuilder::build_as(&shape),
                 ..default()
             },
-            Stroke::new(Color::WHITE, dynamic_thickness), // Thickness now dynamic!
+            Stroke::new(Color::WHITE, 2.0),
             Branch,
         ));
-
-        depth += 1; // Increase depth as we go
     }
 }
 
@@ -61,7 +52,7 @@ fn draw_lsystem(
 pub struct LSystemSymbols(pub String);
 
 /// Bevy app to render the L-System
-pub fn run_renderer(output: &str, angle: f32, scaling_factor: f32, segment_length: f32, thickness: f32) {
+pub fn run_renderer(output: &str, angle: f32, scaling_factor: f32, segment_length: f32) {
     let lsystem_symbols = LSystemSymbols(output.to_string());
 
     App::new()
@@ -69,7 +60,6 @@ pub fn run_renderer(output: &str, angle: f32, scaling_factor: f32, segment_lengt
         .insert_resource(LSystemAngle(angle))
         .insert_resource(LSystemScaling(scaling_factor))
         .insert_resource(LSystemSegmentLength(segment_length))
-        .insert_resource(LSystemThickness(thickness)) // NEW - Passing thickness
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "L-System Renderer".to_string(),
