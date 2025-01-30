@@ -7,7 +7,11 @@ pub struct InterpreterOutput {
 }
 
 /// Interprets L-System symbols and computes positions and directions
-pub fn interpret(symbols: &str, rotation_angle: f32, line_length: f32) -> Result<InterpreterOutput, String> {
+pub fn interpret(
+    symbols: &str,
+    rotation_angle: f32,
+    line_length: f32,
+) -> Result<InterpreterOutput, String> {
     let valid_symbols = HashSet::from(['F', '+', '-', '[', ']']);
     if symbols.chars().any(|ch| !valid_symbols.contains(&ch)) {
         return Err("Invalid symbol in L-System string".to_string());
