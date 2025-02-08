@@ -1,8 +1,8 @@
 use serde_json::Value;
 
-pub const SAVE_VERSION: &str = "1.0.0";
+pub const SAVE_VERSION: &str = "0.1.0"; // Fix to match Cargo.toml
 pub const VERSION_HISTORY: &[&str] = &[
-    "1.0.0", // First version
+    "0.1.0", // First version
 ];
 
 /// Ensures the version history is ordered correctly (Godot-inspired check)
