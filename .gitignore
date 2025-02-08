@@ -1,3 +1,6 @@
 # Ignore build artifacts
 /target
 Cargo.lock
+
+# Ignore save files
+save.json
