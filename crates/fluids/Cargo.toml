@@ -1,0 +1,8 @@
+[package]
+name = "fluids"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#Not sure that we will use this
+#bevy = "0.15"
