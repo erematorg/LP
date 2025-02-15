@@ -6,13 +6,15 @@ use serde::{Serialize, Deserialize};
 struct GameData {
     version: String,
     score: u32,
+    new_field: String,
 }
 
 impl Default for GameData {
     fn default() -> Self {
         Self {
-            version: SAVE_VERSION.to_string(), // Ensures the correct version is set
-            score: 42,
+            version: SAVE_VERSION.to_string(),
+            score: 42, 
+            new_field: "default_value".to_string(),
         }
     }
 }
@@ -27,7 +29,7 @@ fn main() {
         }
         Err(e) => {
             eprintln!("Failed to load existing save: {}. Creating a new one.", e);
-            GameData { version: SAVE_VERSION.to_string(), score: 42 }
+            GameData::default()
         }
     };
 

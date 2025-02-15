@@ -9,6 +9,7 @@ license = "AGPL-3.0"
 members = [
     "crates/l_system",
     "crates/save_system",
+    "crates/fluids",
 ]
 
 # Enable a small amount of optimization in the dev profile.
@@ -23,6 +24,7 @@ opt-level = 3
 
 l_system = { path = "crates/l_system" }
 save_system = { path = "crates/save_system" }
+fluids = { path = "crates/fluids" }
 
 bevy = "0.15.1"
 
