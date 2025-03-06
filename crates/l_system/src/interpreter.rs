@@ -12,6 +12,7 @@ pub fn interpret(
     rotation_angle: f32,
     line_length: f32,
     scale_factor: f32, // Added scale factor parameter
+    angle_variation: f32, // Added angle variation parameter
 ) -> Result<InterpreterOutput, String> {
     let valid_symbols = HashSet::from(['F', '+', '-', '[', ']']);
     if symbols.chars().any(|ch| !valid_symbols.contains(&ch)) {
@@ -38,12 +39,22 @@ pub fn interpret(
                 position = new_position;
             }
             '+' => {
-                direction = Quat::from_rotation_z(-rotation_angle.to_radians())
+                // Apply rotation with angle variation based on bracket depth
+                // We'll pass the variation value from the renderer instead of generating it here
+                let variation_factor = angle_variation * bracket_depth as f32;
+                let varied_angle = rotation_angle * (1.0 + variation_factor);
+                
+                direction = Quat::from_rotation_z(-varied_angle.to_radians())
                     .mul_vec3(direction.extend(0.0))
                     .truncate();
             }
             '-' => {
-                direction = Quat::from_rotation_z(rotation_angle.to_radians())
+                // Apply rotation with angle variation based on bracket depth
+                // We'll pass the variation value from the renderer instead of generating it here
+                let variation_factor = angle_variation * bracket_depth as f32; 
+                let varied_angle = rotation_angle * (1.0 + variation_factor);
+                
+                direction = Quat::from_rotation_z(varied_angle.to_radians())
                     .mul_vec3(direction.extend(0.0))
                     .truncate();
             }
