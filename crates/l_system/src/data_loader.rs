@@ -8,7 +8,8 @@ pub struct Parameters {
     pub scaling_factor_range: [f32; 2],
     pub segment_length_range: [f32; 2],
     pub curvature_factor_range: [f32; 2],
-    pub depth_scale_factor_range: [f32; 2], // NEW: Controls scaling based on bracket depth
+    pub depth_scale_factor_range: [f32; 2], // Controls scaling based on bracket depth
+    pub angle_variation_range: [f32; 2], // Controls random variation in branch angles
 }
 
 #[derive(Deserialize, Debug)]

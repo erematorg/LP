@@ -6,16 +6,21 @@ fn main() {
     let template = load_template("branching_tree").expect("Failed to load template");
 
     // Generate random parameters using `rand 0.9`
-    let mut rng = rng(); // ✅ FIXED: `rand::rng()` instead of `thread_rng()`
+    let mut rng = rng(); 
     
-    let iterations = rng.random_range(template.parameters.iterations_range[0]..=template.parameters.iterations_range[1]); // ✅ FIXED
+    let iterations = rng.random_range(template.parameters.iterations_range[0]..=template.parameters.iterations_range[1]); 
     let angle = rng.random_range(template.parameters.angle_range[0]..=template.parameters.angle_range[1]); // ✅ FIXED
-    let scaling_factor = rng.random_range(template.parameters.scaling_factor_range[0]..=template.parameters.scaling_factor_range[1]); // ✅ FIXED
-    let segment_length = rng.random_range(template.parameters.segment_length_range[0]..=template.parameters.segment_length_range[1]); // ✅ FIXED
+    let scaling_factor = rng.random_range(template.parameters.scaling_factor_range[0]..=template.parameters.scaling_factor_range[1]); 
+    let segment_length = rng.random_range(template.parameters.segment_length_range[0]..=template.parameters.segment_length_range[1]); 
     
     // Get depth scale factor for parametric growth
     let depth_scale_factor = rng.random_range(
         template.parameters.depth_scale_factor_range[0]..=template.parameters.depth_scale_factor_range[1]
+    );
+    
+    // Get angle variation factor for natural looking branches
+    let angle_variation = rng.random_range(
+        template.parameters.angle_variation_range[0]..=template.parameters.angle_variation_range[1]
     );
 
     // Create the L-System using the template
@@ -30,5 +35,5 @@ fn main() {
     println!("Generated Output:\n{}", output);
 
     // Render the L-System using randomized values
-    renderer::run_renderer(&output, angle, scaling_factor, segment_length, depth_scale_factor);
+    renderer::run_renderer(&output, angle, scaling_factor, segment_length, depth_scale_factor, angle_variation);
 }
