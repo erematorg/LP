@@ -10,7 +10,8 @@
         "iterations_range": [3, 5],
         "scaling_factor_range": [0.7, 0.9],
         "segment_length_range": [5, 15],
-        "curvature_factor_range": [0.3, 0.8]
+        "curvature_factor_range": [0.3, 0.8],
+        "depth_scale_factor_range": [0.6, 0.8]
       }
     }
   }

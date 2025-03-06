@@ -11,6 +11,7 @@ pub fn interpret(
     symbols: &str,
     rotation_angle: f32,
     line_length: f32,
+    scale_factor: f32, // Added scale factor parameter
 ) -> Result<InterpreterOutput, String> {
     let valid_symbols = HashSet::from(['F', '+', '-', '[', ']']);
     if symbols.chars().any(|ch| !valid_symbols.contains(&ch)) {
@@ -23,11 +24,15 @@ pub fn interpret(
     let mut output = InterpreterOutput { positions: Vec::new() };
 
     let mut current_scale = 1.0; // Track consistent scaling per iteration
+    let mut bracket_depth = 0; // Track current bracket nesting depth
 
     for ch in symbols.chars() {
         match ch {
             'F' => {
-                let scaled_length = line_length * current_scale; // Apply consistent scaling
+                // Scale based on bracket depth
+                let depth_scale = scale_factor.powf(bracket_depth as f32);
+                let scaled_length = line_length * current_scale * depth_scale;
+                
                 let new_position = position + direction * scaled_length;
                 output.positions.push((position, new_position));
                 position = new_position;
@@ -44,12 +49,14 @@ pub fn interpret(
             }
             '[' => {
                 stack.push((position, direction, current_scale)); // Save scale state too
+                bracket_depth += 1; // Increase depth when entering a branch
             }
             ']' => {
                 if let Some((saved_position, saved_direction, saved_scale)) = stack.pop() {
                     position = saved_position;
                     direction = saved_direction;
                     current_scale = saved_scale; // Restore previous scale
+                    bracket_depth -= 1; // Decrease depth when leaving a branch
                 }
             }
             _ => {}
