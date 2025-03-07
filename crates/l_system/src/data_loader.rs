@@ -13,6 +13,7 @@ pub struct Parameters {
     pub base_thickness_range: [f32; 2], // Controls base line thickness
     pub thickness_scale_factor_range: [f32; 2], // Controls how thickness reduces with depth
     pub directional_bias_range: [f32; 2], // Controls phototropism effect (upward growth bias)
+    pub angle_evolution_range: [f32; 2], // Controls branch drooping effect over time
 }
 
 #[derive(Deserialize, Debug)]

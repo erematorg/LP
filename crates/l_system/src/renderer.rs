@@ -36,6 +36,10 @@ struct LSystemThicknessScaleFactor(pub f32);
 #[derive(Resource)]
 struct LSystemDirectionalBias(pub f32);
 
+/// Parameter for branch angle evolution (drooping)
+#[derive(Resource)]
+struct LSystemAngleEvolutionFactor(pub f32);
+
 /// Random number generator as a resource
 #[derive(Resource)]
 struct LSystemRng(pub ChaCha8Rng);
@@ -57,6 +61,7 @@ fn draw_lsystem(
     base_thickness: Res<LSystemBaseThickness>,
     thickness_scale_factor: Res<LSystemThicknessScaleFactor>,
     directional_bias: Res<LSystemDirectionalBias>,
+    angle_evolution_factor: Res<LSystemAngleEvolutionFactor>,
     mut rng: ResMut<LSystemRng>,
 ) {
     let rotation_angle = angle.0;
@@ -81,7 +86,8 @@ fn draw_lsystem(
         varied_angle,
         base_thickness.0,
         thickness_scale_factor.0,
-        directional_bias.0
+        directional_bias.0,
+        angle_evolution_factor.0
     ).expect("Failed to interpret L-System symbols");
 
     for (i, (start, end)) in interpreter_output.positions.iter().enumerate() {
@@ -112,7 +118,8 @@ pub fn run_renderer(
     angle_variation: f32,
     base_thickness: f32,
     thickness_scale_factor: f32,
-    directional_bias: f32
+    directional_bias: f32,
+    angle_evolution_factor: f32
 ) {
     let lsystem_symbols = LSystemSymbols(output.to_string());
     
@@ -134,6 +141,7 @@ pub fn run_renderer(
         .insert_resource(LSystemBaseThickness(base_thickness))
         .insert_resource(LSystemThicknessScaleFactor(thickness_scale_factor))
         .insert_resource(LSystemDirectionalBias(directional_bias))
+        .insert_resource(LSystemAngleEvolutionFactor(angle_evolution_factor))
         .insert_resource(LSystemRng(rng))
         .add_plugins(EntropyPlugin::<ChaCha8Rng>::default())
         .add_plugins(DefaultPlugins.set(WindowPlugin {
