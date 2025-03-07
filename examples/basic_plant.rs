@@ -22,6 +22,15 @@ fn main() {
     let angle_variation = rng.random_range(
         template.parameters.angle_variation_range[0]..=template.parameters.angle_variation_range[1]
     );
+    
+    // Get thickness parameters for realistic branch rendering
+    let base_thickness = rng.random_range(
+        template.parameters.base_thickness_range[0]..=template.parameters.base_thickness_range[1]
+    );
+    
+    let thickness_scale_factor = rng.random_range(
+        template.parameters.thickness_scale_factor_range[0]..=template.parameters.thickness_scale_factor_range[1]
+    );
 
     // Create the L-System using the template
     let mut lsystem = LSystem::new(&template.axiom);
@@ -35,5 +44,14 @@ fn main() {
     println!("Generated Output:\n{}", output);
 
     // Render the L-System using randomized values
-    renderer::run_renderer(&output, angle, scaling_factor, segment_length, depth_scale_factor, angle_variation);
+    renderer::run_renderer(
+        &output, 
+        angle, 
+        scaling_factor, 
+        segment_length, 
+        depth_scale_factor, 
+        angle_variation,
+        base_thickness,
+        thickness_scale_factor
+    );
 }

@@ -10,6 +10,8 @@ pub struct Parameters {
     pub curvature_factor_range: [f32; 2],
     pub depth_scale_factor_range: [f32; 2], // Controls scaling based on bracket depth
     pub angle_variation_range: [f32; 2], // Controls random variation in branch angles
+    pub base_thickness_range: [f32; 2], // Controls base line thickness
+    pub thickness_scale_factor_range: [f32; 2], // Controls how thickness reduces with depth
 }
 
 #[derive(Deserialize, Debug)]
