@@ -31,6 +31,11 @@ fn main() {
     let thickness_scale_factor = rng.random_range(
         template.parameters.thickness_scale_factor_range[0]..=template.parameters.thickness_scale_factor_range[1]
     );
+    
+    // Get directional bias factor for phototropism effect
+    let directional_bias = rng.random_range(
+        template.parameters.directional_bias_range[0]..=template.parameters.directional_bias_range[1]
+    );
 
     // Create the L-System using the template
     let mut lsystem = LSystem::new(&template.axiom);
@@ -52,6 +57,7 @@ fn main() {
         depth_scale_factor, 
         angle_variation,
         base_thickness,
-        thickness_scale_factor
+        thickness_scale_factor,
+        directional_bias
     );
 }
