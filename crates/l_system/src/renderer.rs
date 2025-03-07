@@ -25,6 +25,13 @@ struct LSystemDepthScaleFactor(pub f32);
 #[derive(Resource)]
 struct LSystemAngleVariation(pub f32);
 
+/// Parameters for line thickness
+#[derive(Resource)]
+struct LSystemBaseThickness(pub f32);
+
+#[derive(Resource)]
+struct LSystemThicknessScaleFactor(pub f32);
+
 /// Random number generator as a resource
 #[derive(Resource)]
 struct LSystemRng(pub ChaCha8Rng);
@@ -43,6 +50,8 @@ fn draw_lsystem(
     segment_length: Res<LSystemSegmentLength>,
     depth_scale_factor: Res<LSystemDepthScaleFactor>,
     angle_variation: Res<LSystemAngleVariation>,
+    base_thickness: Res<LSystemBaseThickness>,
+    thickness_scale_factor: Res<LSystemThicknessScaleFactor>,
     mut rng: ResMut<LSystemRng>,
 ) {
     let rotation_angle = angle.0;
@@ -64,17 +73,20 @@ fn draw_lsystem(
         rotation_angle, 
         line_length, 
         scale_factor,
-        varied_angle
+        varied_angle,
+        base_thickness.0,
+        thickness_scale_factor.0
     ).expect("Failed to interpret L-System symbols");
 
-    for (start, end) in interpreter_output.positions {
-        let shape = shapes::Line(start, end);
+    for (i, (start, end)) in interpreter_output.positions.iter().enumerate() {
+        let thickness = interpreter_output.thicknesses[i];
+        let shape = shapes::Line(*start, *end);
         commands.spawn((
             ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
                 ..default()
             },
-            Stroke::new(Color::WHITE, 2.0),
+            Stroke::new(Color::WHITE, thickness),
             Branch,
         ));
     }
@@ -85,7 +97,16 @@ fn draw_lsystem(
 pub struct LSystemSymbols(pub String);
 
 /// Bevy app to render the L-System
-pub fn run_renderer(output: &str, angle: f32, scaling_factor: f32, segment_length: f32, depth_scale_factor: f32, angle_variation: f32) {
+pub fn run_renderer(
+    output: &str, 
+    angle: f32, 
+    scaling_factor: f32, 
+    segment_length: f32, 
+    depth_scale_factor: f32, 
+    angle_variation: f32,
+    base_thickness: f32,
+    thickness_scale_factor: f32
+) {
     let lsystem_symbols = LSystemSymbols(output.to_string());
     
     // Create a random number generator with a random seed
@@ -103,6 +124,8 @@ pub fn run_renderer(output: &str, angle: f32, scaling_factor: f32, segment_lengt
         .insert_resource(LSystemSegmentLength(segment_length))
         .insert_resource(LSystemDepthScaleFactor(depth_scale_factor))
         .insert_resource(LSystemAngleVariation(angle_variation))
+        .insert_resource(LSystemBaseThickness(base_thickness))
+        .insert_resource(LSystemThicknessScaleFactor(thickness_scale_factor))
         .insert_resource(LSystemRng(rng))
         .add_plugins(EntropyPlugin::<ChaCha8Rng>::default())
         .add_plugins(DefaultPlugins.set(WindowPlugin {
