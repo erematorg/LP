@@ -36,6 +36,11 @@ fn main() {
     let directional_bias = rng.random_range(
         template.parameters.directional_bias_range[0]..=template.parameters.directional_bias_range[1]
     );
+    
+    // Get angle evolution factor for branch drooping effect
+    let angle_evolution_factor = rng.random_range(
+        template.parameters.angle_evolution_range[0]..=template.parameters.angle_evolution_range[1]
+    );
 
     // Create the L-System using the template
     let mut lsystem = LSystem::new(&template.axiom);
@@ -58,6 +63,7 @@ fn main() {
         angle_variation,
         base_thickness,
         thickness_scale_factor,
-        directional_bias
+        directional_bias,
+        angle_evolution_factor
     );
 }
