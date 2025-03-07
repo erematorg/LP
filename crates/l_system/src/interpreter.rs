@@ -14,8 +14,9 @@ pub fn interpret(
     line_length: f32,
     scale_factor: f32,
     angle_variation: f32,
-    base_thickness: f32,         // Base thickness parameter
-    thickness_scale_factor: f32, // How much thickness reduces with depth
+    base_thickness: f32,
+    thickness_scale_factor: f32,
+    directional_bias: f32, // New parameter for directional growth bias
 ) -> Result<InterpreterOutput, String> {
     let valid_symbols = HashSet::from(['F', '+', '-', '[', ']']);
     if symbols.chars().any(|ch| !valid_symbols.contains(&ch)) {
@@ -34,9 +35,31 @@ pub fn interpret(
     let mut bracket_depth = 0; // Track current bracket nesting depth
     let mut current_thickness = base_thickness; // Start with base thickness
 
+    // Reference upward direction for phototropism
+    let upward_direction = Vec2::Y;
+
     for ch in symbols.chars() {
         match ch {
             'F' => {
+                // Apply directional bias toward upward direction (phototropism)
+                if directional_bias > 0.0 {
+                    // Calculate dot product to determine current alignment with upward direction
+                    let alignment = direction.dot(upward_direction);
+                    
+                    // Only apply bias if not already pointing upward
+                    if alignment < 0.99 {
+                        // Calculate perpendicular direction toward upward
+                        let perpendicular = (upward_direction - direction * alignment).normalize();
+                        
+                        // Apply gradual bias based on depth and bias strength
+                        // Deeper branches have stronger phototropism
+                        let bias_strength = directional_bias * (1.0 + 0.2 * bracket_depth as f32);
+                        
+                        // Blend current direction with upward bias
+                        direction = (direction + perpendicular * bias_strength).normalize();
+                    }
+                }
+                
                 // Scale based on bracket depth
                 let depth_scale = scale_factor.powf(bracket_depth as f32);
                 let scaled_length = line_length * current_scale * depth_scale;
