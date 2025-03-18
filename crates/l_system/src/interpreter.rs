@@ -1,4 +1,4 @@
-use glam::{Vec2, Quat};
+use bevy::prelude::*;
 use std::collections::HashSet;
 
 /// Represents the output of the interpreter: positions and directions for rendering
