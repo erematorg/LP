@@ -4,6 +4,7 @@ use bevy_rand::prelude::*;
 use rand_core::{RngCore, SeedableRng}; //TODO
 use crate::interpreter::SymbolType;
 
+// Components
 /// Component for an L-System branch
 #[derive(Component)]
 struct Branch {
@@ -11,43 +12,29 @@ struct Branch {
     symbol_type: SymbolType,
 }
 
-/// Structs to store random values as Bevy resources
+// Resources for L-System parameters
 #[derive(Resource)]
-struct LSystemAngle(pub f32);
-
-#[derive(Resource)]
-struct LSystemScaling(pub f32);
-
-#[derive(Resource)]
-struct LSystemSegmentLength(pub f32);
-
-/// Parameter for branch depth scaling
-#[derive(Resource)]
-struct LSystemDepthScaleFactor(pub f32);
-
-/// Parameter for angle variation
-#[derive(Resource)]
-struct LSystemAngleVariation(pub f32);
-
-/// Parameters for line thickness
-#[derive(Resource)]
-struct LSystemBaseThickness(pub f32);
-
-#[derive(Resource)]
-struct LSystemThicknessScaleFactor(pub f32);
-
-/// Parameter for directional growth bias (phototropism)
-#[derive(Resource)]
-struct LSystemDirectionalBias(pub f32);
-
-/// Parameter for branch angle evolution (drooping)
-#[derive(Resource)]
-struct LSystemAngleEvolutionFactor(pub f32);
+struct LSystemParams {
+    angle: f32,
+    scaling_factor: f32,
+    segment_length: f32,
+    depth_scale_factor: f32,
+    angle_variation: f32,
+    base_thickness: f32,
+    thickness_scale_factor: f32,
+    directional_bias: f32,
+    angle_evolution_factor: f32,
+}
 
 /// Random number generator as a resource
 #[derive(Resource)]
 struct LSystemRng(pub ChaCha8Rng);
 
+/// Resource to store L-System symbols
+#[derive(Resource)]
+pub struct LSystemSymbols(pub String);
+
+// Systems
 /// Spawns the camera
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -67,43 +54,35 @@ fn adjust_thickness_for_symbol(thickness: f32, symbol_type: SymbolType) -> f32 {
 fn draw_lsystem(
     mut commands: Commands,
     symbols: Res<LSystemSymbols>,
-    angle: Res<LSystemAngle>,
-    scaling_factor: Res<LSystemScaling>,
-    segment_length: Res<LSystemSegmentLength>,
-    depth_scale_factor: Res<LSystemDepthScaleFactor>,
-    angle_variation: Res<LSystemAngleVariation>,
-    base_thickness: Res<LSystemBaseThickness>,
-    thickness_scale_factor: Res<LSystemThicknessScaleFactor>,
-    directional_bias: Res<LSystemDirectionalBias>,
-    angle_evolution_factor: Res<LSystemAngleEvolutionFactor>,
+    params: Res<LSystemParams>,
     mut rng: ResMut<LSystemRng>,
 ) {
-    let rotation_angle = angle.0;
-    let line_length = segment_length.0 * scaling_factor.0;
-    let scale_factor = depth_scale_factor.0;
+    // Calculate parameters
+    let line_length = params.segment_length * params.scaling_factor;
 
-    // Generate random variation for each branch using bevy_rand
-    let varied_angle = if angle_variation.0 > 0.0 {
-        // Generate random value between 0 and 1, then convert to -0.5 to 0.5 range
+    // Generate random variation for each branch
+    let varied_angle = if params.angle_variation > 0.0 {
         let random_value = rng.0.next_u32() as f32 / u32::MAX as f32;
-        let random_factor = random_value - 0.5; // Convert to -0.5 to 0.5
-        angle_variation.0 * random_factor
+        let random_factor = random_value - 0.5;
+        params.angle_variation * random_factor
     } else {
         0.0
     };
     
+    // Interpret the L-System
     let interpreter_output = crate::interpreter::interpret(
         &symbols.0, 
-        rotation_angle, 
+        params.angle, 
         line_length, 
-        scale_factor,
+        params.depth_scale_factor,
         varied_angle,
-        base_thickness.0,
-        thickness_scale_factor.0,
-        directional_bias.0,
-        angle_evolution_factor.0
+        params.base_thickness,
+        params.thickness_scale_factor,
+        params.directional_bias,
+        params.angle_evolution_factor
     ).expect("Failed to interpret L-System symbols");
 
+    // Draw the branches
     for i in 0..interpreter_output.positions.len() {
         let (start, end) = interpreter_output.positions[i];
         let base_thickness = interpreter_output.thicknesses[i];
@@ -124,10 +103,6 @@ fn draw_lsystem(
     }
 }
 
-/// Resource to store L-System symbols
-#[derive(Resource)]
-pub struct LSystemSymbols(pub String);
-
 /// Bevy app to render the L-System
 pub fn run_renderer(
     output: &str, 
@@ -141,27 +116,30 @@ pub fn run_renderer(
     directional_bias: f32,
     angle_evolution_factor: f32
 ) {
-    let lsystem_symbols = LSystemSymbols(output.to_string());
-    
-    // Create a random number generator with a random seed
-    // Use the system time as a simple seed
+    // Create a random number generator
     let seed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
     let rng = ChaCha8Rng::seed_from_u64(seed);
 
+    // Create the L-System parameters resource
+    let params = LSystemParams {
+        angle,
+        scaling_factor,
+        segment_length,
+        depth_scale_factor,
+        angle_variation,
+        base_thickness,
+        thickness_scale_factor,
+        directional_bias,
+        angle_evolution_factor,
+    };
+
+    // Build and run the Bevy app
     App::new()
-        .insert_resource(lsystem_symbols)
-        .insert_resource(LSystemAngle(angle))
-        .insert_resource(LSystemScaling(scaling_factor))
-        .insert_resource(LSystemSegmentLength(segment_length))
-        .insert_resource(LSystemDepthScaleFactor(depth_scale_factor))
-        .insert_resource(LSystemAngleVariation(angle_variation))
-        .insert_resource(LSystemBaseThickness(base_thickness))
-        .insert_resource(LSystemThicknessScaleFactor(thickness_scale_factor))
-        .insert_resource(LSystemDirectionalBias(directional_bias))
-        .insert_resource(LSystemAngleEvolutionFactor(angle_evolution_factor))
+        .insert_resource(LSystemSymbols(output.to_string()))
+        .insert_resource(params)
         .insert_resource(LSystemRng(rng))
         .add_plugins(EntropyPlugin::<ChaCha8Rng>::default())
         .add_plugins(DefaultPlugins.set(WindowPlugin {
