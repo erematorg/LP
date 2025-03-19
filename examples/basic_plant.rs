@@ -2,8 +2,8 @@ use l_system::{lsystem::LSystem, data_loader::load_template, renderer};
 use rand::prelude::*;
 
 fn main() {
-    // Load the branching_tree template from fractals.json
-    let template = load_template("branching_tree").expect("Failed to load template");
+    // Load the multi-symbol template from fractals.json
+    let template = load_template("multi_tree").expect("Failed to load template");
 
     // Generate random parameters using rand 0.9
     let mut rng = rand::rng(); 
@@ -51,7 +51,30 @@ fn main() {
 
     // Generate the L-System output
     let output = lsystem.generate();
-    //println!("Generated Output:\n{}", output);
+    
+    // Print symbol usage statistics
+    let mut symbols_count = std::collections::HashMap::new();
+    for ch in output.chars() {
+        if "SBCF+-[]".contains(ch) {
+            *symbols_count.entry(ch).or_insert(0) += 1;
+        }
+    }
+    
+    println!("Symbol counts in generated system:");
+    for (symbol, count) in symbols_count.iter() {
+        let description = match symbol {
+            'S' => "Segment - Basic building block",
+            'B' => "Bifurcation - Splitting point",
+            'C' => "Core - Origin/central element",
+            'F' => "Legacy - Original symbol",
+            '+' => "Rotate clockwise",
+            '-' => "Rotate counter-clockwise",
+            '[' => "Push state",
+            ']' => "Pop state",
+            _ => "Unknown",
+        };
+        println!("{}: {} ({})", symbol, count, description);
+    }
 
     // Render the L-System using randomized values
     renderer::run_renderer(

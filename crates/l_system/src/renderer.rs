@@ -1,11 +1,15 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use bevy_rand::prelude::*;
-use rand_core::{RngCore, SeedableRng};
+use rand_core::{RngCore, SeedableRng}; //TODO
+use crate::interpreter::SymbolType;
 
 /// Component for an L-System branch
 #[derive(Component)]
-struct Branch;
+struct Branch {
+    /// Type of this branch segment
+    symbol_type: SymbolType,
+}
 
 /// Structs to store random values as Bevy resources
 #[derive(Resource)]
@@ -49,6 +53,16 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
+/// Adjust thickness based on symbol type
+fn adjust_thickness_for_symbol(thickness: f32, symbol_type: SymbolType) -> f32 {
+    match symbol_type {
+        SymbolType::Core => thickness * 1.5,         // Thicker for core elements
+        SymbolType::Bifurcation => thickness * 1.2,  // Slightly thicker for branch points
+        SymbolType::Segment => thickness,            // Standard thickness
+        SymbolType::Legacy => thickness,             // Standard thickness
+    }
+}
+
 /// Draws the L-System output dynamically
 fn draw_lsystem(
     mut commands: Commands,
@@ -90,16 +104,22 @@ fn draw_lsystem(
         angle_evolution_factor.0
     ).expect("Failed to interpret L-System symbols");
 
-    for (i, (start, end)) in interpreter_output.positions.iter().enumerate() {
-        let thickness = interpreter_output.thicknesses[i];
-        let shape = shapes::Line(*start, *end);
+    for i in 0..interpreter_output.positions.len() {
+        let (start, end) = interpreter_output.positions[i];
+        let base_thickness = interpreter_output.thicknesses[i];
+        let symbol_type = interpreter_output.types[i];
+        
+        // Adjust thickness based on symbol type
+        let adjusted_thickness = adjust_thickness_for_symbol(base_thickness, symbol_type);
+        
+        let shape = shapes::Line(start, end);
         commands.spawn((
             ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
                 ..default()
             },
-            Stroke::new(Color::WHITE, thickness),
-            Branch,
+            Stroke::new(Color::WHITE, adjusted_thickness),
+            Branch { symbol_type },
         ));
     }
 }
