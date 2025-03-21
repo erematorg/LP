@@ -6,8 +6,14 @@ pub struct Parameters {
     pub angle_range: [f32; 2],
     pub iterations_range: [usize; 2],
     pub scaling_factor_range: [f32; 2],
-    pub segment_length_range: [f32; 2], // NEW
-    pub curvature_factor_range: [f32; 2], // NEW
+    pub segment_length_range: [f32; 2],
+    pub curvature_factor_range: [f32; 2],
+    pub depth_scale_factor_range: [f32; 2], // Controls scaling based on bracket depth
+    pub angle_variation_range: [f32; 2], // Controls random variation in branch angles
+    pub base_thickness_range: [f32; 2], // Controls base line thickness
+    pub thickness_scale_factor_range: [f32; 2], // Controls how thickness reduces with depth
+    pub directional_bias_range: [f32; 2], // Controls phototropism effect (upward growth bias)
+    pub angle_evolution_range: [f32; 2], // Controls branch drooping effect over time
 }
 
 #[derive(Deserialize, Debug)]

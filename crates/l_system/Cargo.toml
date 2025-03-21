@@ -4,12 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-glam = "0.29.2"
-
 bevy = "0.15"
 
 # Bevy Prototype Lyon for 2D shapes temporary until future Bevy release handles necessary needs.
 bevy_prototype_lyon = "0.13"
+
 
 # Serde for serialization and deserialization
 serde = "1.0"
