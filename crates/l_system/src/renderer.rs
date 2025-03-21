@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use bevy_rand::prelude::*;
-use rand_core::{RngCore, SeedableRng}; //TODO
 use crate::interpreter::SymbolType;
 
 // Components
@@ -28,7 +26,7 @@ struct LSystemParams {
 
 /// Random number generator as a resource
 #[derive(Resource)]
-struct LSystemRng(pub ChaCha8Rng);
+struct LSystemRng(pub u64);
 
 /// Resource to store L-System symbols
 #[derive(Resource)]
@@ -56,13 +54,18 @@ fn draw_lsystem(
     symbols: Res<LSystemSymbols>,
     params: Res<LSystemParams>,
     mut rng: ResMut<LSystemRng>,
+    time: Res<Time>,
 ) {
     // Calculate parameters
     let line_length = params.segment_length * params.scaling_factor;
 
-    // Generate random variation for each branch
+    // Generate random variation for each branch using Bevy's built-in time as a seed
     let varied_angle = if params.angle_variation > 0.0 {
-        let random_value = rng.0.next_u32() as f32 / u32::MAX as f32;
+        // Update our simple RNG with time
+        rng.0 = rng.0.wrapping_add(time.elapsed_secs_f64() as u64);
+        
+        // Generate a simple random value between 0.0 and 1.0
+        let random_value = ((rng.0 >> 32) as f32) / u32::MAX as f32;
         let random_factor = random_value - 0.5;
         params.angle_variation * random_factor
     } else {
@@ -116,12 +119,11 @@ pub fn run_renderer(
     directional_bias: f32,
     angle_evolution_factor: f32
 ) {
-    // Create a random number generator
+    // Create a simple seed from the current time
     let seed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    let rng = ChaCha8Rng::seed_from_u64(seed);
 
     // Create the L-System parameters resource
     let params = LSystemParams {
@@ -140,8 +142,7 @@ pub fn run_renderer(
     App::new()
         .insert_resource(LSystemSymbols(output.to_string()))
         .insert_resource(params)
-        .insert_resource(LSystemRng(rng))
-        .add_plugins(EntropyPlugin::<ChaCha8Rng>::default())
+        .insert_resource(LSystemRng(seed))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "L-System Renderer".to_string(),
