@@ -3,7 +3,7 @@ name = "LP"
 version = "0.1.0"
 edition = "2021"
 description = "A systemic 2D platformer in a dynamic living ecosystem.."
-license = "AGPL-3.0"
+license = "Apache-2.0"
 
 [workspace]
 members = [
