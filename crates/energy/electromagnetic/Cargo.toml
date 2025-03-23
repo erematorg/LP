@@ -1,0 +1,7 @@
+[package]
+name = "electromagnetic"
+version = "0.1.0"
+edition = "2021"
+description = "Systems modeling electromagnetic phenomena and their interactions across the universe."
+
+[dependencies]

@@ -5,9 +5,10 @@ use crate::interpreter::SymbolType;
 // Components
 /// Component for an L-System branch
 #[derive(Component)]
+#[allow(dead_code)]
 struct Branch {
     /// Type of this branch segment
-    symbol_type: SymbolType,
+    symbol_type: SymbolType, //TODO: Extends it later and truly get this to work as expected
 }
 
 // Resources for L-System parameters
