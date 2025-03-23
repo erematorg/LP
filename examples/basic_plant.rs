@@ -1,5 +1,5 @@
-use l_system::{lsystem::LSystem, data_loader::load_template, renderer};
-use rand::prelude::*;
+use information::fractals::{fractals::LSystem, data_loader::load_template, renderer}; //Will be reworked to get a better calling API method
+use rand::prelude::*; //Will move to bevy_rand soon enough
 
 fn main() {
     // Load the multi-symbol template from fractals.json

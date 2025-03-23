@@ -2,6 +2,7 @@
 name = "save_system"
 version = "0.1.0"
 edition = "2021"
+description = "Framework for preserving and restoring simulation states across sessions."
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

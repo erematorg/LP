@@ -1,7 +1,8 @@
 [package]
-name = "l_system"
+name = "fractals"
 version = "0.1.0"
 edition = "2021"
+description = "Self-similar pattern generation and analysis for complex information structures."
 
 [dependencies]
 bevy = "0.15"
