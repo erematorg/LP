@@ -1,0 +1,8 @@
+[package]
+name = "matter"
+version = "0.1.0"
+edition = "2021"
+description = "Physical substance modeling from fundamental particles to complex materials, defining how tangible elements behave and interact."
+
+[dependencies]
+fluids = { path = "./fluids" }
