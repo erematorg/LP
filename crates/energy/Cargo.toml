@@ -1,0 +1,9 @@
+[package]
+name = "energy"
+version = "0.1.0"
+edition = "2021"
+description = "Core systems governing how energy manifests, transforms and flows."
+
+[dependencies]
+thermodynamics = { path = "./thermodynamics" }
+electromagnetic = { path = "./electromagnetic" }

@@ -1,0 +1,7 @@
+[package]
+name = "thermodynamics"
+version = "0.1.0"
+edition = "2021"
+description = "Thermal energy systems and their transformations within the physical environment."
+
+[dependencies]

@@ -7,9 +7,12 @@ license = "Apache-2.0"
 
 [workspace]
 members = [
-    "crates/l_system",
-    "crates/save_system",
-    "crates/fluids",
+    "crates/systems",
+    "crates/energy",
+    "crates/forces",
+    "crates/information",
+    "crates/matter",
+    "crates/spacetime",
 ]
 
 # Enable a small amount of optimization in the dev profile.
@@ -22,9 +25,12 @@ opt-level = 3
 
 [dependencies]
 
-l_system = { path = "crates/l_system" }
-save_system = { path = "crates/save_system" }
-fluids = { path = "crates/fluids" }
+systems = { path = "crates/systems" }
+energy = { path = "crates/energy" }
+forces = { path = "crates/forces" }
+information = { path = "crates/information" }
+matter = { path = "crates/matter" }
+spacetime= { path = "crates/spacetime" }
 
 bevy = "0.15.1"
 
