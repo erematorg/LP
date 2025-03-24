@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a bug in LP
+body:
+
+- type: markdown
+  attributes:
+    value: |
+      When reporting bugs, please follow the guidelines in this template. This helps identify the problem precisely and thus enables contributors to fix it faster.
+      - Write a descriptive issue title above.
+      - The golden rule is to **always open *one* issue for *one* bug**. If you notice several bugs and want to report them, make sure to create one new issue for each of them.
+      - Search [open issues](https://github.com/erematorg/LP/issues) and [closed issues](https://github.com/erematorg/LP/issues?q=is%3Aissue+is%3Aclosed) to ensure it has not already been reported. If you don't find a relevant match or if you're unsure, don't hesitate to **open a new issue**. The bugsquad will handle it from there if it's a duplicate.
+      - Please always check if your issue is reproducible in the latest version – it may already have been fixed!
+
+- type: textarea
+  attributes:
+    label: Tested versions
+    description: |
+      To properly fix a bug, we need to identify if the bug was recently introduced in the LP project or if it has been present from the beginning.
+      - Specify the LP version you found the issue in. If you are using a specific build, include relevant details.
+      - If you can, **please test earlier LP versions** and, if applicable, newer versions. Mention whether the bug is reproducible or not in the versions you tested.
+    placeholder: |
+
+      - Reproducible in: v1.0, v1.1
+      - Not reproducible in: v0.9
+  validations:
+    required: true
+
+- type: input
+  attributes:
+    label: System information
+    description: |
+      - Specify the OS version, and when relevant, hardware information.
+      - For issues that are likely OS-specific and/or graphics-related, please specify the CPU model and architecture.
+    placeholder: Windows 10 - LP v1.0 - dedicated GPU NVIDIA GeForce GTX 970 - Intel Core i7-10700KF CPU @ 3.80GHz (16 Threads)
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Issue description
+    description: |
+      Describe your issue briefly. What doesn't work, and how do you expect it to work instead?
+      You can include images or videos with drag and drop, and format code blocks or logs with <code>```</code> tags.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Steps to reproduce
+    description: |
+      List the steps or sample code that reproduces the issue. Having reproducible issues is a prerequisite for contributors to be able to solve them.
+      If you include a minimal reproduction project below, detail how to use it here.
+  validations:
+    required: true
