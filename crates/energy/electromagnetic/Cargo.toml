@@ -5,3 +5,4 @@ edition = "2021"
 description = "Systems modeling electromagnetic phenomena and their interactions across the universe."
 
 [dependencies]
+bevy = "0.15"
