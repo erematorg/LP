@@ -5,3 +5,4 @@ edition = "2021"
 description = "Thermal energy systems and their transformations within the physical environment."
 
 [dependencies]
+bevy = "0.15"
