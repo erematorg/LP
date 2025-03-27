@@ -5,3 +5,4 @@ edition = "2021"
 description = "Fundamental interaction mechanisms that create relationships between entities and drive dynamic behaviors across scales."
 
 [dependencies]
+bevy = "0.15"
