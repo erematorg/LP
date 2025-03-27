@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 use crate::mechanics::{AppliedForce, Mass};
 
-/// Gravitational constant G in m³/(kg·s²)
-pub const GRAVITATIONAL_CONSTANT: f32 = 6.67430e-11;
+/// Modified gravitational constant for simulation scale
+/// We use a much larger value than the real G (6.67430e-11) to make
+/// the simulation visually interesting at screen scale
+pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Component for uniform gravitational field (like on Earth's surface)
 #[derive(Resource, Debug, Clone, Copy)]
@@ -24,6 +26,10 @@ impl Default for UniformGravity {
 #[derive(Component, Debug, Clone, Copy)]
 pub struct GravityAffected;
 
+/// Marker component for gravity field measurement points
+#[derive(Component, Debug, Clone, Copy)]
+pub struct GravityFieldMarker;
+
 /// System to apply uniform gravity forces to entities
 pub fn apply_uniform_gravity(
     gravity: Res<UniformGravity>,
@@ -36,6 +42,11 @@ pub fn apply_uniform_gravity(
         
         // Add to existing force
         force.force += gravity_force;
+        
+        // Track massive objects for gravitational analysis
+        if mass.value > 1000.0 {
+            commands.entity(entity).insert(MassiveBody);
+        }
     }
 }
 
@@ -43,9 +54,13 @@ pub fn apply_uniform_gravity(
 #[derive(Component, Debug, Clone, Copy)]
 pub struct GravitySource;
 
+/// Marker for bodies with significant mass
+#[derive(Component, Debug, Clone, Copy)]
+pub struct MassiveBody;
+
 /// System to calculate gravitational attraction between entities
 pub fn calculate_gravitational_attraction(
-    mut query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+    query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
     mut affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
 ) {
     // For each gravity source
@@ -61,15 +76,14 @@ pub fn calculate_gravitational_attraction(
             let direction = source_transform.translation - affected_transform.translation;
             let distance_squared = direction.length_squared();
             
-            // Skip if too close (prevents extreme forces)
-            if distance_squared < 0.001 {
-                continue;
-            }
+            // Add a small constant to avoid division by zero or extreme forces
+            // This also helps stabilize very close orbits
+            let safe_distance_squared = distance_squared.max(25.0);
             
             // Calculate force magnitude using Newton's Law of Universal Gravitation
             // F = G * (m1 * m2) / r²
             let force_magnitude = GRAVITATIONAL_CONSTANT * 
-                (source_mass.value * affected_mass.value) / distance_squared;
+                (source_mass.value * affected_mass.value) / safe_distance_squared;
             
             // Calculate force vector
             let force_vector = direction.normalize() * force_magnitude;
@@ -87,6 +101,20 @@ pub fn calculate_orbital_velocity(
 ) -> f32 {
     // v = sqrt(G * M / r)
     (GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
+}
+
+/// Calculate initial velocity for an elliptical orbit with given eccentricity
+pub fn calculate_elliptical_orbit_velocity(
+    central_mass: f32,
+    distance: f32,
+    eccentricity: f32,
+    is_periapsis: bool,
+) -> f32 {
+    let mu = GRAVITATIONAL_CONSTANT * central_mass;
+    let semimajor_axis = distance / (1.0 - eccentricity * if is_periapsis { 1.0 } else { -1.0 });
+    
+    // Use the vis-viva equation: v² = GM(2/r - 1/a)
+    (mu * (2.0 / distance - 1.0 / semimajor_axis)).sqrt()
 }
 
 /// Calculate escape velocity from a massive body
