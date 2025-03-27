@@ -80,7 +80,7 @@ pub fn apply_forces(
     time: Res<Time>,
     mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     
     for (mass, mut velocity, mut force) in query.iter_mut() {
         // Skip infinite mass objects
@@ -104,7 +104,7 @@ pub fn integrate_positions(
     time: Res<Time>,
     mut query: Query<(&Velocity, &mut Transform)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     
     for (velocity, mut transform) in query.iter_mut() {
         // Update position using velocity
