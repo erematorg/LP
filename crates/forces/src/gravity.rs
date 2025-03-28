@@ -297,6 +297,42 @@ pub fn calculate_gravitational_attraction(
     }
 }
 
+/// System to calculate gravitational attraction using Barnes-Hut algorithm
+pub fn calculate_barnes_hut_attraction(
+    query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+    mut affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
+    theta: f32, // Accuracy parameter (0.0-1.0, lower = more accurate)
+) {
+    // Only use Barnes-Hut for larger simulations
+    if query.iter().count() < 20 {
+        calculate_gravitational_attraction(query, affected_query);
+        return;
+    }
+    
+    // Create quadtree from gravity sources
+    let bodies: Vec<(Entity, Vec3, f32)> = query
+        .iter()
+        .map(|(e, t, m)| (e, t.translation, m.value))
+        .collect();
+    
+    let quadtree = spatial::Quadtree::from_bodies(&bodies);
+    
+    // Calculate force on each affected body
+    for (entity, transform, _, mut force) in affected_query.iter_mut() {
+        let position = transform.translation;
+        
+        // Skip self-attraction by checking if this entity is in the tree
+        // This is a simplification - a more robust solution would filter in the recursion
+        if bodies.iter().any(|&(e, _, _)| e == entity) {
+            continue;
+        }
+        
+        // Calculate force using Barnes-Hut algorithm
+        let force_vector = calculate_barnes_hut_force(position, &quadtree.root, theta);
+        force.force += force_vector;
+    }
+}
+
 /// Calculate gravitational force using the Barnes-Hut approximation method
 pub fn calculate_barnes_hut_force(
     affected_position: Vec3, 
