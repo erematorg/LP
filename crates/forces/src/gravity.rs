@@ -1,6 +1,72 @@
 use bevy::prelude::*;
 use crate::mechanics::{AppliedForce, Mass};
 
+// Basic 2D axis-aligned bounding box for spatial calculations
+mod spatial {
+    use bevy::prelude::*;
+    
+    /// Represents a 2D axis-aligned bounding box for spatial partitioning
+    #[derive(Clone, Debug)]
+    pub struct AABB {
+        pub center: Vec2,
+        pub half_size: Vec2,
+    }
+    
+    impl AABB {
+        pub fn new(center: Vec2, half_size: Vec2) -> Self {
+            Self { center, half_size }
+        }
+        
+        /// Returns true if the point is within this AABB
+        pub fn contains(&self, point: Vec2) -> bool {
+            let min = self.center - self.half_size;
+            let max = self.center + self.half_size;
+            point.x >= min.x && point.x <= max.x && 
+            point.y >= min.y && point.y <= max.y
+        }
+        
+        /// Returns the distance from a point to this AABB (0 if inside)
+        pub fn distance_to(&self, point: Vec2) -> f32 {
+            let dx = (point.x - self.center.x).abs() - self.half_size.x;
+            let dy = (point.y - self.center.y).abs() - self.half_size.y;
+            
+            if dx < 0.0 && dy < 0.0 {
+                // Point is inside the AABB
+                return 0.0;
+            }
+            
+            // Point is outside - calculate distance
+            Vec2::new(dx.max(0.0), dy.max(0.0)).length()
+        }
+    }
+    
+    /// Represents basic mass properties for Barnes-Hut approximation
+    #[derive(Clone, Debug)]
+    pub struct MassProperties {
+        pub total_mass: f32,
+        pub center_of_mass: Vec3,
+    }
+    
+    impl MassProperties {
+        pub fn new() -> Self {
+            Self {
+                total_mass: 0.0,
+                center_of_mass: Vec3::ZERO,
+            }
+        }
+        
+        /// Update mass properties with a new body
+        pub fn add_body(&mut self, position: Vec3, mass: f32) {
+            let new_total_mass = self.total_mass + mass;
+            
+            if new_total_mass > 0.0 {
+                self.center_of_mass = (self.center_of_mass * self.total_mass + position * mass) / new_total_mass;
+                self.total_mass = new_total_mass;
+            }
+        }
+    }
+}
+
 /// Modified gravitational constant for simulation scale
 /// We use a much larger value than the real G (6.67430e-11) to make
 /// the simulation visually interesting at screen scale
@@ -164,4 +230,47 @@ pub fn calculate_escape_velocity(
 ) -> f32 {
     // v_escape = sqrt(2 * G * M / r)
     (2.0 * GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
+}
+
+/// Calculate gravitational force using the Barnes-Hut approximation method
+/// This function approximates forces from distant clusters of bodies
+/// 
+/// Parameters:
+/// - affected_position: Position of the body being affected
+/// - mass_properties: Mass properties of the node (center of mass and total mass)
+/// - node_size: Width of the node
+/// - distance: Distance from affected body to the node's center of mass
+/// - theta: Accuracy parameter (smaller = more accurate)
+pub fn calculate_barnes_hut_force(
+    affected_position: Vec3, 
+    mass_properties: &spatial::MassProperties,
+    node_size: f32,
+    distance: f32,
+    theta: f32
+) -> Vec3 {
+    // If the node has no mass, return zero force
+    if mass_properties.total_mass <= 0.0 || distance < 0.001 {
+        return Vec3::ZERO;
+    }
+    
+    // Check if node is far enough for approximation
+    // If s/d < theta, we can use approximation (s = node size, d = distance)
+    let is_far_enough = node_size / distance < theta;
+    
+    if is_far_enough {
+        // Use center of mass approximation
+        let direction = mass_properties.center_of_mass - affected_position;
+        let distance_squared = direction.length_squared();
+        
+        // Calculate force magnitude using Newton's Law of Universal Gravitation
+        let force_magnitude = GRAVITATIONAL_CONSTANT * mass_properties.total_mass / distance_squared;
+        
+        // Calculate and return force vector
+        return direction.normalize() * force_magnitude;
+    }
+    
+    // If we're here, the node is too close for approximation
+    // In a full implementation, we would sum forces from child nodes
+    // For now just return zero since we don't have the tree structure yet
+    Vec3::ZERO
 }
