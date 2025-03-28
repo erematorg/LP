@@ -63,8 +63,27 @@ impl Mass {
         if self.is_infinite {
             0.0
         } else {
-            1.0 / self.value
+            1.0 / self.value.max(f32::EPSILON)
         }
+    }
+    
+    /// Returns true if this mass is effectively zero
+    pub fn is_negligible(&self) -> bool {
+        self.value < 0.001
+    }
+    
+    /// Safely compute the reduced mass of two objects (for two-body systems)
+    pub fn reduced_mass(&self, other: &Mass) -> f32 {
+        if self.is_infinite || other.is_infinite {
+            return self.value.min(other.value);
+        }
+        
+        let sum = self.value + other.value;
+        if sum < f32::EPSILON {
+            return 0.0;
+        }
+        
+        (self.value * other.value) / sum
     }
 }
 
@@ -118,13 +137,21 @@ pub fn apply_forces(
     let dt = time.delta_secs();
     
     for (mass, mut velocity, mut force) in query.iter_mut() {
-        // Skip infinite mass objects
-        if mass.is_infinite {
+        // Skip infinite mass objects and effectively massless objects
+        if mass.is_infinite || mass.is_negligible() {
             continue;
         }
         
-        // Calculate acceleration using F = ma
-        let acceleration = force.force / mass.value;
+        // Calculate acceleration using F = ma with safety against division by zero
+        let acceleration = force.force * mass.inverse();
+        
+        // Cap extremely high accelerations to prevent instability
+        let max_acceleration = 1000.0; // Arbitrary limit to prevent numerical issues
+        let acceleration = if acceleration.norm_squared() > max_acceleration * max_acceleration {
+            acceleration.normalize() * max_acceleration
+        } else {
+            acceleration
+        };
         
         // Update velocity using acceleration
         velocity.linvel += acceleration * dt;
