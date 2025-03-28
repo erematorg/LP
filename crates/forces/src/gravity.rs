@@ -63,33 +63,73 @@ pub fn calculate_gravitational_attraction(
     query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
     mut affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
 ) {
-    // For each gravity source
-    for (source_entity, source_transform, source_mass) in query.iter() {
-        // Calculate its effect on all affected entities
-        for (affected_entity, affected_transform, affected_mass, mut force) in affected_query.iter_mut() {
-            // Skip self-attraction
-            if source_entity == affected_entity {
-                continue;
+    // Determine if we should use SIMD optimization
+    let use_simd = query.iter().count() >= 8 && affected_query.iter().count() >= 8;
+    
+    if use_simd {
+        // Collect sources for batch processing
+        let sources: Vec<(Entity, Vec3, f32)> = query
+            .iter()
+            .map(|(e, t, m)| (e, t.translation, m.value))
+            .collect();
+
+        // Process in batches of 4 for better SIMD optimization
+        for chunk in sources.chunks(4) {
+            for (affected_entity, affected_transform, affected_mass, mut force) in affected_query.iter_mut() {
+                let affected_pos = affected_transform.translation;
+                
+                // Process each source in the chunk (compiler can auto-vectorize this loop)
+                for &(source_entity, source_pos, source_mass) in chunk {
+                    // Skip self-attraction
+                    if source_entity == affected_entity {
+                        continue;
+                    }
+                    
+                    // Calculate vector between entities
+                    let direction = source_pos - affected_pos;
+                    let distance_squared = direction.length_squared();
+                    
+                    // Safety threshold
+                    let safe_distance_squared = distance_squared.max(25.0);
+                    
+                    // Calculate force magnitude
+                    let force_magnitude = GRAVITATIONAL_CONSTANT * 
+                        (source_mass * affected_mass.value) / safe_distance_squared;
+                    
+                    // Calculate and apply force vector
+                    let force_vector = direction.normalize() * force_magnitude;
+                    force.force += force_vector;
+                }
             }
-            
-            // Calculate vector between entities
-            let direction = source_transform.translation - affected_transform.translation;
-            let distance_squared = direction.length_squared();
-            
-            // Add a small constant to avoid division by zero or extreme forces
-            // This also helps stabilize very close orbits
-            let safe_distance_squared = distance_squared.max(25.0);
-            
-            // Calculate force magnitude using Newton's Law of Universal Gravitation
-            // F = G * (m1 * m2) / r²
-            let force_magnitude = GRAVITATIONAL_CONSTANT * 
-                (source_mass.value * affected_mass.value) / safe_distance_squared;
-            
-            // Calculate force vector
-            let force_vector = direction.normalize() * force_magnitude;
-            
-            // Add to existing force
-            force.force += force_vector;
+        }
+    } else {
+        // Use original non-SIMD implementation for small body counts
+        // For each gravity source
+        for (source_entity, source_transform, source_mass) in query.iter() {
+            // Calculate its effect on all affected entities
+            for (affected_entity, affected_transform, affected_mass, mut force) in affected_query.iter_mut() {
+                // Skip self-attraction
+                if source_entity == affected_entity {
+                    continue;
+                }
+                
+                // Calculate vector between entities
+                let direction = source_transform.translation - affected_transform.translation;
+                let distance_squared = direction.length_squared();
+                
+                // Add a small constant to avoid division by zero or extreme forces
+                let safe_distance_squared = distance_squared.max(25.0);
+                
+                // Calculate force magnitude using Newton's Law of Universal Gravitation
+                let force_magnitude = GRAVITATIONAL_CONSTANT * 
+                    (source_mass.value * affected_mass.value) / safe_distance_squared;
+                
+                // Calculate force vector
+                let force_vector = direction.normalize() * force_magnitude;
+                
+                // Add to existing force
+                force.force += force_vector;
+            }
         }
     }
 }
