@@ -67,12 +67,10 @@ impl Mass {
         }
     }
     
-    /// Returns true if this mass is effectively zero
     pub fn is_negligible(&self) -> bool {
         self.value < 0.001
     }
     
-    /// Safely compute the reduced mass of two objects (for two-body systems)
     pub fn reduced_mass(&self, other: &Mass) -> f32 {
         if self.is_infinite || other.is_infinite {
             return self.value.min(other.value);
@@ -129,56 +127,6 @@ impl AppliedForce {
     }
 }
 
-/// System to apply forces according to Newton's Second Law (F = ma)
-pub fn apply_forces(
-    time: Res<Time>,
-    mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>,
-) {
-    let dt = time.delta_secs();
-    
-    for (mass, mut velocity, mut force) in query.iter_mut() {
-        // Skip infinite mass objects and effectively massless objects
-        if mass.is_infinite || mass.is_negligible() {
-            continue;
-        }
-        
-        // Calculate acceleration using F = ma with safety against division by zero
-        let acceleration = force.force * mass.inverse();
-        
-        // Cap extremely high accelerations to prevent instability
-        let max_acceleration = 1000.0; // Arbitrary limit to prevent numerical issues
-        let acceleration = if acceleration.norm_squared() > max_acceleration * max_acceleration {
-            acceleration.normalize() * max_acceleration
-        } else {
-            acceleration
-        };
-        
-        // Update velocity using acceleration
-        velocity.linvel += acceleration * dt;
-        
-        // Update force duration
-        force.elapsed += dt;
-    }
-}
-
-/// System to apply Verlet integration for position updates
-pub fn integrate_positions(
-    time: Res<Time>,
-    mut query: Query<(&Velocity, &mut Transform)>,
-) {
-    let dt = time.delta_secs();
-    
-    for (velocity, mut transform) in query.iter_mut() {
-        // Update position using velocity
-        transform.translation += velocity.linvel * dt;
-        
-        // Apply angular velocity
-        if velocity.angvel.norm_squared() > 0.0 {
-            transform.rotation *= Quat::from_scaled_axis(velocity.angvel * dt);
-        }
-    }
-}
-
 /// Component for velocity (both linear and angular)
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Velocity {
@@ -197,6 +145,49 @@ impl Default for Velocity {
     }
 }
 
+/// System to apply forces according to Newton's Second Law (F = ma)
+pub fn apply_forces(
+    time: Res<Time>,
+    mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>,
+) {
+    let dt = time.delta_secs();
+    
+    for (mass, mut velocity, mut force) in query.iter_mut() {
+        if mass.is_infinite || mass.is_negligible() {
+            continue;
+        }
+        
+        let acceleration = force.force * mass.inverse();
+        
+        // Cap extremely high accelerations to prevent instability
+        let max_acceleration = 1000.0;
+        let acceleration = if acceleration.norm_squared() > max_acceleration * max_acceleration {
+            acceleration.normalize() * max_acceleration
+        } else {
+            acceleration
+        };
+        
+        velocity.linvel += acceleration * dt;
+        force.elapsed += dt;
+    }
+}
+
+/// System to apply Verlet integration for position updates
+pub fn integrate_positions(
+    time: Res<Time>,
+    mut query: Query<(&Velocity, &mut Transform)>,
+) {
+    let dt = time.delta_secs();
+    
+    for (velocity, mut transform) in query.iter_mut() {
+        transform.translation += velocity.linvel * dt;
+        
+        if velocity.angvel.norm_squared() > 0.0 {
+            transform.rotation *= Quat::from_scaled_axis(velocity.angvel * dt);
+        }
+    }
+}
+
 /// Calculate momentum of an object
 pub fn calculate_momentum(mass: &Mass, velocity: &Velocity) -> Vec3 {
     mass.value * velocity.linvel
@@ -205,4 +196,107 @@ pub fn calculate_momentum(mass: &Mass, velocity: &Velocity) -> Vec3 {
 /// Calculate kinetic energy of an object
 pub fn calculate_kinetic_energy(mass: &Mass, velocity: &Velocity) -> f32 {
     0.5 * mass.value * velocity.linvel.norm_squared()
+}
+
+/// Represents a pair of entities for force calculations (Newton's Third Law)
+#[derive(Debug, Clone, Copy)]
+pub struct ForcePair<'a> {
+    pub first: (Entity, &'a Transform, &'a Mass),
+    pub second: (Entity, &'a Transform, &'a Mass),
+}
+
+/// Trait for computing paired forces that satisfy Newton's Third Law
+pub trait PairedForce {
+    fn compute_pair_force(&self, pair: ForcePair) -> (Vec3, Vec3);
+}
+
+/// Component marker for entities that should be considered for paired force calculations
+#[derive(Component)]
+pub struct PairedForceInteraction;
+
+/// Event for immediate impulse application that respects Newton's Third Law
+#[derive(Event)]
+pub struct ForceImpulse {
+    pub entity1: Entity,
+    pub impulse1: Vec3,
+    pub entity2: Entity,
+    pub impulse2: Vec3,
+}
+
+impl ForceImpulse {
+    /// Create a balanced impulse pair (equal and opposite)
+    pub fn new_balanced(entity1: Entity, entity2: Entity, impulse_on_first: Vec3) -> Self {
+        Self {
+            entity1,
+            impulse1: impulse_on_first,
+            entity2, 
+            impulse2: -impulse_on_first,
+        }
+    }
+}
+
+/// Plugin that adds all physics systems in the correct order
+#[derive(Default)]
+pub struct PhysicsPlugin;
+
+impl Plugin for PhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<ForceImpulse>()
+           .add_systems(Update, (
+               apply_forces,
+               apply_impulses,
+               integrate_positions,
+           ).chain());
+    }
+}
+
+/// System to compute paired forces and apply them to entities
+pub fn compute_paired_forces<T: PairedForce + Resource>(
+    paired_force: Res<T>,
+    entities: Query<(Entity, &Transform, &Mass), With<PairedForceInteraction>>,
+    mut forces: Query<&mut AppliedForce>,
+) {
+    let entity_list = entities.iter().collect::<Vec<_>>();
+    
+    for i in 0..entity_list.len() {
+        for j in (i+1)..entity_list.len() {
+            let pair = ForcePair {
+                first: entity_list[i],
+                second: entity_list[j],
+            };
+            
+            let (force1, force2) = paired_force.compute_pair_force(pair);
+            
+            // Apply calculated forces
+            if let Ok(mut force) = forces.get_mut(pair.first.0) {
+                force.force += force1;
+            }
+            
+            if let Ok(mut force) = forces.get_mut(pair.second.0) {
+                force.force += force2;
+            }
+        }
+    }
+}
+
+/// System to apply impulses directly to velocities
+pub fn apply_impulses(
+    mut impulses: EventReader<ForceImpulse>,
+    mut velocities: Query<(&Mass, &mut Velocity)>,
+) {
+    for impulse in impulses.read() {
+        // Apply to first entity
+        if let Ok((mass, mut vel)) = velocities.get_mut(impulse.entity1) {
+            if !mass.is_infinite {
+                vel.linvel += impulse.impulse1 * mass.inverse();
+            }
+        }
+        
+        // Apply to second entity
+        if let Ok((mass, mut vel)) = velocities.get_mut(impulse.entity2) {
+            if !mass.is_infinite {
+                vel.linvel += impulse.impulse2 * mass.inverse();
+            }
+        }
+    }
 }
