@@ -1,5 +1,40 @@
 use bevy::prelude::*;
 
+/// Trait for computing the squared norm of a vector efficiently
+pub trait Norm {
+    type Output;
+    fn norm_squared(self) -> Self::Output;
+}
+
+/// Trait for computing the squared distance between vectors
+pub trait Distance: Norm + std::ops::Sub<Output = Self> + Sized {
+    fn distance_squared(self, other: Self) -> <Self as Norm>::Output {
+        (self - other).norm_squared()
+    }
+}
+
+// Implement for Vec3
+impl Norm for Vec3 {
+    type Output = f32;
+    #[inline]
+    fn norm_squared(self) -> f32 {
+        self.length_squared()
+    }
+}
+
+impl Distance for Vec3 {}
+
+// Implement for Vec2
+impl Norm for Vec2 {
+    type Output = f32;
+    #[inline]
+    fn norm_squared(self) -> f32 {
+        self.length_squared() 
+    }
+}
+
+impl Distance for Vec2 {}
+
 /// Component for mass properties of an entity
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Mass {
@@ -111,7 +146,7 @@ pub fn integrate_positions(
         transform.translation += velocity.linvel * dt;
         
         // Apply angular velocity
-        if velocity.angvel.length_squared() > 0.0 {
+        if velocity.angvel.norm_squared() > 0.0 {
             transform.rotation *= Quat::from_scaled_axis(velocity.angvel * dt);
         }
     }
@@ -142,5 +177,5 @@ pub fn calculate_momentum(mass: &Mass, velocity: &Velocity) -> Vec3 {
 
 /// Calculate kinetic energy of an object
 pub fn calculate_kinetic_energy(mass: &Mass, velocity: &Velocity) -> f32 {
-    0.5 * mass.value * velocity.linvel.length_squared()
+    0.5 * mass.value * velocity.linvel.norm_squared()
 }
