@@ -59,28 +59,22 @@ mod spatial {
         }
         
         pub fn get_quadrant(&self, point: Vec2) -> usize {
-            let is_right = point.x >= self.center.x;
-            let is_bottom = point.y < self.center.y;
-            
-            match (is_right, is_bottom) {
-                (false, false) => 0, // top-left
-                (true, false) => 1,  // top-right
-                (false, true) => 2,  // bottom-left
-                (true, true) => 3,   // bottom-right
-            }
+            // Bit 0: right side (1) or left side (0)
+            // Bit 1: bottom side (1) or top side (0)
+            ((point.x >= self.center.x) as usize) | (((point.y < self.center.y) as usize) << 1)
         }
         
         pub fn get_quadrant_aabb(&self, quadrant: usize) -> AABB {
             let quarter_size = self.half_size * 0.5;
-            let offset = match quadrant {
-                0 => Vec2::new(-quarter_size.x, quarter_size.y),  // top-left
-                1 => Vec2::new(quarter_size.x, quarter_size.y),   // top-right
-                2 => Vec2::new(-quarter_size.x, -quarter_size.y), // bottom-left
-                3 => Vec2::new(quarter_size.x, -quarter_size.y),  // bottom-right
-                _ => panic!("Invalid quadrant"),
-            };
+            // x-offset: negative for left (quadrants 0,2), positive for right (quadrants 1,3)
+            // y-offset: positive for top (quadrants 0,1), negative for bottom (quadrants 2,3)
+            let x_sign = if (quadrant & 1) == 0 { -1.0 } else { 1.0 };
+            let y_sign = if (quadrant & 2) == 0 { 1.0 } else { -1.0 };
             
-            AABB::new(self.center + offset, quarter_size)
+            AABB::new(
+                self.center + Vec2::new(x_sign * quarter_size.x, y_sign * quarter_size.y),
+                quarter_size
+            )
         }
     }
     
@@ -232,7 +226,7 @@ pub fn apply_uniform_gravity(
     mut query: Query<(Entity, &Mass, &mut AppliedForce), With<GravityAffected>>,
     mut commands: Commands,
 ) {
-    for (entity, mass, mut force) in query.iter_mut() {
+    for (entity, mass, mut force) in &mut query {
         let gravity_force = mass.value * gravity.acceleration;
         force.force += gravity_force;
         
@@ -259,7 +253,7 @@ pub fn calculate_gravitational_attraction(
 
         // Process in batches of 4 for better SIMD optimization
         for chunk in sources.chunks(4) {
-            for (affected_entity, affected_transform, affected_mass, mut force) in affected_query.iter_mut() {
+            for (affected_entity, affected_transform, affected_mass, mut force) in &mut affected_query {
                 let affected_pos = affected_transform.translation;
                 
                 for &(source_entity, source_pos, source_mass) in chunk {
@@ -279,8 +273,8 @@ pub fn calculate_gravitational_attraction(
         }
     } else {
         // Use original non-SIMD implementation for small body counts
-        for (source_entity, source_transform, source_mass) in query.iter() {
-            for (affected_entity, affected_transform, affected_mass, mut force) in affected_query.iter_mut() {
+        for (source_entity, source_transform, source_mass) in &query {
+            for (affected_entity, affected_transform, affected_mass, mut force) in &mut affected_query {
                 if source_entity == affected_entity {
                     continue;
                 }
@@ -318,7 +312,7 @@ pub fn calculate_barnes_hut_attraction(
     let quadtree = spatial::Quadtree::from_bodies(&bodies);
     
     // Calculate force on each affected body
-    for (entity, transform, _, mut force) in affected_query.iter_mut() {
+    for (entity, transform, _, mut force) in &mut affected_query {
         let position = transform.translation;
         
         // Skip self-attraction by checking if this entity is in the tree
