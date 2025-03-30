@@ -1,8 +1,52 @@
 use bevy::prelude::*;
 use crate::mechanics::{AppliedForce, Mass};
 
+/// A trait for computing the squared norm of a vector efficiently
+trait Norm {
+    type Output;
+    fn norm_squared(self) -> Self::Output;
+}
+
+impl Norm for Vec3 {
+    type Output = f32;
+    #[inline]
+    fn norm_squared(self) -> f32 {
+        self.length_squared()
+    }
+}
+
 /// Modified gravitational constant for simulation scale
 pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
+
+/// Calculate softened gravitational acceleration between two bodies
+#[inline]
+fn calculate_softened_acceleration(
+    direction: Vec3,
+    mass: f32, 
+    softening_squared: f32
+) -> Vec3 {
+    let distance_squared = direction.norm_squared();
+    // Apply softening to prevent singularities
+    let softened_distance_squared = distance_squared + softening_squared;
+    let force_magnitude = GRAVITATIONAL_CONSTANT * mass / softened_distance_squared;
+    
+    direction.normalize() * force_magnitude
+}
+
+/// Resource for gravity simulation parameters
+#[derive(Resource, Clone, Debug)]
+pub struct GravityParams {
+    /// Softening parameter to prevent singularities
+    pub softening: f32,
+}
+
+impl Default for GravityParams {
+    fn default() -> Self {
+        Self { 
+            softening: 5.0 
+        }
+    }
+}
 
 /// Component for uniform gravitational field (like on Earth's surface)
 #[derive(Resource, Debug, Clone, Copy)]
@@ -34,7 +78,7 @@ pub struct MassiveBody;
 
 // Spatial partitioning structures for Barnes-Hut algorithm
 mod spatial {
-    use bevy::prelude::*;
+    use bevy::prelude::*; //TODO: Redundant and may need to make this a clearer section instead
     
     const MAX_DEPTH: usize = 8;
     const MAX_BODIES_PER_NODE: usize = 8;
@@ -238,9 +282,13 @@ pub fn apply_uniform_gravity(
 
 /// System to calculate gravitational attraction between entities
 pub fn calculate_gravitational_attraction(
+    gravity_params: Res<GravityParams>,
     query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
     mut affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
 ) {
+    // Get softening parameter squared once
+    let softening_squared = gravity_params.softening * gravity_params.softening;
+    
     // Determine if we should use SIMD optimization
     let use_simd = query.iter().count() >= 8 && affected_query.iter().count() >= 8;
     
@@ -262,12 +310,7 @@ pub fn calculate_gravitational_attraction(
                     }
                     
                     let direction = source_pos - affected_pos;
-                    let distance_squared = direction.length_squared();
-                    let safe_distance_squared = distance_squared.max(25.0);
-                    let force_magnitude = GRAVITATIONAL_CONSTANT * 
-                        (source_mass * affected_mass.value) / safe_distance_squared;
-                    
-                    force.force += direction.normalize() * force_magnitude;
+                    force.force += calculate_softened_acceleration(direction, source_mass * affected_mass.value, softening_squared);
                 }
             }
         }
@@ -280,12 +323,7 @@ pub fn calculate_gravitational_attraction(
                 }
                 
                 let direction = source_transform.translation - affected_transform.translation;
-                let distance_squared = direction.length_squared();
-                let safe_distance_squared = distance_squared.max(25.0);
-                let force_magnitude = GRAVITATIONAL_CONSTANT * 
-                    (source_mass.value * affected_mass.value) / safe_distance_squared;
-                
-                force.force += direction.normalize() * force_magnitude;
+                force.force += calculate_softened_acceleration(direction, source_mass.value * affected_mass.value, softening_squared);
             }
         }
     }
@@ -293,13 +331,14 @@ pub fn calculate_gravitational_attraction(
 
 /// System to calculate gravitational attraction using Barnes-Hut algorithm
 pub fn calculate_barnes_hut_attraction(
+    gravity_params: Res<GravityParams>,
     query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
     mut affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
     theta: f32, // Accuracy parameter (0.0-1.0, lower = more accurate)
 ) {
     // Only use Barnes-Hut for larger simulations
     if query.iter().count() < 20 {
-        calculate_gravitational_attraction(query, affected_query);
+        calculate_gravitational_attraction(gravity_params, query, affected_query);
         return;
     }
     
@@ -322,7 +361,7 @@ pub fn calculate_barnes_hut_attraction(
         }
         
         // Calculate force using Barnes-Hut algorithm
-        let force_vector = calculate_barnes_hut_force(position, &quadtree.root, theta);
+        let force_vector = calculate_barnes_hut_force(position, &quadtree.root, theta, gravity_params.softening);
         force.force += force_vector;
     }
 }
@@ -331,14 +370,16 @@ pub fn calculate_barnes_hut_attraction(
 pub fn calculate_barnes_hut_force(
     affected_position: Vec3, 
     node: &spatial::QuadtreeNode,
-    theta: f32
+    theta: f32,
+    softening: f32,
 ) -> Vec3 {
+    // Get softening squared once
+    let softening_squared = softening * softening;
+    
     // If the node is far enough, use approximation
     if node.is_far_enough(affected_position, theta) {
         let direction = node.mass_properties.center_of_mass - affected_position;
-        let distance_squared = direction.length_squared().max(0.001);
-        let force_magnitude = GRAVITATIONAL_CONSTANT * node.mass_properties.total_mass / distance_squared;
-        return direction.normalize() * force_magnitude;
+        return calculate_softened_acceleration(direction, node.mass_properties.total_mass, softening_squared);
     }
     
     // If leaf node, calculate force from each body
@@ -347,14 +388,13 @@ pub fn calculate_barnes_hut_force(
         
         for &(_, position, mass) in &node.bodies {
             let direction = position - affected_position;
-            let distance_squared = direction.length_squared();
+            let distance_squared = direction.norm_squared();
             
             if distance_squared < 0.001 {
                 continue;
             }
             
-            let force_magnitude = GRAVITATIONAL_CONSTANT * mass / distance_squared;
-            total_force += direction.normalize() * force_magnitude;
+            total_force += calculate_softened_acceleration(direction, mass, softening_squared);
         }
         
         return total_force;
@@ -364,7 +404,7 @@ pub fn calculate_barnes_hut_force(
     let mut total_force = Vec3::ZERO;
     for child in &node.children {
         if let Some(child_node) = child {
-            total_force += calculate_barnes_hut_force(affected_position, child_node, theta);
+            total_force += calculate_barnes_hut_force(affected_position, child_node, theta, softening);
         }
     }
     
