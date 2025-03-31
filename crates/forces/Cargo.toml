@@ -6,3 +6,4 @@ description = "Fundamental interaction mechanisms that create relationships betw
 
 [dependencies]
 bevy = "0.15"
+core = { path = "./core" }
