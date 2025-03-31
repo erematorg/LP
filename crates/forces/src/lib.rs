@@ -1,2 +1,1 @@
-pub mod gravity;
-pub mod mechanics;
+pub use core as core;

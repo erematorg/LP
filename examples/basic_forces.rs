@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use forces::mechanics::{Mass, Velocity, AppliedForce, apply_forces, integrate_positions};
-use forces::gravity::{GravitySource, GravityAffected, calculate_gravitational_attraction};
+use forces::core::newton_laws::{Mass, Velocity, AppliedForce, apply_forces, integrate_positions};
+use forces::core::gravity::{GravitySource, GravityAffected, calculate_gravitational_attraction};
 
 fn main() {
     App::new()
