@@ -1,1 +1,2 @@
-//TODO : To make things cleaner with clear separation between domains
+pub mod gravity;
+pub mod newton_laws;
