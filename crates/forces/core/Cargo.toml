@@ -1,0 +1,8 @@
+[package]
+name = "core"
+version = "0.1.0"
+edition = "2021"
+description = "The 4 fundamental forces."
+
+[dependencies]
+bevy = "0.15"
