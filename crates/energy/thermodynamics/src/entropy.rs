@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::thermal::Temperature;
+use bevy::prelude::*;
 
 /// Entropy component for thermodynamic systems
 #[derive(Component, Debug, Clone, Copy)]
@@ -10,7 +10,9 @@ pub struct Entropy {
 
 impl Entropy {
     pub fn new(value: f32) -> Self {
-        Self { value: value.max(0.0) }
+        Self {
+            value: value.max(0.0),
+        }
     }
 }
 
@@ -22,10 +24,7 @@ pub enum Reversibility {
 }
 
 /// Calculate entropy change for heat transfer
-pub fn entropy_change_heat_transfer(
-    heat_transferred: f32,
-    temperature: f32,
-) -> f32 {
+pub fn entropy_change_heat_transfer(heat_transferred: f32, temperature: f32) -> f32 {
     // ΔS = Q/T
     if temperature > 0.0 {
         heat_transferred / temperature

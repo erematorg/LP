@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::thermal::Temperature;
+use bevy::prelude::*;
 
 /// Component marking systems in thermal equilibrium
 #[derive(Component, Debug)]
@@ -25,8 +25,8 @@ pub fn is_in_equilibrium(temp_a: f32, temp_b: f32, tolerance: f32) -> bool {
 
 /// Calculate time to reach thermal equilibrium
 pub fn equilibrium_time_estimate(
-    temp_diff: f32,      // Initial temperature difference
-    thermal_mass: f32,   // Thermal mass (J/K)
+    temp_diff: f32,          // Initial temperature difference
+    thermal_mass: f32,       // Thermal mass (J/K)
     heat_transfer_rate: f32, // Rate of heat transfer (W)
 ) -> f32 {
     // Simple estimate based on temperature difference and heat transfer rate

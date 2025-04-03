@@ -1,14 +1,13 @@
-use serde::{Serialize, Deserialize};
-use std::fs;
-use serde_json::Value;
 use crate::versioning::{is_save_up_to_date, upgrade_save};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::fs;
 
 /// Saves data to a file
 pub fn save<T: Serialize>(data: &T, path: &str) -> Result<(), String> {
-    let json = serde_json::to_string_pretty(data)
-        .map_err(|e| format!("Serialization failed: {}", e))?;
-    fs::write(path, json)
-        .map_err(|e| format!("File write failed: {}", e))?;
+    let json =
+        serde_json::to_string_pretty(data).map_err(|e| format!("Serialization failed: {}", e))?;
+    fs::write(path, json).map_err(|e| format!("File write failed: {}", e))?;
     Ok(())
 }
 
@@ -28,8 +27,8 @@ pub fn load<T: for<'de> Deserialize<'de> + Default + Serialize>(path: &str) -> R
         }
     };
 
-    let mut data: Value = serde_json::from_str(&json)
-        .map_err(|e| format!("Deserialization failed: {}", e))?;
+    let mut data: Value =
+        serde_json::from_str(&json).map_err(|e| format!("Deserialization failed: {}", e))?;
 
     if !is_save_up_to_date(&data) {
         eprintln!("[Warning] Save file is outdated! Attempting to upgrade...");
