@@ -4,21 +4,35 @@ pub const SAVE_VERSION: &str = "0.1.0"; // Fix to match Cargo.toml
 
 /// Checks if a save file is up to date
 pub fn is_save_up_to_date(data: &Value) -> bool {
-    let version = data.get("version").and_then(|v| v.as_str()).unwrap_or("0.0.0").to_string();
+    let version = data
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("0.0.0")
+        .to_string();
     if version == SAVE_VERSION.to_string() {
         return true;
     }
 
-    eprintln!("[Warning] Save file is outdated! Detected version: {}. Expected: {}.", version, SAVE_VERSION);
+    eprintln!(
+        "[Warning] Save file is outdated! Detected version: {}. Expected: {}.",
+        version, SAVE_VERSION
+    );
     false
 }
 
 /// Upgrades old save data to match the latest format dynamically
 pub fn upgrade_save(mut data: Value) -> Value {
-    let version = data.get("version").and_then(|v| v.as_str()).unwrap_or("0.0.0").to_string();
+    let version = data
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("0.0.0")
+        .to_string();
 
     // Always upgrade to the latest version
-    eprintln!("[Info] Upgrading save from {} to {}...", version, SAVE_VERSION);
+    eprintln!(
+        "[Info] Upgrading save from {} to {}...",
+        version, SAVE_VERSION
+    );
 
     // Ensure missing fields are initialized dynamically
     for (key, default_value) in get_default_fields() {
@@ -40,7 +54,7 @@ pub fn upgrade_save(mut data: Value) -> Value {
 /// Returns a map of all expected fields with their default values
 fn get_default_fields() -> Vec<(&'static str, Value)> {
     vec![
-        ("score", Value::from(42)),  // Default score
+        ("score", Value::from(42)),                  // Default score
         ("new_field", Value::from("default_value")), // Ensure this field is correctly added
     ]
 }

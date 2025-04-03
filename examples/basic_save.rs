@@ -1,6 +1,6 @@
-use systems::save_system::save_system::{save, load};
+use serde::{Deserialize, Serialize};
+use systems::save_system::save_system::{load, save};
 use systems::save_system::versioning::SAVE_VERSION;
-use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct GameData {
@@ -13,7 +13,7 @@ impl Default for GameData {
     fn default() -> Self {
         Self {
             version: SAVE_VERSION.to_string(),
-            score: 42, 
+            score: 42,
             new_field: "default_value".to_string(),
         }
     }

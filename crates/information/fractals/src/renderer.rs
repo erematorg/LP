@@ -1,6 +1,6 @@
+use crate::interpreter::SymbolType;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use crate::interpreter::SymbolType;
 
 // Components
 /// Component for an L-System branch
@@ -42,10 +42,10 @@ fn setup_camera(mut commands: Commands) {
 /// Adjust thickness based on symbol type
 fn adjust_thickness_for_symbol(thickness: f32, symbol_type: SymbolType) -> f32 {
     match symbol_type {
-        SymbolType::Core => thickness * 1.5,         // Thicker for core elements
-        SymbolType::Bifurcation => thickness * 1.2,  // Slightly thicker for branch points
-        SymbolType::Segment => thickness,            // Standard thickness
-        SymbolType::Legacy => thickness,             // Standard thickness
+        SymbolType::Core => thickness * 1.5, // Thicker for core elements
+        SymbolType::Bifurcation => thickness * 1.2, // Slightly thicker for branch points
+        SymbolType::Segment => thickness,    // Standard thickness
+        SymbolType::Legacy => thickness,     // Standard thickness
     }
 }
 
@@ -64,7 +64,7 @@ fn draw_lsystem(
     let varied_angle = if params.angle_variation > 0.0 {
         // Update our simple RNG with time
         rng.0 = rng.0.wrapping_add(time.elapsed_secs_f64() as u64);
-        
+
         // Generate a simple random value between 0.0 and 1.0
         let random_value = ((rng.0 >> 32) as f32) / u32::MAX as f32;
         let random_factor = random_value - 0.5;
@@ -72,29 +72,30 @@ fn draw_lsystem(
     } else {
         0.0
     };
-    
+
     // Interpret the L-System
     let interpreter_output = crate::interpreter::interpret(
-        &symbols.0, 
-        params.angle, 
-        line_length, 
+        &symbols.0,
+        params.angle,
+        line_length,
         params.depth_scale_factor,
         varied_angle,
         params.base_thickness,
         params.thickness_scale_factor,
         params.directional_bias,
-        params.angle_evolution_factor
-    ).expect("Failed to interpret L-System symbols");
+        params.angle_evolution_factor,
+    )
+    .expect("Failed to interpret L-System symbols");
 
     // Draw the branches
     for i in 0..interpreter_output.positions.len() {
         let (start, end) = interpreter_output.positions[i];
         let base_thickness = interpreter_output.thicknesses[i];
         let symbol_type = interpreter_output.types[i];
-        
+
         // Adjust thickness based on symbol type
         let adjusted_thickness = adjust_thickness_for_symbol(base_thickness, symbol_type);
-        
+
         let shape = shapes::Line(start, end);
         commands.spawn((
             ShapeBundle {
@@ -109,16 +110,16 @@ fn draw_lsystem(
 
 /// Bevy app to render the L-System
 pub fn run_renderer(
-    output: &str, 
-    angle: f32, 
-    scaling_factor: f32, 
-    segment_length: f32, 
-    depth_scale_factor: f32, 
+    output: &str,
+    angle: f32,
+    scaling_factor: f32,
+    segment_length: f32,
+    depth_scale_factor: f32,
     angle_variation: f32,
     base_thickness: f32,
     thickness_scale_factor: f32,
     directional_bias: f32,
-    angle_evolution_factor: f32
+    angle_evolution_factor: f32,
 ) {
     // Create a simple seed from the current time
     let seed = std::time::SystemTime::now()
