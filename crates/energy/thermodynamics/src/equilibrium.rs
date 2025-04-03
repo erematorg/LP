@@ -1,4 +1,4 @@
-use crate::thermal::Temperature;
+//use crate::thermal::Temperature;
 use bevy::prelude::*;
 
 /// Component marking systems in thermal equilibrium
