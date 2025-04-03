@@ -119,7 +119,10 @@ pub fn interpret(
 
                 direction = Quat::from_rotation_z(sign * varied_angle.to_radians())
                     .mul_vec3(direction.extend(0.0))
-                    .truncate();
+                    .truncate()
+                    // Enhanced rotation with natural curvature and subtle directional bias later will inherit from forces such as gravity from the forces crate
+                    .rotate_towards(upward_direction, angle_variation * 0.1)
+                    .lerp(upward_direction, directional_bias * 0.05);
             }
             '[' => {
                 stack.push(BranchState {
