@@ -50,5 +50,4 @@ pub fn equilibrium_time_estimate(
     } else {
         f32::INFINITY
     }
- 
 }
