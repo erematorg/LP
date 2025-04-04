@@ -26,6 +26,26 @@ pub struct ThermalConductivity {
     pub value: f32,
 }
 
+/// Thermal diffusivity property
+#[derive(Component, Debug, Clone, Copy)]
+pub struct ThermalDiffusivity {
+    /// m²/s
+    pub value: f32,
+}
+
+impl ThermalDiffusivity {
+    /// Calculate thermal diffusivity
+    pub fn calculate(
+        conductivity: f32,   // Thermal conductivity (W/(m·K))
+        density: f32,        // Density (kg/m³)
+        specific_heat: f32,  // Specific heat capacity (J/(kg·K))
+    ) -> Self {
+        Self {
+            value: conductivity / (density * specific_heat).max(f32::EPSILON)
+        }
+    }
+}
+
 /// Calculate heat transfer via conduction
 pub fn heat_conduction(
     temp_diff: f32,    // Temperature difference (K)
