@@ -1,7 +1,7 @@
-use bevy::prelude::*;
 use crate::fields::{ElectricField, MagneticField};
+use bevy::prelude::*;
 
-// Speed of light (in m/s) constant physical value 
+// Speed of light (in m/s) constant physical value
 //TODO: Making this cleaner later on to make units of measure dynamic rather than admiting 1 meter = 1 meter, same for seconds and much more
 const C: f32 = 299_792_458.0;
 
@@ -27,10 +27,10 @@ impl ElectromagneticWave {
         // Calculate wavelength and wave number
         let wavelength = C / frequency;
         let wave_number = 2.0 * std::f32::consts::PI / wavelength;
-        
+
         // Calculate magnetic amplitude (B = E/c for EM waves in vacuum)
         let magnetic_amplitude = electric_amplitude / C;
-        
+
         Self {
             frequency,
             direction: direction.normalize(),
@@ -40,18 +40,20 @@ impl ElectromagneticWave {
             wave_number,
         }
     }
-    
+
     /// Calculate the electric and magnetic fields at a position and time
     pub fn get_fields_at(&self, position: Vec3, time: f32) -> (ElectricField, MagneticField) {
         // Projection of position onto wave direction
         let pos_projection = self.direction.dot(position);
-        
+
         // Phase at position and time
-        let total_phase = self.wave_number * pos_projection - 2.0 * std::f32::consts::PI * self.frequency * time + self.phase;
-        
+        let total_phase = self.wave_number * pos_projection
+            - 2.0 * std::f32::consts::PI * self.frequency * time
+            + self.phase;
+
         // Calculate phase factor
         let phase_factor = total_phase.sin();
-        
+
         // Electric field is perpendicular to direction
         // We'll use a simple perpendicular vector for demonstration
         let e_direction = if self.direction.dot(Vec3::Y) < 0.9 {
@@ -59,17 +61,17 @@ impl ElectromagneticWave {
         } else {
             self.direction.cross(Vec3::X).normalize()
         };
-        
+
         // Electric field
         let e_field = e_direction * (self.electric_amplitude * phase_factor);
-        
+
         // Magnetic field is perpendicular to both direction and electric field
         let m_direction = self.direction.cross(e_direction).normalize();
         let m_field = m_direction * (self.magnetic_amplitude * phase_factor);
-        
+
         (
             ElectricField::new(e_field, position),
-            MagneticField::new(m_field, position)
+            MagneticField::new(m_field, position),
         )
     }
 }
@@ -94,22 +96,26 @@ impl MaterialProperties {
             conductivity: 0.0,            // σ (S/m)
         }
     }
-    
+
     /// Create custom material properties
     pub fn new(permittivity: f32, permeability: f32, conductivity: f32) -> Self {
-        Self { permittivity, permeability, conductivity }
+        Self {
+            permittivity,
+            permeability,
+            conductivity,
+        }
     }
-    
+
     /// Calculate the refractive index of the material
     pub fn refractive_index(&self) -> f32 {
         // n = √(εᵣμᵣ) where εᵣ and μᵣ are relative permittivity and permeability
         let vacuum = Self::vacuum();
         let relative_permittivity = self.permittivity / vacuum.permittivity;
         let relative_permeability = self.permeability / vacuum.permeability;
-        
+
         (relative_permittivity * relative_permeability).sqrt()
     }
-    
+
     /// Calculate the speed of light in this material
     pub fn light_speed(&self) -> f32 {
         // v = c/n

@@ -28,6 +28,81 @@ pub struct EnergyConversion {
     pub losses: f32,
 }
 
+/// Energy transaction types for conservation accounting
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransactionType {
+    Input,   // Energy entering the system
+    Output,  // Energy leaving the system
+}
+
+/// Record of a single energy transaction
+#[derive(Debug, Clone)]
+pub struct EnergyTransaction {
+    /// Type of transaction
+    pub transaction_type: TransactionType,
+    /// Amount of energy involved (joules)
+    pub amount: f32,
+    /// Source of energy (None for inputs from outside system)
+    pub source: Option<Entity>,
+    /// Destination of energy (None for outputs to outside system)
+    pub destination: Option<Entity>,
+    /// Timestamp when the transaction occurred
+    pub timestamp: f32,
+}
+
+/// Component for precise energy accounting
+#[derive(Component, Debug)]
+pub struct EnergyAccountingLedger {
+    /// History of all transactions, newest first
+    pub transactions: Vec<EnergyTransaction>,
+    /// Maximum number of transactions to store
+    pub max_history: usize,
+    /// Sum of all inputs
+    pub total_input: f32,
+    /// Sum of all outputs
+    pub total_output: f32,
+}
+
+impl Default for EnergyAccountingLedger {
+    fn default() -> Self {
+        Self {
+            transactions: Vec::new(),
+            max_history: 100,
+            total_input: 0.0,
+            total_output: 0.0,
+        }
+    }
+}
+
+impl EnergyAccountingLedger {
+    /// Record a new energy transaction
+    pub fn record_transaction(&mut self, transaction: EnergyTransaction) {
+        match transaction.transaction_type {
+            TransactionType::Input => self.total_input += transaction.amount,
+            TransactionType::Output => self.total_output += transaction.amount,
+        }
+        
+        self.transactions.insert(0, transaction);
+        if self.transactions.len() > self.max_history {
+            self.transactions.pop();
+        }
+    }
+    
+    /// Get the net energy change for this entity
+    pub fn net_energy_change(&self) -> f32 {
+        self.total_input - self.total_output
+    }
+}
+
+/// System for tracking energy conservation across entire systems
+#[derive(Resource)]
+pub struct SystemConservationTracker {
+    /// Total energy of the system at initialization
+    pub initial_total_energy: f32,
+    /// Maximum allowed conservation error
+    pub tolerance: f32,
+}
+
 /// Verify energy conservation in a closed system
 pub fn verify_conservation(
     initial_energy: f32,
