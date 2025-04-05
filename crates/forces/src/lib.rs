@@ -1,1 +1,1 @@
-pub use core as core;
+pub use core;
