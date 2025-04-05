@@ -9,11 +9,11 @@ pub struct Parameters {
     pub segment_length_range: [f32; 2],
     pub curvature_factor_range: [f32; 2],
     pub depth_scale_factor_range: [f32; 2], // Controls scaling based on bracket depth
-    pub angle_variation_range: [f32; 2], // Controls random variation in branch angles
-    pub base_thickness_range: [f32; 2], // Controls base line thickness
+    pub angle_variation_range: [f32; 2],    // Controls random variation in branch angles
+    pub base_thickness_range: [f32; 2],     // Controls base line thickness
     pub thickness_scale_factor_range: [f32; 2], // Controls how thickness reduces with depth
-    pub directional_bias_range: [f32; 2], // Controls phototropism effect (upward growth bias)
-    pub angle_evolution_range: [f32; 2], // Controls branch drooping effect over time
+    pub directional_bias_range: [f32; 2],   // Controls phototropism effect (upward growth bias)
+    pub angle_evolution_range: [f32; 2],    // Controls branch drooping effect over time
 }
 
 #[derive(Deserialize, Debug)]
@@ -31,8 +31,11 @@ pub fn load_template(template_name: &str) -> Result<Template, String> {
     let json: serde_json::Value = serde_json::from_str(&file_content)
         .map_err(|_| "Error: Invalid JSON format in fractals.json".to_string())?;
 
-    json["templates"].get(template_name)
+    json["templates"]
+        .get(template_name)
         .ok_or_else(|| format!("Error: Template '{}' not found", template_name))
-        .and_then(|template| serde_json::from_value(template.clone())
-            .map_err(|_| format!("Error: Failed to parse template '{}'", template_name)))
+        .and_then(|template| {
+            serde_json::from_value(template.clone())
+                .map_err(|_| format!("Error: Failed to parse template '{}'", template_name))
+        })
 }
