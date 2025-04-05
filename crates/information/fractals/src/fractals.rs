@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::generator;
+use std::collections::HashMap;
 
 /// Handles rule management for L-Systems.
 pub struct RuleManager<'a> {

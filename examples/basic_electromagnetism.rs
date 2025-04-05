@@ -18,7 +18,7 @@ struct Charge;
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
-    
+
     // Create a grid of field line indicators
     for i in -5..=5 {
         for j in -5..=5 {
@@ -33,7 +33,7 @@ fn setup(mut commands: Commands) {
             ));
         }
     }
-    
+
     // Point charge visualization
     commands.spawn((
         Sprite {
@@ -56,28 +56,28 @@ fn update_field_lines(
         charge_transform.translation = Vec3::new(
             100.0 * time.elapsed_secs().sin(),
             100.0 * time.elapsed_secs().cos(),
-            0.0
+            0.0,
         );
     }
-    
+
     // Get charge position
     let charge_pos = if let Ok(charge_transform) = charge_query.get_single() {
         charge_transform.translation
     } else {
         Vec3::ZERO
     };
-    
+
     for (mut transform, mut sprite) in field_query.iter_mut() {
         // Calculate electric field at this point
         let field = ElectricField::from_point_charge(
             1.0, // Charge value
             charge_pos,
-            transform.translation
+            transform.translation,
         );
-        
+
         let field_vec = field.field * 5.0; // Scale for visualization
         let field_strength = field_vec.length();
-        
+
         // Set arrow rotation to match field direction
         if field_strength > 0.01 {
             transform.rotation = Quat::from_rotation_z(field_vec.y.atan2(field_vec.x));
