@@ -8,4 +8,4 @@ description = "Core systems governing how energy manifests, transforms and flows
 bevy = "0.15"
 
 thermodynamics = { path = "./thermodynamics" }
-electromagnetic = { path = "./electromagnetic" }
+electromagnetism = { path = "./electromagnetism" }

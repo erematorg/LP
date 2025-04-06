@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use energy::electromagnetic::fields::ElectricField;
+use energy::electromagnetism::fields::ElectricField;
 
 fn main() {
     App::new()

@@ -1,4 +1,4 @@
-pub use electromagnetic;
+pub use electromagnetism;
 pub use thermodynamics;
 
 pub mod conservation;
