@@ -7,3 +7,4 @@ description = "Core simulation infrastructure components that manage and support
 [dependencies]
 save_system = { path = "./save_system" }
 mpm = { path = "./mpm" }
+audio = { path = "./audio" }
