@@ -1,3 +1,4 @@
+pub use acoustics;
 pub use electromagnetism;
 pub use thermodynamics;
 
