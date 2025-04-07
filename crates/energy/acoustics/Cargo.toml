@@ -1,8 +1,0 @@
-[package]
-name = "acoustics"
-version = "0.1.0"
-edition = "2021"
-description = "Physical modeling of sound propagation, resonance, and wave dynamics within various media."
-
-[dependencies]
-bevy = "0.15"

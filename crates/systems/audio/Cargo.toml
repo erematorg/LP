@@ -1,8 +1,0 @@
-[package]
-name = "audio"
-version = "0.1.0"
-edition = "2021"
-description = "Sound generation, playback and spatial processing system for ambient and interactive audio experiences."
-
-[dependencies]
-bevy = "0.15"
