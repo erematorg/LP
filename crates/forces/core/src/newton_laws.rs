@@ -187,15 +187,22 @@ pub fn calculate_forces(
 }
 
 /// System to apply forces according to Newton's Second Law (F = ma)
-pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>) {
+pub fn apply_forces(
+    time: Res<Time>, 
+    force_cache: Res<ForceCache>,
+    mut query: Query<(Entity, &Mass, &mut Velocity, &mut AppliedForce)>
+) {
     let dt = time.delta_secs();
 
-    for (mass, mut velocity, mut force) in query.iter_mut() {
+    for (entity, mass, mut velocity, mut force) in query.iter_mut() {
         if mass.is_infinite || mass.is_negligible() {
             continue;
         }
 
-        let acceleration = force.force * mass.inverse();
+        // Get force from cache if available, otherwise use the stored force
+        let total_force = force_cache.get_force(entity).unwrap_or(force.force);
+        
+        let acceleration = total_force * mass.inverse();
 
         // Cap extremely high accelerations to prevent instability
         let max_acceleration = 1000.0;
@@ -281,21 +288,22 @@ impl Plugin for PhysicsPlugin {
            .add_systems(
             Update,
             (
-                reset_force_cache,
-                calculate_forces.after(reset_force_cache),
-                apply_forces.after(calculate_forces),
-                apply_impulses.after(calculate_forces),
-                integrate_positions.after(apply_forces),
+                reset_force_cache, // First reset
+                calculate_forces, // Then collect existing forces
+                // Additional force calculations would go here
+                apply_forces, // Then apply the forces
+                apply_impulses, // Apply any impulses 
+                integrate_positions, // Finally update positions
             ).chain(),
         );
     }
 }
 
-/// System to compute paired forces and apply them to entities
+/// System to compute paired forces and store them in the force cache
 pub fn compute_paired_forces<T: PairedForce + Resource>(
     paired_force: Res<T>,
     entities: Query<(Entity, &Transform, &Mass), With<PairedForceInteraction>>,
-    mut forces: Query<&mut AppliedForce>,
+    mut force_cache: ResMut<ForceCache>,
 ) {
     let entity_list = entities.iter().collect::<Vec<_>>();
 
@@ -308,14 +316,9 @@ pub fn compute_paired_forces<T: PairedForce + Resource>(
 
             let (force1, force2) = paired_force.compute_pair_force(pair);
 
-            // Apply calculated forces
-            if let Ok(mut force) = forces.get_mut(pair.first.0) {
-                force.force += force1;
-            }
-
-            if let Ok(mut force) = forces.get_mut(pair.second.0) {
-                force.force += force2;
-            }
+            // Store calculated forces in the cache instead of applying directly
+            force_cache.add_force(pair.first.0, force1);
+            force_cache.add_force(pair.second.0, force2);
         }
     }
 }
