@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use std::collections::HashMap;
 
 /// Trait for computing the squared norm of a vector efficiently
 pub trait Norm {
@@ -128,30 +127,6 @@ impl AppliedForce {
     }
 }
 
-/// Temporary resource to store forces before applying them
-/// This prevents forces from being applied while others are still being calculated
-#[derive(Resource, Default, Debug)]
-pub struct ForceCache {
-    /// Map of entity IDs to calculated forces
-    forces: HashMap<Entity, Vec3>,
-}
-
-impl ForceCache {
-    pub fn add_force(&mut self, entity: Entity, force: Vec3) {
-        self.forces.entry(entity)
-            .and_modify(|existing| *existing += force)
-            .or_insert(force);
-    }
-    
-    pub fn get_force(&self, entity: Entity) -> Option<Vec3> {
-        self.forces.get(&entity).copied()
-    }
-    
-    pub fn clear(&mut self) {
-        self.forces.clear();
-    }
-}
-
 /// Component for velocity (both linear and angular)
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Velocity {
@@ -170,39 +145,16 @@ impl Default for Velocity {
     }
 }
 
-/// System to reset force cache before calculating new forces
-pub fn reset_force_cache(mut force_cache: ResMut<ForceCache>) {
-    force_cache.clear();
-}
-
-/// System to calculate forces between entities and store them in the cache
-pub fn calculate_forces(
-    query: Query<(Entity, &AppliedForce)>,
-    mut force_cache: ResMut<ForceCache>,
-) {
-    // Store the current applied forces for later application
-    for (entity, force) in query.iter() {
-        force_cache.add_force(entity, force.force);
-    }
-}
-
 /// System to apply forces according to Newton's Second Law (F = ma)
-pub fn apply_forces(
-    time: Res<Time>, 
-    force_cache: Res<ForceCache>,
-    mut query: Query<(Entity, &Mass, &mut Velocity, &mut AppliedForce)>
-) {
+pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>) {
     let dt = time.delta_secs();
 
-    for (entity, mass, mut velocity, mut force) in query.iter_mut() {
+    for (mass, mut velocity, mut force) in query.iter_mut() {
         if mass.is_infinite || mass.is_negligible() {
             continue;
         }
 
-        // Get force from cache if available, otherwise use the stored force
-        let total_force = force_cache.get_force(entity).unwrap_or(force.force);
-        
-        let acceleration = total_force * mass.inverse();
+        let acceleration = force.force * mass.inverse();
 
         // Cap extremely high accelerations to prevent instability
         let max_acceleration = 1000.0;
@@ -283,27 +235,18 @@ pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ForceCache>() // Initialize the ForceCache resource
-           .add_event::<ForceImpulse>()
-           .add_systems(
+        app.add_event::<ForceImpulse>().add_systems(
             Update,
-            (
-                reset_force_cache, // First reset
-                calculate_forces, // Then collect existing forces
-                // Additional force calculations would go here
-                apply_forces, // Then apply the forces
-                apply_impulses, // Apply any impulses 
-                integrate_positions, // Finally update positions
-            ).chain(),
+            (apply_forces, apply_impulses, integrate_positions).chain(),
         );
     }
 }
 
-/// System to compute paired forces and store them in the force cache
+/// System to compute paired forces and apply them to entities
 pub fn compute_paired_forces<T: PairedForce + Resource>(
     paired_force: Res<T>,
     entities: Query<(Entity, &Transform, &Mass), With<PairedForceInteraction>>,
-    mut force_cache: ResMut<ForceCache>,
+    mut forces: Query<&mut AppliedForce>,
 ) {
     let entity_list = entities.iter().collect::<Vec<_>>();
 
@@ -316,9 +259,14 @@ pub fn compute_paired_forces<T: PairedForce + Resource>(
 
             let (force1, force2) = paired_force.compute_pair_force(pair);
 
-            // Store calculated forces in the cache instead of applying directly
-            force_cache.add_force(pair.first.0, force1);
-            force_cache.add_force(pair.second.0, force2);
+            // Apply calculated forces
+            if let Ok(mut force) = forces.get_mut(pair.first.0) {
+                force.force += force1;
+            }
+
+            if let Ok(mut force) = forces.get_mut(pair.second.0) {
+                force.force += force2;
+            }
         }
     }
 }
