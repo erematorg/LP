@@ -170,6 +170,22 @@ impl Default for Velocity {
     }
 }
 
+/// System to reset force cache before calculating new forces
+pub fn reset_force_cache(mut force_cache: ResMut<ForceCache>) {
+    force_cache.clear();
+}
+
+/// System to calculate forces between entities and store them in the cache
+pub fn calculate_forces(
+    query: Query<(Entity, &AppliedForce)>,
+    mut force_cache: ResMut<ForceCache>,
+) {
+    // Store the current applied forces for later application
+    for (entity, force) in query.iter() {
+        force_cache.add_force(entity, force.force);
+    }
+}
+
 /// System to apply forces according to Newton's Second Law (F = ma)
 pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>) {
     let dt = time.delta_secs();
@@ -264,7 +280,13 @@ impl Plugin for PhysicsPlugin {
            .add_event::<ForceImpulse>()
            .add_systems(
             Update,
-            (apply_forces, apply_impulses, integrate_positions).chain(),
+            (
+                reset_force_cache,
+                calculate_forces.after(reset_force_cache),
+                apply_forces.after(calculate_forces),
+                apply_impulses.after(calculate_forces),
+                integrate_positions.after(apply_forces),
+            ).chain(),
         );
     }
 }
