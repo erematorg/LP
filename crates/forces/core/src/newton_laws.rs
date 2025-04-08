@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::collections::HashMap;
 
 /// Trait for computing the squared norm of a vector efficiently
 pub trait Norm {
@@ -127,6 +128,30 @@ impl AppliedForce {
     }
 }
 
+/// Temporary resource to store forces before applying them
+/// This prevents forces from being applied while others are still being calculated
+#[derive(Resource, Default, Debug)]
+pub struct ForceCache {
+    /// Map of entity IDs to calculated forces
+    forces: HashMap<Entity, Vec3>,
+}
+
+impl ForceCache {
+    pub fn add_force(&mut self, entity: Entity, force: Vec3) {
+        self.forces.entry(entity)
+            .and_modify(|existing| *existing += force)
+            .or_insert(force);
+    }
+    
+    pub fn get_force(&self, entity: Entity) -> Option<Vec3> {
+        self.forces.get(&entity).copied()
+    }
+    
+    pub fn clear(&mut self) {
+        self.forces.clear();
+    }
+}
+
 /// Component for velocity (both linear and angular)
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Velocity {
@@ -235,7 +260,9 @@ pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ForceImpulse>().add_systems(
+        app.init_resource::<ForceCache>() // Initialize the ForceCache resource
+           .add_event::<ForceImpulse>()
+           .add_systems(
             Update,
             (apply_forces, apply_impulses, integrate_positions).chain(),
         );
