@@ -8,3 +8,4 @@ description = "Core simulation infrastructure components that manage and support
 save_system = { path = "./save_system" }
 pbmpm = { path = "./pbmpm" }
 acoustics = { path = "./acoustics" }
+ai = { path = "./ai" }
