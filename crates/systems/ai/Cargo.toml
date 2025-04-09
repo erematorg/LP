@@ -1,0 +1,8 @@
+[package]
+name = "ai"
+version = "0.1.0"
+edition = "2021"
+description = "Utility-based AI framework for life form simulation with modular drives, memory, personality and relationships"
+
+[dependencies]
+bevy = "0.15"

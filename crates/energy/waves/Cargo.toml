@@ -1,0 +1,8 @@
+[package]
+name = "waves"
+version = "0.1.0"
+edition = "2021"
+description = "Comprehensive modeling of wave propagation, energy transfer, and dynamic interactions across physical domains."
+
+[dependencies]
+bevy = "0.15"
