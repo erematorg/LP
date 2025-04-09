@@ -1,5 +1,5 @@
 [package]
-name = "mpm"
+name = "pbmpm"
 version = "0.1.0"
 edition = "2021"
 description = "Material Point Method implementation for simulating continuous materials"
