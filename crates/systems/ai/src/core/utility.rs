@@ -33,6 +33,35 @@ impl UtilityScore {
         }
     }
 
+    /// Multiply the score by a factor (adjusts importance)
+    pub fn multiply_by_factor(&self, factor: f32) -> Self {
+        Self::new(self.0 * factor)
+    }
+
+    /// Combine two scores with AND logic (both must be true)
+    /// Returns lower values as both scores must be high
+    pub fn and_with(&self, other: &Self) -> Self {
+        Self::new(self.0 * other.0)
+    }
+
+    /// Blend two scores with custom importance weights
+    /// weight_a and weight_b should ideally sum to 1.0
+    pub fn blend_weighted(&self, other: &Self, weight_a: f32, weight_b: f32) -> Self {
+        Self::new(self.0 * weight_a + other.0 * weight_b)
+    }
+
+    /// Combine scores with OR logic (either can be true)
+    /// P(A or B) = P(A) + P(B) - P(A and B)
+    pub fn or_with(&self, other: &Self) -> Self {
+        Self::new(self.0 + other.0 - (self.0 * other.0))
+    }
+
+    /// Get the opposite score (1 - score)
+    /// Useful for negating or inverting priorities
+    pub fn opposite(&self) -> Self {
+        Self::new(1.0 - self.0)
+    }
+
     /// Perform weighted random selection between multiple options
     pub fn weighted_select<T: Clone, R: Rng>(options: &[(T, UtilityScore)], rng: &mut R) -> Option<T> {
         let total_weight: f32 = options.iter().map(|(_, score)| score.value()).sum();
