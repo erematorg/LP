@@ -48,6 +48,13 @@ pub struct EntityRelationship {
    pub last_interaction_tick: u64, // Game ticks since last interaction
 }
 
+impl EntityRelationship {
+    /// Update the last interaction tick to the current game tick
+    pub fn update_interaction(&mut self, current_tick: u64) {
+        self.last_interaction_tick = current_tick;
+    }
+}
+
 /// Component that stores all relationships an entity maintains
 #[derive(Debug, Default, Component)]
 pub struct SocialNetwork {
