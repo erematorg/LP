@@ -74,4 +74,18 @@ impl SocialNetwork {
        
        result
    }
+
+   /// Add a new relationship or update an existing one
+   pub fn add_or_update_relationship(&mut self, target: EntityId, relationship_type: RelationshipType, strength: f32) {
+       let relationship = EntityRelationship {
+           strength: RelationshipStrength::new(strength),
+           relationship_type,
+           last_interaction_tick: 0,
+       };
+
+       self.relationships
+           .entry(target)
+           .or_default()
+           .insert(relationship_type, relationship);
+   }
 }
