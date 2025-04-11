@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::core::utility::UtilityScore;
 
 /// Memory timestamp (game ticks)
 pub type MemoryTimestamp = u64;
@@ -16,8 +17,8 @@ pub enum MemoryEventType {
 #[derive(Debug, Clone, Component)]
 pub struct MemoryEvent {
     pub timestamp: MemoryTimestamp,
-    pub importance: f32,  // 0.0-1.0 value
-    // pub location: Option<Vec2>,  // Commented out until terrain is implemented
+    pub importance: UtilityScore,  // Use UtilityScore instead of raw f32
+    // pub location: Option<Vec2>, // Commented out until terrain is implemented
     pub related_entities: Vec<Entity>,
     pub event_type: MemoryEventType,
 }
@@ -27,7 +28,7 @@ impl MemoryEvent {
         Self {
             event_type,
             timestamp,
-            importance: importance.clamp(0.0, 1.0),
+            importance: UtilityScore::new(importance),  // Convert to UtilityScore
             // location: None,
             related_entities: Vec::new(),
         }
