@@ -62,19 +62,6 @@ pub struct SocialNetwork {
 }
 
 impl SocialNetwork {
-   /// Get all relationships of a specific ecological type
-   pub fn get_by_type(&self, relationship_type: RelationshipType) -> Vec<(EntityId, &EntityRelationship)> {
-       let mut result = Vec::new();
-       
-       for (&entity_id, relationships) in &self.relationships {
-           if let Some(relationship) = relationships.get(&relationship_type) {
-               result.push((entity_id, relationship));
-           }
-       }
-       
-       result
-   }
-
    /// Add a new relationship or update an existing one
    pub fn add_or_update_relationship(&mut self, target: EntityId, relationship_type: RelationshipType, strength: f32) {
        let relationship = EntityRelationship {
@@ -87,5 +74,27 @@ impl SocialNetwork {
            .entry(target)
            .or_default()
            .insert(relationship_type, relationship);
+   }
+
+   /// Query relationships with flexible filtering
+   pub fn query_relationships(
+       &self, 
+       relationship_type: Option<RelationshipType>, 
+       min_strength: Option<f32>
+   ) -> Vec<(EntityId, &EntityRelationship)> {
+       let mut result = Vec::new();
+       
+       for (&entity_id, relationships) in &self.relationships {
+           for (current_type, relationship) in relationships {
+               let type_match = relationship_type.map_or(true, |rt| *current_type == rt);
+               let strength_match = min_strength.map_or(true, |ms| relationship.strength.value() >= ms);
+               
+               if type_match && strength_match {
+                   result.push((entity_id, relationship));
+               }
+           }
+       }
+       
+       result
    }
 }
