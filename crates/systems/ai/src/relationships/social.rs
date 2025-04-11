@@ -63,12 +63,24 @@ pub struct SocialNetwork {
 
 impl SocialNetwork {
    /// Add a new relationship or update an existing one
-   pub fn add_or_update_relationship(&mut self, target: EntityId, relationship_type: RelationshipType, strength: f32) {
-       let relationship = EntityRelationship {
+   pub fn add_or_update_relationship(&mut self, target: EntityId, relationship_type: RelationshipType, strength: f32, current_tick: u64) {
+       let mut relationship = EntityRelationship {
            strength: RelationshipStrength::new(strength),
            relationship_type,
-           last_interaction_tick: 0,
+           last_interaction_tick: current_tick,
        };
+
+       // If relationship already exists, update based on existing interaction history
+       if let Some(existing_relationship) = self.relationships
+           .entry(target)
+           .or_default()
+           .get_mut(&relationship_type) {
+           
+           // Modify strength based on interaction frequency
+           relationship.strength.adjust(
+               (current_tick - existing_relationship.last_interaction_tick) as f32 / 1000.0
+           );
+       }
 
        self.relationships
            .entry(target)
