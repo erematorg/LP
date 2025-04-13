@@ -1,5 +1,6 @@
 //use bevy::prelude::*; Might be needed later
-use rand::prelude::*;
+use rand::prelude::*; //Gotta use Bevy_Rand as well later
+use crate::core::interfaces::AIModule;
 
 /// Represents a utility score for decision-making
 /// Normalized between 0.0 and 1.0
@@ -79,4 +80,34 @@ impl UtilityScore {
         // Fallback to last option (shouldn't happen with proper weights)
         options.last().map(|(opt, _)| opt.clone())
     }
+}
+
+/// Possible AI behaviors that can be selected based on utility scores
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Behavior {
+    Idle,      // Default state, minimal activity
+    Hunt,      // Pursuing prey or resource
+    Flee,      // Escaping from threat
+    Explore,   // Discovering new areas
+    Fight,     // Engaging in combat
+    Rest,      // Recovering energy
+    Socialize, // Interacting with others
+}
+
+/// Selects the most appropriate behavior based on module utility scores
+pub fn determine_behavior<'a>(
+    modules: &[(&'a dyn AIModule, UtilityScore, Behavior)],
+) -> (Behavior, UtilityScore) {
+    if modules.is_empty() {
+        return (Behavior::Idle, UtilityScore::new(0.0));
+    }
+    
+    // Find highest utility module
+    let (_, highest_score, best_behavior) = modules
+        .iter()
+        .max_by(|(_, score_a, _), (_, score_b, _)| 
+            score_a.partial_cmp(score_b).unwrap_or(std::cmp::Ordering::Equal))
+        .unwrap();
+    
+    (*best_behavior, *highest_score)
 }
