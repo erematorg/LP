@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::core::utility::UtilityScore;
 
 /// Core personality traits for AI entities
 #[derive(Component, Debug, Clone)]
@@ -41,5 +42,26 @@ impl Personality {
     pub fn flee_likelihood(&self) -> f32 {
         // Lower bravery increases flee likelihood
         1.0 - self.bravery
+    }
+    
+    /// Get attack behavior utility score
+    pub fn attack_utility(&self) -> UtilityScore {
+        UtilityScore::new(self.attack_likelihood())
+    }
+    
+    /// Get flee behavior utility score
+    pub fn flee_utility(&self) -> UtilityScore {
+        UtilityScore::new(self.flee_likelihood())
+    }
+    
+    /// Get dominance behavior utility score
+    pub fn dominance_utility(&self) -> UtilityScore {
+        UtilityScore::new(self.dominance)
+    }
+    
+    /// Get social behavior utility score
+    pub fn social_utility(&self) -> f32 {
+        // Lower aggression and higher dominance increases social interaction utility
+        (1.0 - self.aggression * 0.3) + (self.dominance * 0.3)
     }
 }
