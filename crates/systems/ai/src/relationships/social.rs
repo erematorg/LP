@@ -110,3 +110,34 @@ impl SocialNetwork {
        result
    }
 }
+
+/// Get social behavior utility score
+pub fn social_behavior_utility(relationships: &SocialNetwork) -> UtilityScore {
+    let mut total_utility = 0.0;
+    let mut count = 0;
+    
+    for (_, relationship_map) in &relationships.relationships {
+        for (_, relationship) in relationship_map {
+            total_utility += relationship.strength.value();
+            count += 1;
+        }
+    }
+    
+    if count > 0 {
+        UtilityScore::new(total_utility / count as f32)
+    } else {
+        UtilityScore::new(0.0)
+    }
+}
+
+/// Get the relationship strength between two entities
+pub fn get_relationship_strength(
+    social_network: &SocialNetwork,
+    target: EntityId,
+    relationship_type: RelationshipType
+) -> Option<RelationshipStrength> {
+    social_network.relationships
+        .get(&target)
+        .and_then(|relationships| relationships.get(&relationship_type))
+        .map(|relationship| relationship.strength)
+}
