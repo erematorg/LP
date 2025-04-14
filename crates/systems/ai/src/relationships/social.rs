@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
 use std::collections::HashMap;
+use crate::core::interfaces::AIModule;
 
 
 /// Entity identifier type (compatible with Bevy ECS)
@@ -140,4 +141,17 @@ pub fn get_relationship_strength(
         .get(&target)
         .and_then(|relationships| relationships.get(&relationship_type))
         .map(|relationship| relationship.strength)
+}
+
+// In relationships/social.rs
+impl AIModule for SocialNetwork {
+    fn update(&mut self) {
+        // In a real implementation, this would decay old relationships
+        // or update based on recent interactions
+    }
+    
+    fn utility(&self) -> UtilityScore {
+        // Calculate overall social interaction utility
+        social_behavior_utility(self)
+    }
 }

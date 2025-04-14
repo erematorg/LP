@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
+use crate::core::interfaces::AIModule;
+
 
 /// Core need types representing basic drives
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -73,5 +75,17 @@ pub fn get_most_urgent_need(
     most_urgent.map(|need_type| (need_type, highest_urgency))
 }
 
+impl AIModule for Need {
+    fn update(&mut self) {
+        // Naturally decrease satisfaction over time
+        // (Note: Full implementation would use time delta)
+        self.satisfaction = (self.satisfaction - self.depletion_rate * 0.01).max(0.0);
+    }
+    
+    fn utility(&self) -> UtilityScore {
+        // Return urgency as utility
+        self.urgency()
+    }
+}
 
 //TODO: Adding a NeedTracker to monitor and manage needs over time, would be in systems/ai/src/trackers/needs_tracker.rs
