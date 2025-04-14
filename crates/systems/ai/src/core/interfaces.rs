@@ -1,9 +1,8 @@
 use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
 
-
 /// Base trait for all AI modules
-pub trait AIModule {
+pub trait AIModule: Send + Sync {
     /// Update the module's internal state
     fn update(&mut self);
     
