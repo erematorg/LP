@@ -1,42 +1,51 @@
 use bevy::prelude::*;
-use crate::core::utility::{Behavior, UtilityScore, determine_behavior};
+use crate::core::utility::{Behavior, determine_behavior};
 use crate::core::interfaces::{AIModule, ActionExecutor};
 use crate::personality::traits::Personality;
 use crate::relationships::social::SocialNetwork;
 use crate::drives::needs::{Need, NeedType};
 use crate::memory::types::{MemoryEvent, MemoryTimestamp};
 use crate::trackers::prelude::*;
+
 pub struct AIController {
     // Core AI components
     pub perception: Perception,
+    pub entity_tracker: EntityTracker,
+    pub needs_tracker: NeedsTracker,
     pub modules: Vec<Box<dyn AIModule>>,
     pub behavior: Behavior,
     
     // Entity components
     pub personality: Option<Personality>,
     pub social_network: Option<SocialNetwork>,
-    pub needs_tracker: Option<NeedsTracker>,
     pub memories: Vec<MemoryEvent>,
     
     // Current state
     pub current_target: Option<Entity>,
     pub current_utility: f32,
     pub current_tick: MemoryTimestamp,
+    pub current_position: Vec2,
 }
 
 impl AIController {
-    pub fn new(detection_radius: f32) -> Self {
+    pub fn new(detection_radius: f32, max_tracked_entities: usize) -> Self {
+        let perception = Perception::new(detection_radius);
+        let entity_tracker = EntityTracker::new(max_tracked_entities);
+        let needs_tracker = NeedsTracker::new();
+        
         Self {
-            perception: Perception::new(detection_radius),
+            perception,
+            entity_tracker,
+            needs_tracker,
             modules: Vec::new(),
             behavior: Behavior::Idle,
             personality: None,
             social_network: None,
-            needs_tracker: None,
             memories: Vec::new(),
             current_target: None,
             current_utility: 0.0,
             current_tick: 0,
+            current_position: Vec2::ZERO,
         }
     }
     
@@ -50,27 +59,50 @@ impl AIController {
         self
     }
     
-    pub fn with_needs_tracker(mut self, tracker: NeedsTracker) -> Self {
-        self.needs_tracker = Some(tracker);
-        self
-    }
-    
-    pub fn add_memory(&mut self, memory: MemoryEvent) {
-        self.memories.push(memory);
-    }
-    
     pub fn register_module(&mut self, module: Box<dyn AIModule>) {
         self.modules.push(module);
     }
     
+    pub fn add_memory(&mut self, memory: MemoryEvent) {
+        self.memories.push(memory);
+        
+        // Sort memories by importance
+        self.memories.sort_by(|a, b| b.importance.value().partial_cmp(&a.importance.value()).unwrap());
+        
+        // Keep only the most important/recent memories
+        const MAX_MEMORIES: usize = 50;
+        if self.memories.len() > MAX_MEMORIES {
+            self.memories.truncate(MAX_MEMORIES);
+        }
+    }
+    
+    pub fn add_need(&mut self, need: Need) {
+        self.needs_tracker.add_need(need);
+    }
+    
     pub fn update(&mut self, position: Vec2, entities: &[(Entity, Vec2)], time: f32) {
+        // Update current position
+        self.current_position = position;
+        
         // Increment tick counter
         self.current_tick += 1;
         
-        // 1. Update perception
+        // 1. Update perception and entity tracking
         self.perception.update(position, entities, time);
         
-        // 2. Update all modules
+        // Update entity tracker with perception data
+        for (entity, pos, distance) in &self.perception.visible_entities {
+            // Calculate importance based on proximity - closer entities are more important
+            let importance = 1.0 - (*distance / self.perception.detection_radius).clamp(0.0, 1.0);
+            self.entity_tracker.add_entity(*entity, *pos, importance);
+        }
+        
+        // 2. Update all core trackers
+        // We call AIModule update() which is separate from specific tracker update methods
+        self.entity_tracker.update();
+        self.needs_tracker.update();
+        
+        // 3. Update all other modules
         for module in &mut self.modules {
             module.update();
         }
@@ -84,23 +116,27 @@ impl AIController {
             social.update();
         }
         
-        if let Some(ref mut needs) = self.needs_tracker {
-            needs.update();
-        }
-        
-        // 3. Collect modules with behaviors and utilities
+        // 4. Collect options for behavior selection
         let mut behavior_options = Vec::new();
         
-        // Add each module with appropriate behavior mapping
-        for module in &self.modules {
-            // This would be more sophisticated in a real implementation
-            let behavior = self.map_module_to_behavior(module.as_ref());
-            behavior_options.push((
-                module.as_ref() as &dyn AIModule,
-                module.utility(),
-                behavior
-            ));
-        }
+        // Add core trackers
+        behavior_options.push((
+            &self.perception as &dyn AIModule,
+            self.perception.utility(),
+            map_perception_to_behavior(&self.perception)
+        ));
+        
+        behavior_options.push((
+            &self.entity_tracker as &dyn AIModule,
+            self.entity_tracker.utility(),
+            map_entity_tracker_to_behavior(&self.entity_tracker)
+        ));
+        
+        behavior_options.push((
+            &self.needs_tracker as &dyn AIModule,
+            self.needs_tracker.utility(),
+            map_needs_to_behavior(&self.needs_tracker)
+        ));
         
         // Add personality-driven behaviors
         if let Some(ref personality) = self.personality {
@@ -119,23 +155,13 @@ impl AIController {
             ));
         }
         
-        // Add needs-driven behaviors
-        if let Some(ref needs) = self.needs_tracker {
-            if let Some((need_type, urgency)) = needs.get_most_urgent_need() {
-                // Map need type to behavior
-                let behavior = match need_type {
-                    NeedType::Hunger => Behavior::Hunt,
-                    NeedType::Safety => Behavior::Flee,
-                    NeedType::Rest => Behavior::Rest,
-                    NeedType::Social => Behavior::Socialize,
-                };
-                
-                behavior_options.push((
-                    needs as &dyn AIModule,
-                    urgency,
-                    behavior
-                ));
-            }
+        // Add custom modules
+        for module in &self.modules {
+            behavior_options.push((
+                module.as_ref(),
+                module.utility(),
+                self.map_module_to_behavior(module.as_ref())
+            ));
         }
         
         // Add social behaviors
@@ -147,14 +173,14 @@ impl AIController {
             ));
         }
         
-        // 4. Select behavior with highest utility
+        // 5. Select behavior with highest utility
         let (new_behavior, utility) = determine_behavior(&behavior_options);
         self.behavior = new_behavior;
         self.current_utility = utility.value();
     }
     
     // Maps a module to an appropriate behavior based on type
-    fn map_module_to_behavior(&self, module: &dyn AIModule) -> Behavior {
+    fn map_module_to_behavior(&self, _module: &dyn AIModule) -> Behavior {
         // Default mapping - would be enhanced based on module type
         Behavior::Idle
     }
@@ -191,16 +217,51 @@ impl AIController {
             },
             Behavior::Explore => {
                 // Simple exploration by moving in a random direction
-                // Would be more sophisticated in a real implementation
                 if let Some((_, pos, _)) = self.perception.closest_entity() {
                     let angle = (self.current_tick as f32 * 0.1).sin() * 3.14;
                     let random_pos = Vec2::new(angle.cos(), angle.sin()) * 100.0 + pos;
                     executor.move_toward(random_pos, 0.7);
                 }
             },
-            Behavior::Idle | _ => {
+            Behavior::Idle => {
                 executor.idle(0.5);
             }
         }
+    }
+}
+
+// Helper functions to map module states to behaviors
+fn map_perception_to_behavior(perception: &Perception) -> Behavior {
+    if perception.highest_threat_level > 0.7 {
+        Behavior::Flee
+    } else if perception.highest_threat_level > 0.4 {
+        Behavior::Fight
+    } else {
+        Behavior::Explore
+    }
+}
+
+fn map_entity_tracker_to_behavior(tracker: &EntityTracker) -> Behavior {
+    if let Some((_, entity)) = tracker.get_most_important_entity() {
+        if entity.importance > 0.7 {
+            Behavior::Hunt
+        } else {
+            Behavior::Explore
+        }
+    } else {
+        Behavior::Idle
+    }
+}
+
+fn map_needs_to_behavior(needs: &NeedsTracker) -> Behavior {
+    if let Some((need_type, _)) = needs.get_most_urgent_need() {
+        match need_type {
+            NeedType::Hunger => Behavior::Hunt,
+            NeedType::Safety => Behavior::Flee,
+            NeedType::Rest => Behavior::Rest,
+            NeedType::Social => Behavior::Socialize,
+        }
+    } else {
+        Behavior::Idle
     }
 }
