@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
+use crate::core::interfaces::AIModule;
 
 /// Core personality traits for AI entities
 #[derive(Component, Debug, Clone)]
@@ -63,5 +64,17 @@ impl Personality {
     pub fn social_utility(&self) -> f32 {
         // Lower aggression and higher dominance increases social interaction utility
         (1.0 - self.aggression * 0.3) + (self.dominance * 0.3)
+    }
+}
+
+impl AIModule for Personality {
+    fn update(&mut self) {
+        // Personality traits are generally stable
+        // but could evolve slowly based on experiences
+    }
+    
+    fn utility(&self) -> UtilityScore {
+        // Return a base utility score for personality-driven behaviors
+        UtilityScore::new(0.5)
     }
 }

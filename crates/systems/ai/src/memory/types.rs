@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
+use crate::core::interfaces::AIModule;
+
 
 /// Memory timestamp (game ticks)
 pub type MemoryTimestamp = u64;
@@ -37,5 +39,17 @@ impl MemoryEvent {
     pub fn with_entity(mut self, entity: Entity) -> Self {
         self.related_entities.push(entity);
         self
+    }
+}
+
+impl AIModule for MemoryEvent {
+    fn update(&mut self) {
+        // Memories don't need regular updates
+        // Could implement decay of importance over time if needed
+    }
+    
+    fn utility(&self) -> UtilityScore {
+        // Return importance as utility
+        self.importance
     }
 }
