@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::core::utility::UtilityScore;
 use std::collections::HashMap;
 use crate::core::interfaces::AIModule;
+use crate::personality::traits::Personality;
 
 
 /// Entity identifier type (compatible with Bevy ECS)
@@ -109,6 +110,53 @@ impl SocialNetwork {
        }
        
        result
+   }
+   
+   /// Adjust relationship based on personality traits
+   pub fn adjust_relationship_with_personality(
+       &mut self, 
+       target: EntityId, 
+       relationship_type: RelationshipType, 
+       personality: &Personality, 
+       current_tick: u64
+   ) {
+       // Base strength from existing relationship or default
+       let base_strength = self.relationships
+           .get(&target)
+           .and_then(|r| r.get(&relationship_type))
+           .map_or(0.5, |rel| rel.strength.value());
+       
+       // Apply personality modifiers
+       let modified_strength = match relationship_type {
+           RelationshipType::Cooperation => {
+               // More dominant personalities are less cooperative
+               base_strength * (1.0 - personality.dominance * 0.3)
+           },
+           RelationshipType::Competition => {
+               // More aggressive personalities compete more strongly
+               base_strength * (1.0 + personality.aggression * 0.5)
+           },
+           RelationshipType::Predation => {
+               // More aggressive and brave personalities have stronger predation
+               base_strength * (1.0 + personality.aggression * 0.6 + personality.bravery * 0.4)
+           },
+           RelationshipType::Fear => {
+               // Less brave personalities feel more fear
+               base_strength * (1.0 + (1.0 - personality.bravery) * 0.7)
+           },
+           RelationshipType::Kinship => {
+               // Personality doesn't strongly affect genetic relationships
+               base_strength
+           }
+       };
+       
+       // Add or update the relationship with the modified strength
+       self.add_or_update_relationship(
+           target, 
+           relationship_type, 
+           modified_strength, 
+           current_tick
+       );
    }
 }
 
