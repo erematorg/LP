@@ -4,7 +4,7 @@ use crate::core::interfaces::{AIModule, ActionExecutor};
 use crate::personality::traits::Personality;
 use crate::relationships::social::SocialNetwork;
 use crate::drives::needs::{Need, NeedType};
-use crate::memory::types::{MemoryEvent, MemoryTimestamp};
+use crate::memory::types::{MemoryEvent, MemoryEventType, MemoryTimestamp};
 use crate::trackers::prelude::*;
 
 pub struct AIController {
@@ -80,6 +80,51 @@ impl AIController {
         self.needs_tracker.add_need(need);
     }
     
+    pub fn process_perception_events(&mut self) {
+        // Store visible entities in a temporary vector to avoid borrow issues
+        let visible_entities: Vec<(Entity, Vec2, f32)> = self.perception.visible_entities.clone();
+        let highest_threat = self.perception.highest_threat_level;
+        
+        // Create memories from newly perceived entities
+        for (entity, _pos, distance) in &visible_entities {
+            // Calculate importance based on proximity
+            let importance = 1.0 - (*distance / self.perception.detection_radius).clamp(0.0, 1.0);
+            
+            // Check if this is a new entity or one we haven't seen in a while
+            let is_significant = if let Some(tracked) = self.entity_tracker.get_tracked_entity(*entity) {
+                tracked.ticks_since_seen > 20  // We haven't seen it for a while
+            } else {
+                true  // It's completely new
+            };
+            
+            // Only create memories for significant perception events
+            if is_significant && importance > 0.4 {
+                let memory = MemoryEvent::new(
+                    MemoryEventType::Resource,  // Default type, would be based on entity type
+                    importance, 
+                    self.current_tick
+                )
+                .with_entity(*entity);
+                
+                self.add_memory(memory);
+            }
+        }
+        
+        // Create threat memories for high-threat perceptions
+        if highest_threat > 0.6 {
+            if let Some((entity, _, _)) = self.perception.closest_entity() {
+                let threat_memory = MemoryEvent::new(
+                    MemoryEventType::Threat,
+                    highest_threat,
+                    self.current_tick
+                )
+                .with_entity(entity);
+                
+                self.add_memory(threat_memory);
+            }
+        }
+    }
+    
     pub fn update(&mut self, position: Vec2, entities: &[(Entity, Vec2)], time: f32) {
         // Update current position
         self.current_position = position;
@@ -89,6 +134,9 @@ impl AIController {
         
         // 1. Update perception and entity tracking
         self.perception.update(position, entities, time);
+        
+        // Process perception events into memories
+        self.process_perception_events();
         
         // Update entity tracker with perception data
         for (entity, pos, distance) in &self.perception.visible_entities {
