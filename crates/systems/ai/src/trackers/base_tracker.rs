@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use crate::core::interfaces::AIModule;
-use crate::core::utility::UtilityScore;
+use crate::prelude::*;
 use std::collections::HashMap;
 
 /// Core tracker for monitoring entities

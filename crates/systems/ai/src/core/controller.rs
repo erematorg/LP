@@ -1,12 +1,5 @@
 use bevy::prelude::*;
-use crate::core::utility::{Behavior, determine_behavior};
-use crate::core::interfaces::{AIModule, ActionExecutor};
-use crate::personality::traits::Personality;
-use crate::relationships::social::SocialNetwork;
-use crate::drives::needs::{Need, NeedType};
-use crate::memory::types::{MemoryEvent, MemoryEventType, MemoryTimestamp};
-use crate::trackers::prelude::*;
-
+use crate::prelude::*;
 pub struct AIController {
     // Core AI components
     pub perception: Perception,

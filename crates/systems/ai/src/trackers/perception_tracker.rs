@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use crate::core::utility::UtilityScore;
-use crate::core::interfaces::AIModule;
+use crate::prelude::*;
 
 pub struct Perception {
     pub visible_entities: Vec<(Entity, Vec2, f32)>, // Entity, position, distance

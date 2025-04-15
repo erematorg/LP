@@ -1,7 +1,5 @@
 use bevy::prelude::*;
-use crate::core::utility::UtilityScore;
-use crate::drives::needs::{Need, NeedType};
-use crate::core::interfaces::AIModule;
+use crate::prelude::*;
 
 /// Tracks and manages needs for an entity
 pub struct NeedsTracker {

@@ -1,9 +1,6 @@
 use bevy::prelude::*;
-use crate::core::utility::UtilityScore;
+use crate::prelude::*;
 use std::collections::HashMap;
-use crate::core::interfaces::AIModule;
-use crate::personality::traits::Personality;
-
 
 /// Entity identifier type (compatible with Bevy ECS)
 pub type EntityId = Entity;
