@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::prelude::*;
+use std::f32::consts::PI; //Should make clippy happy yet I may look for another solution later
 pub struct AIController {
     // Core AI components
     pub perception: Perception,
@@ -259,7 +260,7 @@ impl AIController {
             Behavior::Explore => {
                 // Simple exploration by moving in a random direction
                 if let Some((_, pos, _)) = self.perception.closest_entity() {
-                    let angle = (self.current_tick as f32 * 0.1).sin() * 3.14;
+                    let angle = (self.current_tick as f32 * 0.1).sin() * PI;
                     let random_pos = Vec2::new(angle.cos(), angle.sin()) * 100.0 + pos;
                     executor.move_toward(random_pos, 0.7);
                 }
