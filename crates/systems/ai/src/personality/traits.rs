@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use crate::core::utility::UtilityScore;
-use crate::core::interfaces::AIModule;
+use crate::prelude::*;
 
 /// Core personality traits for AI entities
 #[derive(Component, Debug, Clone)]

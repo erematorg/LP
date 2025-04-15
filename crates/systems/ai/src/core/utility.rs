@@ -1,7 +1,6 @@
 //use bevy::prelude::*; Might be needed later
 use rand::prelude::*; //Gotta use Bevy_Rand as well later
-use crate::core::interfaces::AIModule;
-
+use crate::prelude::*;
 /// Represents a utility score for decision-making
 /// Normalized between 0.0 and 1.0
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use crate::core::utility::UtilityScore;
-use crate::core::interfaces::AIModule;
+use crate::prelude::*;
 
 
 /// Core need types representing basic drives
