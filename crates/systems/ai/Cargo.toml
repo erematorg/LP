@@ -6,3 +6,4 @@ description = "Utility-based AI framework for life form simulation with modular 
 
 [dependencies]
 bevy = "0.15"
+rand = "0.9"
