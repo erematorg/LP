@@ -1,6 +1,33 @@
 use bevy::prelude::*;
 use crate::prelude::*;
 use std::f32::consts::PI; //Should make clippy happy yet I may look for another solution later
+
+
+/// The current state for an Action. These states are managed by the AIController
+/// and executed by the action itself.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ActionState {
+    /// Initial state. No action should be performed.
+    Init,
+    /// Action requested. The action system should start executing.
+    Requested,
+    /// The action has ongoing execution.
+    Executing,
+    /// Action has been cancelled. Action should clean up and transition
+    /// to either Success or Failure.
+    Cancelled,
+    /// The action was completed successfully.
+    Success,
+    /// The action failed to complete.
+    Failure,
+}
+
+impl Default for ActionState {
+    fn default() -> Self {
+        Self::Init
+    }
+}
+
 pub struct AIController {
     // Core AI components
     pub perception: Perception,
@@ -19,6 +46,9 @@ pub struct AIController {
     pub current_utility: f32,
     pub current_tick: MemoryTimestamp,
     pub current_position: Vec2,
+    
+    // Action state management
+    pub action_state: ActionState,
 }
 
 impl AIController {
@@ -40,6 +70,7 @@ impl AIController {
             current_utility: 0.0,
             current_tick: 0,
             current_position: Vec2::ZERO,
+            action_state: ActionState::default(),
         }
     }
     
@@ -140,7 +171,6 @@ impl AIController {
         }
         
         // 2. Update all core trackers
-        // We call AIModule update() which is separate from specific tracker update methods
         self.entity_tracker.update();
         self.needs_tracker.update();
         
@@ -158,7 +188,12 @@ impl AIController {
             social.update();
         }
         
-        // 4. Collect options for behavior selection
+        // 4. Select behavior based on utility scores
+        self.select_behavior();
+    }
+    
+    fn select_behavior(&mut self) {
+        // Collect options for behavior selection
         let mut behavior_options = Vec::new();
         
         // Add core trackers
@@ -227,46 +262,126 @@ impl AIController {
         Behavior::Idle
     }
     
+    /// Execute the current behavior with state machine handling
     pub fn execute(&mut self, executor: &mut dyn ActionExecutor) {
-        // Execute action based on current behavior
-        match self.behavior {
-            Behavior::Hunt => {
-                if let Some((entity, pos, _)) = self.perception.closest_entity() {
-                    self.current_target = Some(entity);
-                    executor.move_toward(pos, 1.0);
+        match self.action_state {
+            ActionState::Init => {
+                // Initial state, prepare for execution
+                self.action_state = ActionState::Requested;
+            },
+            ActionState::Requested => {
+                // Begin execution based on behavior
+                self.action_state = ActionState::Executing;
+                
+                // Perform initial action setup
+                match self.behavior {
+                    Behavior::Hunt => {
+                        if let Some((entity, pos, _)) = self.perception.closest_entity() {
+                            self.current_target = Some(entity);
+                            executor.move_toward(pos, 1.0);
+                        }
+                    },
+                    Behavior::Flee => {
+                        if let Some((_, pos, _)) = self.perception.closest_entity() {
+                            executor.flee_from(pos);
+                        }
+                    },
+                    Behavior::Fight => {
+                        if let Some(target) = self.current_target {
+                            executor.attack(Some(target));
+                        } else if let Some((entity, _, _)) = self.perception.closest_entity() {
+                            executor.attack(Some(entity));
+                        }
+                    },
+                    Behavior::Rest => {
+                        executor.idle(1.0);
+                    },
+                    Behavior::Socialize => {
+                        if let Some((entity, pos, _)) = self.perception.closest_entity() {
+                            self.current_target = Some(entity);
+                            executor.move_toward(pos, 0.5);
+                        }
+                    },
+                    Behavior::Explore => {
+                        // Simple exploration by moving in a random direction
+                        if let Some((_, pos, _)) = self.perception.closest_entity() {
+                            let angle = (self.current_tick as f32 * 0.1).sin() * PI;
+                            let random_pos = Vec2::new(angle.cos(), angle.sin()) * 100.0 + pos;
+                            executor.move_toward(random_pos, 0.7);
+                        }
+                    },
+                    Behavior::Idle => {
+                        executor.idle(0.5);
+                    }
                 }
             },
-            Behavior::Flee => {
-                if let Some((_, pos, _)) = self.perception.closest_entity() {
-                    executor.flee_from(pos);
+            ActionState::Executing => {
+                // Continue execution based on behavior
+                let completed = match self.behavior {
+                    Behavior::Hunt => {
+                        if let Some((entity, pos, _)) = self.perception.closest_entity() {
+                            self.current_target = Some(entity);
+                            !executor.move_toward(pos, 1.0)
+                        } else {
+                            true // No targets, consider complete
+                        }
+                    },
+                    Behavior::Flee => {
+                        if let Some((_, pos, _)) = self.perception.closest_entity() {
+                            !executor.flee_from(pos)
+                        } else {
+                            true // Nothing to flee from, consider complete
+                        }
+                    },
+                    Behavior::Fight => {
+                        if let Some(target) = self.current_target {
+                            executor.attack(Some(target))
+                        } else if let Some((entity, _, _)) = self.perception.closest_entity() {
+                            executor.attack(Some(entity))
+                        } else {
+                            true // No targets, consider complete
+                        }
+                    },
+                    Behavior::Rest => {
+                        executor.idle(1.0)
+                    },
+                    Behavior::Socialize => {
+                        if let Some((entity, pos, _)) = self.perception.closest_entity() {
+                            self.current_target = Some(entity);
+                            !executor.move_toward(pos, 0.5)
+                        } else {
+                            true // No one to socialize with, consider complete
+                        }
+                    },
+                    Behavior::Explore => {
+                        if let Some((_, pos, _)) = self.perception.closest_entity() {
+                            let angle = (self.current_tick as f32 * 0.1).sin() * PI;
+                            let random_pos = Vec2::new(angle.cos(), angle.sin()) * 100.0 + pos;
+                            !executor.move_toward(random_pos, 0.7)
+                        } else {
+                            true // Nothing to explore, consider complete
+                        }
+                    },
+                    Behavior::Idle => {
+                        executor.idle(0.5)
+                    }
+                };
+                
+                if completed {
+                    // Action completed, mark as success
+                    self.action_state = ActionState::Success;
                 }
             },
-            Behavior::Fight => {
-                if let Some(target) = self.current_target {
-                    executor.attack(Some(target));
-                } else if let Some((entity, _, _)) = self.perception.closest_entity() {
-                    executor.attack(Some(entity));
-                }
+            ActionState::Cancelled => {
+                // Handle cancellation gracefully
+                executor.cleanup();
+                self.action_state = ActionState::Failure;
             },
-            Behavior::Rest => {
-                executor.idle(1.0);
-            },
-            Behavior::Socialize => {
-                if let Some((entity, pos, _)) = self.perception.closest_entity() {
-                    self.current_target = Some(entity);
-                    executor.move_toward(pos, 0.5);
-                }
-            },
-            Behavior::Explore => {
-                // Simple exploration by moving in a random direction
-                if let Some((_, pos, _)) = self.perception.closest_entity() {
-                    let angle = (self.current_tick as f32 * 0.1).sin() * PI;
-                    let random_pos = Vec2::new(angle.cos(), angle.sin()) * 100.0 + pos;
-                    executor.move_toward(random_pos, 0.7);
-                }
-            },
-            Behavior::Idle => {
-                executor.idle(0.5);
+            ActionState::Success | ActionState::Failure => {
+                // Reset state for next behavior
+                self.action_state = ActionState::Init;
+                // Optionally clear target
+                self.current_target = None;
             }
         }
     }
