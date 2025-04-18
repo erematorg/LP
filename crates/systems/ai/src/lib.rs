@@ -12,7 +12,11 @@ pub mod prelude {
     // Core interfaces
     pub use crate::core::interfaces::{AIModule, ActionExecutor};
     pub use crate::core::utility::{Behavior, UtilityScore, determine_behavior};
-    pub use crate::core::controller::AIController;
+    
+    // New big-brain inspired components
+    pub use crate::core::scorers::{Score, Scorer, ScorerContext};
+    pub use crate::core::actions::{Action, ActionContext, ActionState};
+    pub use crate::core::thinkers::{Thinker, Choice, ActionType, Picker, FirstToScore, Highest, HasThinker};
     
     // Trackers
     pub use crate::trackers::perception_tracker::Perception;
