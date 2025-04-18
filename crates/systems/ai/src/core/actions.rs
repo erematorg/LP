@@ -162,6 +162,162 @@ impl Action for Sequence {
     }
 }
 
+/// Configures what mode the Concurrent action will run in
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConcurrentMode {
+    /// Reaches success when any of the concurrent actions reaches Success (OR logic)
+    Race,
+    /// Reaches success when all of the concurrent actions reach Success (AND logic)
+    Join,
+}
+
+/// Composite action that executes multiple actions concurrently
+pub struct Concurrent {
+    actions: Vec<Box<dyn Action>>,
+    states: Vec<ActionState>,
+    mode: ConcurrentMode,
+}
+
+impl Concurrent {
+    pub fn new(actions: Vec<Box<dyn Action>>, mode: ConcurrentMode) -> Self {
+        let states = vec![ActionState::Init; actions.len()];
+        Self {
+            actions,
+            states,
+            mode,
+        }
+    }
+    
+    /// Create a Race-mode concurrent action (succeeds when any action succeeds)
+    pub fn race(actions: Vec<Box<dyn Action>>) -> Self {
+        Self::new(actions, ConcurrentMode::Race)
+    }
+    
+    /// Create a Join-mode concurrent action (succeeds when all actions succeed)
+    pub fn join(actions: Vec<Box<dyn Action>>) -> Self {
+        Self::new(actions, ConcurrentMode::Join)
+    }
+}
+
+impl Action for Concurrent {
+    fn execute(&mut self, context: &mut ActionContext) -> ActionState {
+        if self.actions.is_empty() {
+            return ActionState::Success;
+        }
+        
+        // Process each action
+        let mut all_success = true;
+        let mut any_success = false;
+        let mut any_executing = false;
+        
+        for (i, action) in self.actions.iter_mut().enumerate() {
+            match self.states[i] {
+                ActionState::Init => {
+                    self.states[i] = ActionState::Requested;
+                    all_success = false;
+                    any_executing = true;
+                },
+                ActionState::Requested | ActionState::Executing => {
+                    self.states[i] = action.execute(context);
+                    
+                    match self.states[i] {
+                        ActionState::Success => {
+                            any_success = true;
+                            action.on_success(context);
+                        },
+                        ActionState::Failure => {
+                            all_success = false;
+                            action.on_failure(context);
+                        },
+                        _ => {
+                            all_success = false;
+                            any_executing = true;
+                        }
+                    }
+                },
+                ActionState::Cancelled => {
+                    action.on_cancel(context);
+                    self.states[i] = ActionState::Failure;
+                    all_success = false;
+                },
+                ActionState::Success => {
+                    any_success = true;
+                },
+                ActionState::Failure => {
+                    all_success = false;
+                }
+            }
+        }
+        
+        // Determine final state based on mode
+        match self.mode {
+            ConcurrentMode::Race => {
+                if any_success {
+                    // In Race mode, if any action succeeds, cancel all others
+                    for (i, action) in self.actions.iter_mut().enumerate() {
+                        if !matches!(self.states[i], ActionState::Success | ActionState::Failure) {
+                            action.on_cancel(context);
+                            self.states[i] = ActionState::Cancelled;
+                        }
+                    }
+                    ActionState::Success
+                } else if !any_executing {
+                    // All actions have finished and none succeeded
+                    ActionState::Failure
+                } else {
+                    ActionState::Executing
+                }
+            },
+            ConcurrentMode::Join => {
+                if !all_success {
+                    if !any_executing {
+                        // All actions have finished but not all succeeded
+                        ActionState::Failure
+                    } else {
+                        ActionState::Executing
+                    }
+                } else {
+                    // All actions succeeded
+                    ActionState::Success
+                }
+            }
+        }
+    }
+    
+    fn on_start(&mut self, context: &mut ActionContext) -> bool {
+        if self.actions.is_empty() {
+            return false;
+        }
+        
+        let mut all_started = true;
+        for (i, action) in self.actions.iter_mut().enumerate() {
+            if !action.on_start(context) {
+                all_started = false;
+                self.states[i] = ActionState::Failure;
+            } else {
+                self.states[i] = ActionState::Requested;
+            }
+        }
+        all_started
+    }
+    
+    fn on_cancel(&mut self, context: &mut ActionContext) {
+        for (i, action) in self.actions.iter_mut().enumerate() {
+            if !matches!(self.states[i], ActionState::Success | ActionState::Failure) {
+                action.on_cancel(context);
+                self.states[i] = ActionState::Cancelled;
+            }
+        }
+    }
+    
+    fn label(&self) -> &str {
+        match self.mode {
+            ConcurrentMode::Race => "Concurrent (Race)",
+            ConcurrentMode::Join => "Concurrent (Join)",
+        }
+    }
+}
+
 // Common action implementations
 
 pub struct MoveToTarget {
