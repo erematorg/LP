@@ -15,6 +15,13 @@ fn main() {
         .run();
 }
 
+#[derive(Component, Default)]
+struct CreatureAction {
+    action_attempts: u32,
+    total_food_consumed: u32,
+    last_action_result: ActionState,
+}
+
 #[derive(Component)]
 struct Creature {
     social_network: SocialNetwork,
@@ -22,6 +29,7 @@ struct Creature {
     velocity: Vec2,
     lifespan: f32,
     hunger: f32,
+    action: CreatureAction,
 }
 
 #[derive(Component)]
@@ -52,6 +60,7 @@ fn setup(mut commands: Commands) {
                 velocity: Vec2::new(0.0, 0.0),
                 lifespan: 30.0,
                 hunger: 0.0,
+                action: CreatureAction::default(),
             },
         ));
     }
@@ -134,12 +143,22 @@ fn update_creatures_and_perception(
                 );
             }
             
-            // Update lifespan and hunger
+            // Update lifespan and hunger with action tracking
             creature.lifespan -= time.delta_secs();
             creature.hunger = (creature.hunger + time.delta_secs() * 0.1).min(1.0);
+            creature.action.action_attempts += 1;
             
             // Despawn if lifespan expires or hunger reaches maximum
             if creature.lifespan <= 0.0 || creature.hunger >= 1.0 {
+                // Action Lifecycle Hook: Log final action state
+                println!(
+                    "Creature despawning - Lifespan: {}, Hunger: {}, Action Attempts: {}, Total Food Consumed: {}, Last Action: {:?}", 
+                    creature.lifespan, 
+                    creature.hunger, 
+                    creature.action.action_attempts,
+                    creature.action.total_food_consumed,
+                    creature.action.last_action_result
+                );
                 to_despawn.push(entity);
                 continue;
             }
@@ -165,6 +184,13 @@ fn update_creatures_and_perception(
                         if score > best_score {
                             best_score = score;
                             target_food = Some(food_pos.truncate());
+                            
+                            // Action Lifecycle Hook: Log action initiation
+                            println!(
+                                "Creature initiating food seek - Distance: {}, Relationship Score: {}", 
+                                dist, 
+                                score
+                            );
                         }
                     }
                 }
@@ -231,8 +257,17 @@ fn handle_food_consumption(
             let distance = creature_pos.distance(food_pos);
             
             if distance < 25.0 {
+                // Action Lifecycle Hook: Food Consumption
+                println!(
+                    "Food consumed - Distance: {}, Hunger before: {}, Lifespan gain: 15.0", 
+                    distance, 
+                    creature.hunger
+                );
+                
                 creature.lifespan = (creature.lifespan + 15.0).min(30.0);
                 creature.hunger = 0.0;
+                creature.action.total_food_consumed += 1;
+                creature.action.last_action_result = ActionState::Success;
                 
                 food.active = false;
                 food.respawn_timer.reset();
@@ -252,6 +287,9 @@ fn respawn_food(
             food.respawn_timer.tick(time.delta());
             
             if food.respawn_timer.finished() {
+                // Action Lifecycle Hook: Food Respawn
+                println!("Food respawned");
+                
                 food.active = true;
                 *visibility = Visibility::Inherited;
             }
