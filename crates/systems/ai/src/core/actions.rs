@@ -33,10 +33,22 @@ pub trait Action: Send + Sync {
     /// Execute one step of the action
     fn execute(&mut self, context: &mut ActionContext) -> ActionState;
     
+    /// Called when the action is starting (transitioning from Requested to Executing)
+    /// Return false if the action can't start for some reason
+    fn on_start(&mut self, _context: &mut ActionContext) -> bool {
+        true // Default implementation always succeeds
+    }
+    
     /// Called when the action is cancelled
     fn on_cancel(&mut self, context: &mut ActionContext) {
         context.executor.cleanup();
     }
+    
+    /// Called when the action completes successfully
+    fn on_success(&mut self, _context: &mut ActionContext) {}
+    
+    /// Called when the action fails
+    fn on_failure(&mut self, _context: &mut ActionContext) {}
     
     /// Label for debugging and tracing
     fn label(&self) -> &str {
@@ -80,6 +92,9 @@ impl Action for Sequence {
                 // Handle step completion
                 match self.step_state {
                     ActionState::Success => {
+                        // Call on_success for the completed step
+                        self.steps[self.current_step].on_success(context);
+                        
                         self.current_step += 1;
                         if self.current_step >= self.steps.len() {
                             ActionState::Success
@@ -88,7 +103,11 @@ impl Action for Sequence {
                             ActionState::Executing
                         }
                     },
-                    ActionState::Failure => ActionState::Failure,
+                    ActionState::Failure => {
+                        // Call on_failure for the failed step
+                        self.steps[self.current_step].on_failure(context);
+                        ActionState::Failure
+                    },
                     _ => ActionState::Executing
                 }
             },
@@ -109,9 +128,32 @@ impl Action for Sequence {
         }
     }
     
+    fn on_start(&mut self, context: &mut ActionContext) -> bool {
+        if self.steps.is_empty() {
+            return false;
+        }
+        
+        // Only try to start the first step
+        self.steps[0].on_start(context)
+    }
+    
     fn on_cancel(&mut self, context: &mut ActionContext) {
         if self.current_step < self.steps.len() {
             self.steps[self.current_step].on_cancel(context);
+        }
+    }
+    
+    fn on_success(&mut self, context: &mut ActionContext) {
+        // Sequence succeeded, all steps completed
+        for step in &mut self.steps {
+            step.on_success(context);
+        }
+    }
+    
+    fn on_failure(&mut self, context: &mut ActionContext) {
+        // Sequence failed at the current step
+        if self.current_step < self.steps.len() {
+            self.steps[self.current_step].on_failure(context);
         }
     }
     
@@ -153,6 +195,11 @@ impl Action for MoveToTarget {
         }
     }
     
+    fn on_start(&mut self, context: &mut ActionContext) -> bool {
+        // Verify we have a valid target before starting
+        context.target.is_some() && context.entity_tracker.get_tracked_entity(context.target.unwrap()).is_some()
+    }
+    
     fn label(&self) -> &str {
         "Move To Target"
     }
@@ -173,6 +220,11 @@ impl Action for FleeFromThreat {
         }
     }
     
+    fn on_start(&mut self, context: &mut ActionContext) -> bool {
+        // Only start if there's an actual threat
+        context.perception.closest_entity().is_some()
+    }
+    
     fn label(&self) -> &str {
         "Flee From Threat"
     }
@@ -187,6 +239,11 @@ impl Action for AttackTarget {
         } else {
             ActionState::Executing
         }
+    }
+    
+    fn on_start(&mut self, context: &mut ActionContext) -> bool {
+        // Verify we have a valid target before starting
+        context.target.is_some()
     }
     
     fn label(&self) -> &str {
@@ -215,6 +272,11 @@ impl Action for Rest {
             context.executor.idle(self.duration - self.elapsed);
             ActionState::Executing
         }
+    }
+    
+    fn on_start(&mut self, _context: &mut ActionContext) -> bool {
+        self.elapsed = 0.0;
+        true
     }
     
     fn label(&self) -> &str {
