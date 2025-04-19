@@ -30,8 +30,9 @@ struct Creature {
     lifespan: f32,
     hunger: f32,
     action: CreatureAction,
-    // Added minimal concurrent action tracking
     using_concurrent_actions: bool,
+    // Simple field to track if this creature is altruistic
+    altruistic: bool,
 }
 
 #[derive(Component)]
@@ -63,8 +64,9 @@ fn setup(mut commands: Commands) {
                 lifespan: 30.0,
                 hunger: 0.0,
                 action: CreatureAction::default(),
-                // Enable concurrent actions for all creatures
                 using_concurrent_actions: true,
+                // Enable altruism for creatures with odd indices
+                altruistic: i % 2 == 1,
             },
         ));
     }
@@ -111,6 +113,18 @@ fn update_creatures_and_perception(
         .filter(|(_, _, active)| *active)
         .map(|(e, pos, _)| (*e, *pos))
         .collect();
+        
+    // Get a list of creatures and their positions first for altruistic behavior
+    let creatures: Vec<(Entity, Vec2, f32)> = {
+        let query = params.p0();
+        query.iter()
+            .map(|(entity, transform, creature)| (
+                entity, 
+                transform.translation.truncate(),
+                creature.hunger
+            ))
+            .collect()
+    };
     
     // Update perception and calculate movements
     let mut velocities = Vec::new();
@@ -163,9 +177,6 @@ fn update_creatures_and_perception(
             
             if creature.hunger > 0.3 && !active_food.is_empty() {
                 if creature.using_concurrent_actions {
-                    // Simple demonstration of concurrent actions:
-                    // Run two food-finding strategies in parallel and use the result of the first one that succeeds
-                    
                     // Strategy 1: Social-based approach (existing logic)
                     let mut social_target = None;
                     let mut social_score = 0.0;
@@ -198,8 +209,51 @@ fn update_creatures_and_perception(
                         }
                     }
                     
+                    // Simple altruistic behavior - if this creature is altruistic and not too hungry,
+                    // check if other creatures are closer to the target food and hungrier
+                    if creature.altruistic && creature.hunger < 0.7 {
+                        if let Some(target_pos) = direct_target {
+                            for (other_entity, other_pos, other_hunger) in &creatures {
+                                if *other_entity != entity {
+                                    let other_distance = other_pos.distance(target_pos);
+                                    let self_distance = position.distance(target_pos);
+                                    
+                                    // If another creature is closer and hungrier, look for a different food
+                                    if other_distance < self_distance && *other_hunger > creature.hunger + 0.2 {
+                                        // Find alternative food
+                                        let mut alternative = None;
+                                        let mut alt_dist = f32::MAX;
+                                        
+                                        for (_, food_pos) in &active_food {
+                                            let fp = food_pos.truncate();
+                                            if fp.distance(target_pos) > 50.0 { // Different food
+                                                let dist = position.distance(fp);
+                                                if dist < alt_dist {
+                                                    alt_dist = dist;
+                                                    alternative = Some(fp);
+                                                }
+                                            }
+                                        }
+                                        
+                                        if let Some(alt_pos) = alternative {
+                                            direct_target = Some(alt_pos);
+                                            closest_dist = alt_dist;
+                                            // Add positive relationship with the creature we helped
+                                            creature.social_network.add_or_update_relationship(
+                                                *other_entity,
+                                                RelationshipType::Cooperation,
+                                                0.9, // Strong cooperative relationship
+                                                current_tick
+                                            );
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Race mode: Use the strategy with higher score
-                    // This simulates a "Race" concurrent action where the first to succeed wins
                     let social_value = social_score;
                     let direct_value = if closest_dist < f32::MAX { 1.0 - (closest_dist / 500.0) } else { 0.0 };
                     
@@ -297,7 +351,6 @@ fn handle_food_consumption(
             let distance = creature_pos.distance(food_pos);
             
             if distance < 25.0 {
-                // Action Lifecycle Hook: Food Consumption
                 creature.lifespan = (creature.lifespan + 15.0).min(30.0);
                 creature.hunger = 0.0;
                 creature.action.total_food_consumed += 1;
@@ -333,9 +386,20 @@ fn update_visuals(
 ) {
     for (creature, mut sprite) in &mut query {
         // Base color based on hunger
-        let red = 0.2 + creature.hunger * 0.6;
+        let mut red = 0.2 + creature.hunger * 0.6;
         let green = 0.9 - creature.hunger * 0.3;
-        let blue = if creature.using_concurrent_actions { 0.5 } else { 0.2 };
+        
+        // Base blue for concurrent actions
+        let mut blue = 0.2;
+        if creature.using_concurrent_actions {
+            blue += 0.2;
+        }
+        
+        // Add purple tint for altruistic creatures
+        if creature.altruistic {
+            red += 0.1;
+            blue += 0.1;
+        }
         
         sprite.color = Color::srgb(red, green, blue);
     }
