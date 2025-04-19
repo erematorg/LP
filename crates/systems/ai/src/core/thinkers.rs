@@ -1,9 +1,15 @@
-// ai/src/core/thinkers.rs
-
 use crate::prelude::*;
 use bevy::prelude::*;
 
 use std::collections::VecDeque;
+
+/// Basic stages in the decision-making pipeline
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecisionStage {
+    Evaluation,  // Evaluating options
+    Selection,   // Selecting best action
+    Execution,   // Executing selected action
+}
 
 /// A choice representing a potential action with its scorer
 pub struct Choice {
@@ -83,6 +89,9 @@ pub struct Thinker {
     pub current_action: Option<(Box<dyn Action + Send + Sync>, ActionState)>,
     pub otherwise_action: Option<ActionType>,
     pub scheduled_actions: VecDeque<ActionType>,
+    // Debug information for pipeline stages
+    pub current_stage: DecisionStage,
+    pub last_scores: Vec<(ActionType, f32)>,
 }
 
 impl Thinker {
@@ -93,6 +102,8 @@ impl Thinker {
             current_action: None,
             otherwise_action: None,
             scheduled_actions: VecDeque::new(),
+            current_stage: DecisionStage::Evaluation,
+            last_scores: Vec::new(),
         }
     }
     
@@ -114,6 +125,7 @@ impl Thinker {
     pub fn update(&mut self, context: &ScorerContext, action_context: &mut ActionContext) -> Behavior {
         // Continue current action if it exists
         if let Some((action, state)) = &mut self.current_action {
+            self.current_stage = DecisionStage::Execution;
             match *state {
                 ActionState::Executing | ActionState::Requested => {
                     *state = action.execute(action_context);
@@ -160,18 +172,40 @@ impl Thinker {
             return Some(action_type);
         }
         
-        // Score all choices
-        let scored_choices: Vec<_> = self.choices.iter()
-            .map(|choice| (choice, choice.scorer.score(context)))
-            .collect();
+        // Stage 1: Evaluate all choices
+        let mut stage = DecisionStage::Evaluation;
+        self.current_stage = stage;
         
-        // Use picker to select best choice
-        if let Some(choice) = self.picker.pick(&scored_choices) {
-            return Some(choice.action_type);
+        // Track scores for debugging
+        self.last_scores.clear();
+        
+        // Score all choices
+        let mut scored_choices = Vec::new();
+        for choice in &self.choices {
+            let score = choice.scorer.score(context);
+            self.last_scores.push((choice.action_type, score.value()));
+            scored_choices.push((choice, score));
         }
         
-        // Otherwise action
-        self.otherwise_action
+        // Stage 2: Select best action
+        stage = DecisionStage::Selection;
+        self.current_stage = stage;
+        
+        // Use picker to select best choice
+        let selected_action = self.picker.pick(&scored_choices)
+            .map(|choice| choice.action_type);
+        
+        // Return selected action or fallback
+        selected_action.or(self.otherwise_action)
+    }
+    
+    // Debug methods
+    pub fn get_current_stage(&self) -> DecisionStage {
+        self.current_stage
+    }
+    
+    pub fn get_last_scores(&self) -> &[(ActionType, f32)] {
+        &self.last_scores
     }
 }
 
