@@ -30,6 +30,8 @@ struct Creature {
     lifespan: f32,
     hunger: f32,
     action: CreatureAction,
+    // Added minimal concurrent action tracking
+    using_concurrent_actions: bool,
 }
 
 #[derive(Component)]
@@ -61,6 +63,8 @@ fn setup(mut commands: Commands) {
                 lifespan: 30.0,
                 hunger: 0.0,
                 action: CreatureAction::default(),
+                // Enable concurrent actions for all creatures
+                using_concurrent_actions: true,
             },
         ));
     }
@@ -150,15 +154,6 @@ fn update_creatures_and_perception(
             
             // Despawn if lifespan expires or hunger reaches maximum
             if creature.lifespan <= 0.0 || creature.hunger >= 1.0 {
-                // Action Lifecycle Hook: Log final action state
-                println!(
-                    "Creature despawning - Lifespan: {}, Hunger: {}, Action Attempts: {}, Total Food Consumed: {}, Last Action: {:?}", 
-                    creature.lifespan, 
-                    creature.hunger, 
-                    creature.action.action_attempts,
-                    creature.action.total_food_consumed,
-                    creature.action.last_action_result
-                );
                 to_despawn.push(entity);
                 continue;
             }
@@ -167,37 +162,82 @@ fn update_creatures_and_perception(
             let mut movement = Vec2::ZERO;
             
             if creature.hunger > 0.3 && !active_food.is_empty() {
-                // Find best food based on relationships
-                let food_relationships = creature.social_network.query_relationships(
-                    Some(RelationshipType::Cooperation),
-                    Some(0.5)
-                );
-                
-                let mut target_food = None;
-                let mut best_score = 0.0;
-                
-                for (food_entity, relation) in &food_relationships {
-                    if let Some((_, food_pos)) = active_food.iter().find(|(e, _)| e == food_entity) {
-                        let dist = position.distance(food_pos.truncate());
-                        let score = relation.strength.value() * (1.0 - dist / 400.0);
-                        
-                        if score > best_score {
-                            best_score = score;
-                            target_food = Some(food_pos.truncate());
+                if creature.using_concurrent_actions {
+                    // Simple demonstration of concurrent actions:
+                    // Run two food-finding strategies in parallel and use the result of the first one that succeeds
+                    
+                    // Strategy 1: Social-based approach (existing logic)
+                    let mut social_target = None;
+                    let mut social_score = 0.0;
+                    let food_relationships = creature.social_network.query_relationships(
+                        Some(RelationshipType::Cooperation),
+                        Some(0.5)
+                    );
+                    
+                    for (food_entity, relation) in &food_relationships {
+                        if let Some((_, food_pos)) = active_food.iter().find(|(e, _)| e == food_entity) {
+                            let dist = position.distance(food_pos.truncate());
+                            let score = relation.strength.value() * (1.0 - dist / 400.0);
                             
-                            // Action Lifecycle Hook: Log action initiation
-                            println!(
-                                "Creature initiating food seek - Distance: {}, Relationship Score: {}", 
-                                dist, 
-                                score
-                            );
+                            if score > social_score {
+                                social_score = score;
+                                social_target = Some(food_pos.truncate());
+                            }
                         }
                     }
-                }
-                
-                if let Some(food_pos) = target_food {
-                    let direction = (food_pos - position).normalize_or_zero();
-                    movement = direction * (40.0 + 30.0 * creature.hunger);
+                    
+                    // Strategy 2: Direct distance-based approach
+                    let mut direct_target = None;
+                    let mut closest_dist = f32::MAX;
+                    
+                    for (_, food_pos) in &active_food {
+                        let dist = position.distance(food_pos.truncate());
+                        if dist < closest_dist {
+                            closest_dist = dist;
+                            direct_target = Some(food_pos.truncate());
+                        }
+                    }
+                    
+                    // Race mode: Use the strategy with higher score
+                    // This simulates a "Race" concurrent action where the first to succeed wins
+                    let social_value = social_score;
+                    let direct_value = if closest_dist < f32::MAX { 1.0 - (closest_dist / 500.0) } else { 0.0 };
+                    
+                    if social_value > direct_value && social_target.is_some() {
+                        let food_pos = social_target.unwrap();
+                        let direction = (food_pos - position).normalize_or_zero();
+                        movement = direction * (40.0 + 30.0 * creature.hunger);
+                    } else if direct_target.is_some() {
+                        let food_pos = direct_target.unwrap();
+                        let direction = (food_pos - position).normalize_or_zero();
+                        movement = direction * (40.0 + 30.0 * creature.hunger);
+                    }
+                } else {
+                    // Original single-strategy logic
+                    let food_relationships = creature.social_network.query_relationships(
+                        Some(RelationshipType::Cooperation),
+                        Some(0.5)
+                    );
+                    
+                    let mut target_food = None;
+                    let mut best_score = 0.0;
+                    
+                    for (food_entity, relation) in &food_relationships {
+                        if let Some((_, food_pos)) = active_food.iter().find(|(e, _)| e == food_entity) {
+                            let dist = position.distance(food_pos.truncate());
+                            let score = relation.strength.value() * (1.0 - dist / 400.0);
+                            
+                            if score > best_score {
+                                best_score = score;
+                                target_food = Some(food_pos.truncate());
+                            }
+                        }
+                    }
+                    
+                    if let Some(food_pos) = target_food {
+                        let direction = (food_pos - position).normalize_or_zero();
+                        movement = direction * (40.0 + 30.0 * creature.hunger);
+                    }
                 }
             }
             
@@ -258,12 +298,6 @@ fn handle_food_consumption(
             
             if distance < 25.0 {
                 // Action Lifecycle Hook: Food Consumption
-                println!(
-                    "Food consumed - Distance: {}, Hunger before: {}, Lifespan gain: 15.0", 
-                    distance, 
-                    creature.hunger
-                );
-                
                 creature.lifespan = (creature.lifespan + 15.0).min(30.0);
                 creature.hunger = 0.0;
                 creature.action.total_food_consumed += 1;
@@ -287,9 +321,6 @@ fn respawn_food(
             food.respawn_timer.tick(time.delta());
             
             if food.respawn_timer.finished() {
-                // Action Lifecycle Hook: Food Respawn
-                println!("Food respawned");
-                
                 food.active = true;
                 *visibility = Visibility::Inherited;
             }
@@ -301,10 +332,11 @@ fn update_visuals(
     mut query: Query<(&Creature, &mut Sprite)>,
 ) {
     for (creature, mut sprite) in &mut query {
-        sprite.color = Color::srgb(
-            0.2 + creature.hunger * 0.6, 
-            0.9 - creature.hunger * 0.3, 
-            0.2
-        );
+        // Base color based on hunger
+        let red = 0.2 + creature.hunger * 0.6;
+        let green = 0.9 - creature.hunger * 0.3;
+        let blue = if creature.using_concurrent_actions { 0.5 } else { 0.2 };
+        
+        sprite.color = Color::srgb(red, green, blue);
     }
 }
