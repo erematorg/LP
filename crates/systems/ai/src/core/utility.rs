@@ -1,5 +1,5 @@
 //use bevy::prelude::*; Might be needed later
-use rand::prelude::*; //Gotta use Bevy_Rand as well later
+use rand::prelude::*; //Gotta use Bevy_Rand as well later I swear I will 
 use crate::prelude::*;
 /// Represents a utility score for decision-making
 /// Normalized between 0.0 and 1.0
@@ -101,12 +101,23 @@ pub fn determine_behavior<'a>(
         return (Behavior::Idle, UtilityScore::new(0.0));
     }
     
-    // Find highest utility module
-    let (_, highest_score, best_behavior) = modules
-        .iter()
-        .max_by(|(_, score_a, _), (_, score_b, _)| 
-            score_a.partial_cmp(score_b).unwrap_or(std::cmp::Ordering::Equal))
-        .unwrap();
+    // Create normalized version of the scores for better decision making
+    let mut normalized_scores: Vec<UtilityScore> = modules.iter().map(|(_, score, _)| *score).collect();
+    UtilityScore::normalize_scores(&mut normalized_scores);
     
-    (*best_behavior, *highest_score)
+    // Find behavior with highest normalized score
+    let mut best_index = 0;
+    let mut best_score = normalized_scores[0];
+    
+    for (i, score) in normalized_scores.iter().enumerate().skip(1) {
+        if score > &best_score {
+            best_score = *score;
+            best_index = i;
+        }
+    }
+    
+    // Return the original behavior and original score (not normalized)
+    // This preserves the absolute utility value while making selection based on normalized scores
+    let (_, original_score, behavior) = modules[best_index];
+    (behavior, original_score)
 }
