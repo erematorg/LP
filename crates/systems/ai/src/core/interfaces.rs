@@ -17,9 +17,11 @@ pub trait ActionExecutor {
     /// Perform an attack action
     fn attack(&mut self, target: Option<Entity>) -> bool;
     
-    /// Move away from a threat
+    /// Move away from a threat  
     fn flee_from(&mut self, threat: Vec2) -> bool;
     
     /// Idle/rest at current position
     fn idle(&mut self, duration: f32) -> bool;
+    
+    fn cleanup(&mut self);
 }

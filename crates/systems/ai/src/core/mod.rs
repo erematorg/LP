@@ -1,3 +1,5 @@
 pub mod interfaces;
 pub mod utility;
-pub mod controller;
+pub mod actions;
+pub mod scorers;
+pub mod thinkers;
