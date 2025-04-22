@@ -1,19 +1,4 @@
-/// Core wave equation modeling for all wave types
-/// 
-/// This module implements the mathematical foundation for wave phenomena,
-/// providing a dimension-agnostic approach to wave calculations.
-
 use bevy::prelude::*;
-
-/// The general form of the wave equation is:
-/// 
-/// ∂²u/∂t² = c² * ∇²u
-/// 
-/// Where:
-/// - u is the wave amplitude as a function of position and time
-/// - t is time
-/// - ∇² is the Laplacian operator
-/// - c is the wave propagation speed
 
 /// Wave parameters for configuring wave behavior
 #[derive(Component, Debug, Clone)]
@@ -30,6 +15,8 @@ pub struct WaveParameters {
     pub direction: Vec3,
     /// What axis to displace along (normal to the wave plane)
     pub displacement_axis: Vec3,
+    /// Damping coefficient (energy loss over time)
+    pub damping: f32,
 }
 
 impl Default for WaveParameters {
@@ -39,13 +26,14 @@ impl Default for WaveParameters {
             amplitude: 1.0,
             wavelength: 1.0,
             phase: 0.0,
-            direction: Vec3::X, // Default propagation along x-axis
-            displacement_axis: Vec3::Y, // Default displacement along y-axis
+            direction: Vec3::X,
+            displacement_axis: Vec3::Y,
+            damping: 0.0,
         }
     }
 }
 
-/// Component to store the position for wave calculations
+/// Component to store position for wave calculations
 #[derive(Component, Debug, Clone)]
 pub struct WavePosition(pub Vec3);
 
@@ -63,63 +51,114 @@ impl WavePosition {
     }
 }
 
-/// Calculate wave number (k) from wavelength
+/// Wave type marker component
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WaveType {
+    Traveling,
+    Radial,
+    Standing,
+}
+
 #[inline]
 pub fn wave_number(wavelength: f32) -> f32 {
     2.0 * std::f32::consts::PI / wavelength
 }
 
-/// Calculate angular frequency (ω) from wave speed and wave number
 #[inline]
 pub fn angular_frequency(speed: f32, wave_number: f32) -> f32 {
     speed * wave_number
 }
 
-/// Solve the wave equation for a position at time t
-/// 
-/// This implements a generalized traveling wave solution:
-/// u(r,t) = A * sin(k⋅r - ωt + φ)
-/// Where r is the position vector and k is the wave vector
 #[inline]
 pub fn solve_wave(params: &WaveParameters, position: Vec3, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
-    // Calculate the dot product of wave vector and position
     let k_vec = params.direction.normalize() * k;
     let dot_product = k_vec.dot(position);
     
-    params.amplitude * (dot_product - omega * time + params.phase).sin()
+    let damping_factor = (-params.damping * time).exp();
+    
+    params.amplitude * damping_factor * (dot_product - omega * time + params.phase).sin()
 }
 
-/// System that updates entities with wave displacements
+#[inline]
+pub fn solve_radial_wave(params: &WaveParameters, center: Vec3, position: Vec3, time: f32) -> f32 {
+    let k = wave_number(params.wavelength);
+    let omega = angular_frequency(params.speed, k);
+    
+    let distance = position.distance(center);
+    
+    let spatial_falloff = if distance > 0.001 {
+        1.0 / distance.sqrt()
+    } else {
+        1.0
+    };
+    
+    let damping_factor = (-params.damping * time).exp();
+    
+    params.amplitude * spatial_falloff * damping_factor * 
+        (k * distance - omega * time + params.phase).sin()
+}
+
+#[inline]
+pub fn solve_standing_wave(params: &WaveParameters, position: Vec3, time: f32) -> f32 {
+    let k = wave_number(params.wavelength);
+    let omega = angular_frequency(params.speed, k);
+    
+    let direction = params.direction.normalize();
+    let spatial_term = (k * direction.dot(position) + params.phase).sin();
+    let temporal_term = (omega * time).cos();
+    
+    let damping_factor = (-params.damping * time).exp();
+    
+    params.amplitude * damping_factor * spatial_term * temporal_term
+}
+
 pub fn update_wave_displacements(
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &WaveParameters, &WavePosition)>,
+    mut query: Query<(&mut Transform, &WaveParameters, &WavePosition, Option<&WaveType>)>,
+    wave_centers: Query<(&Transform, &WaveCenterMarker)>,
 ) {
     let t = time.elapsed_secs();
     
-    for (mut transform, params, position) in query.iter_mut() {
-        let displacement = solve_wave(params, position.0, t);
+    for (mut transform, params, position, wave_type) in query.iter_mut() {
+        let displacement = match wave_type {
+            Some(WaveType::Radial) => {
+                // Find the nearest wave center
+                let center = wave_centers.iter()
+                    .map(|(t, _)| t.translation)
+                    .min_by(|a, b| {
+                        let dist_a = a.distance(position.0);
+                        let dist_b = b.distance(position.0);
+                        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .unwrap_or(Vec3::ZERO);
+                    
+                solve_radial_wave(params, center, position.0, t)
+            },
+            Some(WaveType::Standing) => solve_standing_wave(params, position.0, t),
+            _ => solve_wave(params, position.0, t),
+        };
         
-        // Calculate displacement vector along the specified axis
         let displacement_vec = params.displacement_axis.normalize() * displacement;
-        
-        // Apply displacement to the transform
         transform.translation += displacement_vec;
     }
 }
 
-// Helper functions for common wave patterns
+// Marker component for wave centers (for radial waves)
+#[derive(Component)]
+pub struct WaveCenterMarker;
 
-/// Create parameters for a linear wave propagating along a direction
+// Helper functions for common wave patterns
 pub fn create_linear_wave(
     amplitude: f32, 
     wavelength: f32, 
     speed: f32,
     phase: f32, 
     direction: Vec3, 
-    displacement_axis: Vec3
+    displacement_axis: Vec3,
+    damping: f32
 ) -> WaveParameters {
     WaveParameters {
         amplitude,
@@ -128,68 +167,35 @@ pub fn create_linear_wave(
         phase,
         direction: direction.normalize(),
         displacement_axis: displacement_axis.normalize(),
+        damping,
     }
 }
 
-/// Solve for a radial/circular wave emanating from a center point
-#[inline]
-pub fn solve_radial_wave(
-    params: &WaveParameters, 
-    center: Vec3, 
-    position: Vec3, 
-    time: f32
-) -> f32 {
-    let k = wave_number(params.wavelength);
-    let omega = angular_frequency(params.speed, k);
-    
-    // Calculate distance from center (radial component)
-    let distance = position.distance(center);
-    
-    // Amplitude decreases with distance for a radial wave (1/r falloff)
-    let amplitude_factor = if distance > 0.001 {
-        params.amplitude / distance.sqrt()
-    } else {
-        params.amplitude
-    };
-    
-    amplitude_factor * (k * distance - omega * time + params.phase).sin()
-}
-
-/// Create parameters for a standing wave pattern
 pub fn create_standing_wave(
     amplitude: f32,
     wavelength: f32,
     frequency: f32,
     phase: f32,
     direction: Vec3,
-    displacement_axis: Vec3
+    displacement_axis: Vec3,
+    damping: f32
 ) -> WaveParameters {
-    // Standing waves don't propagate but oscillate in place
-    // We'll handle the standing wave pattern in a separate solver
     WaveParameters {
         amplitude,
         wavelength,
-        speed: frequency * wavelength, // For consistency, though unused directly
+        speed: frequency * wavelength,
         phase,
         direction: direction.normalize(),
         displacement_axis: displacement_axis.normalize(),
+        damping,
     }
 }
 
-/// Solve for a standing wave pattern
+/// Calculate damping coefficient from half-life
 #[inline]
-pub fn solve_standing_wave(
-    params: &WaveParameters,
-    position: Vec3,
-    time: f32
-) -> f32 {
-    let k = wave_number(params.wavelength);
-    let omega = angular_frequency(params.speed, k);
-    
-    // Standing wave is a product of spatial and temporal components
-    let direction = params.direction.normalize();
-    let spatial_term = (k * direction.dot(position) + params.phase).sin();
-    let temporal_term = (omega * time).cos();
-    
-    params.amplitude * spatial_term * temporal_term
+pub fn damping_from_half_life(half_life: f32) -> f32 {
+    if half_life <= 0.0 {
+        return 0.0;
+    }
+    (2.0_f32.ln()) / half_life
 }
