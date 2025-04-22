@@ -77,9 +77,16 @@ pub fn solve_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
     let k_vec = params.direction.normalize() * k;
     let dot_product = k_vec.dot(position);
     
+    // Calculate the phase argument for the wave function
+    let phase = dot_product - omega * time + params.phase;
+    
+    // Apply damping over time
     let damping_factor = (-params.damping * time).exp();
     
-    params.amplitude * damping_factor * (dot_product - omega * time + params.phase).sin()
+    // Use sine as the wave function (can be generalized later)
+    let wave_function = phase.sin();
+    
+    params.amplitude * damping_factor * wave_function
 }
 
 #[inline]
@@ -87,18 +94,25 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, 
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
-    let distance = position.distance(center);
+    // Calculate vector from center to position
+    let displacement = position - center;
+    let distance = displacement.length();
     
+    // Calculate spatial decay (amplitude decreases with distance)
     let spatial_falloff = if distance > 0.001 {
         1.0 / distance.sqrt()
     } else {
         1.0
     };
     
+    // Calculate the phase argument, potentially allowing for direction-dependent effects
+    let phase = k * distance - omega * time + params.phase;
+    
+    // Apply damping over time
     let damping_factor = (-params.damping * time).exp();
     
-    params.amplitude * spatial_falloff * damping_factor * 
-        (k * distance - omega * time + params.phase).sin()
+    // Calculate the final wave displacement
+    params.amplitude * spatial_falloff * damping_factor * phase.sin()
 }
 
 #[inline]
