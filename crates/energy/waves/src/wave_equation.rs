@@ -12,9 +12,9 @@ pub struct WaveParameters {
     /// Initial phase offset (radians)
     pub phase: f32,
     /// Direction of wave propagation (normalized)
-    pub direction: Vec3,
+    pub direction: Vec2,
     /// What axis to displace along (normal to the wave plane)
-    pub displacement_axis: Vec3,
+    pub displacement_axis: Vec2,
     /// Damping coefficient (energy loss over time)
     pub damping: f32,
 }
@@ -26,8 +26,8 @@ impl Default for WaveParameters {
             amplitude: 1.0,
             wavelength: 1.0,
             phase: 0.0,
-            direction: Vec3::X,
-            displacement_axis: Vec3::Y,
+            direction: Vec2::X,
+            displacement_axis: Vec2::Y,
             damping: 0.0,
         }
     }
@@ -35,19 +35,19 @@ impl Default for WaveParameters {
 
 /// Component to store position for wave calculations
 #[derive(Component, Debug, Clone)]
-pub struct WavePosition(pub Vec3);
+pub struct WavePosition(pub Vec2);
 
 impl WavePosition {
-    pub fn new(position: Vec3) -> Self {
+    pub fn new(position: Vec2) -> Self {
         Self(position)
     }
     
     pub fn from_xy(x: f32, y: f32) -> Self {
-        Self(Vec3::new(x, y, 0.0))
+        Self(Vec2::new(x, y))
     }
     
     pub fn from_x(x: f32) -> Self {
-        Self(Vec3::new(x, 0.0, 0.0))
+        Self(Vec2::new(x, 0.0))
     }
 }
 
@@ -70,7 +70,7 @@ pub fn angular_frequency(speed: f32, wave_number: f32) -> f32 {
 }
 
 #[inline]
-pub fn solve_wave(params: &WaveParameters, position: Vec3, time: f32) -> f32 {
+pub fn solve_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
@@ -83,7 +83,7 @@ pub fn solve_wave(params: &WaveParameters, position: Vec3, time: f32) -> f32 {
 }
 
 #[inline]
-pub fn solve_radial_wave(params: &WaveParameters, center: Vec3, position: Vec3, time: f32) -> f32 {
+pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
@@ -102,7 +102,7 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec3, position: Vec3, 
 }
 
 #[inline]
-pub fn solve_standing_wave(params: &WaveParameters, position: Vec3, time: f32) -> f32 {
+pub fn solve_standing_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
@@ -127,13 +127,13 @@ pub fn update_wave_displacements(
             Some(WaveType::Radial) => {
                 // Find the nearest wave center
                 let center = wave_centers.iter()
-                    .map(|(t, _)| t.translation)
+                    .map(|(t, _)| t.translation.truncate())
                     .min_by(|a, b| {
                         let dist_a = a.distance(position.0);
                         let dist_b = b.distance(position.0);
                         dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .unwrap_or(Vec3::ZERO);
+                    .unwrap_or(Vec2::ZERO);
                     
                 solve_radial_wave(params, center, position.0, t)
             },
@@ -142,7 +142,8 @@ pub fn update_wave_displacements(
         };
         
         let displacement_vec = params.displacement_axis.normalize() * displacement;
-        transform.translation += displacement_vec;
+        transform.translation.x += displacement_vec.x;
+        transform.translation.y += displacement_vec.y;
     }
 }
 
@@ -156,8 +157,8 @@ pub fn create_linear_wave(
     wavelength: f32, 
     speed: f32,
     phase: f32, 
-    direction: Vec3, 
-    displacement_axis: Vec3,
+    direction: Vec2, 
+    displacement_axis: Vec2,
     damping: f32
 ) -> WaveParameters {
     WaveParameters {
@@ -176,8 +177,8 @@ pub fn create_standing_wave(
     wavelength: f32,
     frequency: f32,
     phase: f32,
-    direction: Vec3,
-    displacement_axis: Vec3,
+    direction: Vec2,
+    displacement_axis: Vec2,
     damping: f32
 ) -> WaveParameters {
     WaveParameters {
