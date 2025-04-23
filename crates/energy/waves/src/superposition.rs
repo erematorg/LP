@@ -3,7 +3,12 @@ use crate::oscillation::{WaveParameters, wave_number, angular_frequency};
 use crate::propagation::WavePosition;
 
 #[inline]
-pub fn solve_standing_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
+pub fn solve_standing_wave(
+    params: &WaveParameters, 
+    position: Vec2, 
+    time: f32,
+    interference_fn: Option<impl Fn(f32) -> f32>
+) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
     
@@ -13,7 +18,11 @@ pub fn solve_standing_wave(params: &WaveParameters, position: Vec2, time: f32) -
     
     let damping_factor = (-params.damping * time).exp();
     
-    params.amplitude * damping_factor * spatial_term * temporal_term
+    let base_wave = params.amplitude * damping_factor * spatial_term * temporal_term;
+    
+    interference_fn
+        .map(|f| base_wave * f(time))
+        .unwrap_or(base_wave)
 }
 
 /// System for updating standing waves specifically
@@ -24,7 +33,7 @@ pub fn update_standing_waves(
     let t = time.elapsed_secs();
     
     for (mut transform, params, position) in query.iter_mut() {
-        let displacement = solve_standing_wave(params, position.0, t);
+        let displacement = solve_standing_wave(params, position.0, t, None::<fn(f32) -> f32>);
         let displacement_vec = params.displacement_axis.normalize() * displacement;
         transform.translation.x += displacement_vec.x;
         transform.translation.y += displacement_vec.y;
