@@ -34,6 +34,7 @@ fn main() {
 
 // Components for visualization
 #[derive(Component)]
+#[allow(dead_code)]
 struct CelestialBody {
     radius: f32,
     color: Color,
