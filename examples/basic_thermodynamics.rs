@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use energy::thermodynamics::thermal::{heat_conduction, Temperature, ThermalConductivity};
+use energy::thermodynamics::prelude::*;
 
 //TODO: VERY BASIC, only thermal for now.
 //Quite poor compared to our old godot thermodynamics demo I'd say around 75% less polished yet clear separation of cocnerns and good scalability for later.
