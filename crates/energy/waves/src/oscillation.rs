@@ -17,6 +17,8 @@ pub struct WaveParameters {
     pub displacement_axis: Vec2,
     /// Damping coefficient (energy loss over time)
     pub damping: f32,
+    /// Dispersion factor controlling wave frequency behavior
+    pub dispersion_factor: f32,
 }
 
 impl Default for WaveParameters {
@@ -29,6 +31,7 @@ impl Default for WaveParameters {
             direction: Vec2::X,
             displacement_axis: Vec2::Y,
             damping: 0.0,
+            dispersion_factor: 0.0, // Default: no dispersion
         }
     }
 }

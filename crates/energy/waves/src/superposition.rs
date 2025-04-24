@@ -51,7 +51,8 @@ pub fn create_standing_wave(
     phase: f32,
     direction: Vec2,
     displacement_axis: Vec2,
-    damping: f32
+    damping: f32,
+    dispersion_factor: f32 // New parameter
 ) -> WaveParameters {
     WaveParameters {
         amplitude,
@@ -61,5 +62,6 @@ pub fn create_standing_wave(
         direction: direction.normalize(),
         displacement_axis: displacement_axis.normalize(),
         damping,
+        dispersion_factor, // Add the new field
     }
 }

@@ -1,6 +1,22 @@
 use bevy::prelude::*;
 use crate::oscillation::{WaveParameters, wave_number, angular_frequency};
 
+// Calculate modified angular frequency with dispersion
+#[inline]
+pub fn dispersive_angular_frequency(params: &WaveParameters, k: f32) -> f32 {
+    if params.dispersion_factor == 0.0 {
+        // No dispersion case - standard linear relationship
+        angular_frequency(params.speed, k)
+    } else {
+        // Simple power law dispersion model: ω = ck^n where n = 1 + dispersion_factor
+        // When dispersion_factor = 0, n = 1 (linear, no dispersion)
+        // When dispersion_factor > 0, higher frequencies travel faster
+        // When dispersion_factor < 0, higher frequencies travel slower
+        let n = 1.0 + params.dispersion_factor;
+        params.speed * k.powf(n)
+    }
+}
+
 /// Component to store position for wave calculations
 #[derive(Component, Debug, Clone)]
 pub struct WavePosition(pub Vec2);
@@ -34,7 +50,7 @@ pub struct WaveCenterMarker;
 #[inline]
 pub fn solve_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
-    let omega = angular_frequency(params.speed, k);
+    let omega = dispersive_angular_frequency(params, k);
     
     let k_vec = params.direction.normalize() * k;
     let dot_product = k_vec.dot(position);
@@ -54,7 +70,7 @@ pub fn solve_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
 #[inline]
 pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
-    let omega = angular_frequency(params.speed, k);
+    let omega = dispersive_angular_frequency(params, k);
     
     // Calculate vector from center to position
     let displacement = position - center;
@@ -118,7 +134,8 @@ pub fn create_linear_wave(
     phase: f32, 
     direction: Vec2, 
     displacement_axis: Vec2,
-    damping: f32
+    damping: f32,
+    dispersion_factor: f32
 ) -> WaveParameters {
     WaveParameters {
         amplitude,
@@ -128,5 +145,6 @@ pub fn create_linear_wave(
         direction: direction.normalize(),
         displacement_axis: displacement_axis.normalize(),
         damping,
+        dispersion_factor,
     }
 }
