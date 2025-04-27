@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use rand::prelude::*; 
+use rand::prelude::*; //still plan to use bevy_rand instead
 use crate::prelude::*;
 use std::collections::HashMap;
 
@@ -131,8 +131,7 @@ struct CachedValue {
     timestamp: f32,
 }
 
-/// Resource for utility score caching, inspired by big-brain
-/// This is a Bevy Resource that can be accessed in systems
+/// Global utility cache resource
 #[derive(Resource)]
 pub struct UtilityCache {
     cache: HashMap<String, CachedValue>,
@@ -194,8 +193,38 @@ impl UtilityCache {
     }
 }
 
+/// Entity-specific cache component for better scaling
+#[derive(Component, Default)]
+pub struct EntityUtilityCache {
+    cache: HashMap<String, CachedValue>,
+}
+
+impl EntityUtilityCache {
+    /// Get cached value if not expired
+    pub fn get(&self, key: &str, current_time: f32, ttl: f32) -> Option<UtilityScore> {
+        self.cache.get(key).and_then(|cached| {
+            if current_time - cached.timestamp < ttl {
+                Some(cached.value)
+            } else {
+                None
+            }
+        })
+    }
+    
+    /// Store value with timestamp
+    pub fn insert(&mut self, key: String, value: UtilityScore, current_time: f32) {
+        self.cache.insert(key, CachedValue { value, timestamp: current_time });
+    }
+    
+    /// Clean up expired entries
+    pub fn cleanup(&mut self, current_time: f32, ttl: f32) {
+        self.cache.retain(|_, cached| {
+            current_time - cached.timestamp < ttl
+        });
+    }
+}
+
 /// Trait for AIModules that support caching
-/// Similar to big-brain's trait-based approach to component behaviors
 pub trait CacheableModule: AIModule {
     /// Generate a cache key for this module
     fn cache_key(&self) -> Option<String> {
@@ -203,33 +232,71 @@ pub trait CacheableModule: AIModule {
     }
     
     /// Get utility with caching if available
-    fn cached_utility(&self, cache: &mut Option<&mut UtilityCache>, current_time: f32) -> UtilityScore {
+    fn cached_utility(
+        &self, 
+        entity_cache: Option<&mut EntityUtilityCache>,
+        global_cache: Option<&mut UtilityCache>, 
+        current_time: f32
+    ) -> UtilityScore {
         // Try to get a cache key
         let Some(key) = self.cache_key() else { 
             return self.utility(); // No key means no caching
         };
         
-        // Try to use cache if available
-        if let Some(cache) = cache {
-            return cache.get_or_insert_with(key, || self.utility(), current_time);
+        // Try entity cache first (better locality and parallelism)
+        if let Some(entity_cache) = entity_cache {
+            let ttl = global_cache.as_ref().map(|c| c.ttl).unwrap_or(0.5);
+            
+            if let Some(value) = entity_cache.get(&key, current_time, ttl) {
+                return value;
+            }
+            
+            // Not in entity cache, calculate and store
+            let value = self.utility();
+            entity_cache.insert(key.clone(), value, current_time);
+            
+            // Also update global cache if available
+            if let Some(global_cache) = global_cache {
+                global_cache.insert(key, value, current_time);
+            }
+            
+            return value;
         }
         
-        // No cache available, calculate directly
+        // No entity cache, try global cache
+        if let Some(global_cache) = global_cache {
+            return global_cache.get_or_insert_with(key, || self.utility(), current_time);
+        }
+        
+        // No caching available, calculate directly
         self.utility()
     }
 }
 
 /// System that periodically cleans up the utility cache
-/// This is inspired by big-brain's approach to maintenance systems
 pub fn cleanup_utility_cache_system(
     time: Res<Time>,
-    mut cache: ResMut<UtilityCache>,
+    mut global_cache: ResMut<UtilityCache>,
+    mut entity_caches: Query<&mut EntityUtilityCache>,
 ) {
     let current_time = time.elapsed_secs_f64() as f32;
-    cache.cleanup(current_time);
+    
+    // Clean up global cache
+    global_cache.cleanup(current_time);
+    
+    // Clean up entity caches
+    for mut entity_cache in &mut entity_caches {
+        entity_cache.cleanup(current_time, global_cache.ttl);
+    }
 }
 
 /// Helper function to get current time as f32
 pub fn get_current_time(time: &Time) -> f32 {
     time.elapsed_secs_f64() as f32
+}
+
+/// Simple function to initialize the caching system
+pub fn setup_utility_caching(app: &mut App, ttl: f32) {
+    app.insert_resource(UtilityCache::new(ttl))
+       .add_systems(Last, cleanup_utility_cache_system);
 }
