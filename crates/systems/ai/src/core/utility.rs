@@ -1,6 +1,8 @@
-//use bevy::prelude::*; Might be needed later
-use rand::prelude::*; //Gotta use Bevy_Rand as well later I swear I will 
+use bevy::prelude::*;
+use rand::prelude::*; 
 use crate::prelude::*;
+use std::collections::HashMap;
+
 /// Represents a utility score for decision-making
 /// Normalized between 0.0 and 1.0
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -120,4 +122,114 @@ pub fn determine_behavior<'a>(
     // This preserves the absolute utility value while making selection based on normalized scores
     let (_, original_score, behavior) = modules[best_index];
     (behavior, original_score)
+}
+
+/// A cached result with timestamp for expiration
+#[derive(Clone, Debug)]
+struct CachedValue {
+    value: UtilityScore,
+    timestamp: f32,
+}
+
+/// Resource for utility score caching, inspired by big-brain
+/// This is a Bevy Resource that can be accessed in systems
+#[derive(Resource)]
+pub struct UtilityCache {
+    cache: HashMap<String, CachedValue>,
+    ttl: f32,
+}
+
+impl Default for UtilityCache {
+    fn default() -> Self {
+        Self {
+            cache: HashMap::new(),
+            ttl: 0.5, // Default 0.5 seconds TTL
+        }
+    }
+}
+
+impl UtilityCache {
+    pub fn new(ttl: f32) -> Self {
+        Self {
+            cache: HashMap::new(),
+            ttl,
+        }
+    }
+    
+    /// Get cached value if not expired
+    pub fn get(&self, key: &str, current_time: f32) -> Option<UtilityScore> {
+        self.cache.get(key).and_then(|cached| {
+            if current_time - cached.timestamp < self.ttl {
+                Some(cached.value)
+            } else {
+                None
+            }
+        })
+    }
+    
+    /// Store value with timestamp
+    pub fn insert(&mut self, key: String, value: UtilityScore, current_time: f32) {
+        self.cache.insert(key, CachedValue { value, timestamp: current_time });
+    }
+    
+    /// Get value if cached, otherwise calculate and store
+    pub fn get_or_insert_with<F>(&mut self, key: String, calculator: F, current_time: f32) -> UtilityScore 
+    where
+        F: FnOnce() -> UtilityScore,
+    {
+        if let Some(value) = self.get(&key, current_time) {
+            return value;
+        }
+        
+        let value = calculator();
+        self.insert(key, value, current_time);
+        value
+    }
+    
+    /// Clean up expired entries
+    pub fn cleanup(&mut self, current_time: f32) {
+        self.cache.retain(|_, cached| {
+            current_time - cached.timestamp < self.ttl
+        });
+    }
+}
+
+/// Trait for AIModules that support caching
+/// Similar to big-brain's trait-based approach to component behaviors
+pub trait CacheableModule: AIModule {
+    /// Generate a cache key for this module
+    fn cache_key(&self) -> Option<String> {
+        None // Default implementation returns None (no caching)
+    }
+    
+    /// Get utility with caching if available
+    fn cached_utility(&self, cache: &mut Option<&mut UtilityCache>, current_time: f32) -> UtilityScore {
+        // Try to get a cache key
+        let Some(key) = self.cache_key() else { 
+            return self.utility(); // No key means no caching
+        };
+        
+        // Try to use cache if available
+        if let Some(cache) = cache {
+            return cache.get_or_insert_with(key, || self.utility(), current_time);
+        }
+        
+        // No cache available, calculate directly
+        self.utility()
+    }
+}
+
+/// System that periodically cleans up the utility cache
+/// This is inspired by big-brain's approach to maintenance systems
+pub fn cleanup_utility_cache_system(
+    time: Res<Time>,
+    mut cache: ResMut<UtilityCache>,
+) {
+    let current_time = time.elapsed_secs_f64() as f32;
+    cache.cleanup(current_time);
+}
+
+/// Helper function to get current time as f32
+pub fn get_current_time(time: &Time) -> f32 {
+    time.elapsed_secs_f64() as f32
 }
