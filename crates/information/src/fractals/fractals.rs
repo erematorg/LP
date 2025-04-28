@@ -1,4 +1,4 @@
-use crate::generator;
+use super::generator;
 use std::collections::HashMap;
 
 /// Handles rule management for L-Systems.
