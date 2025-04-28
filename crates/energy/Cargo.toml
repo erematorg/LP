@@ -6,7 +6,3 @@ description = "Core systems governing how energy manifests, transforms and flows
 
 [dependencies]
 bevy = "0.15"
-
-waves = { path = "./waves" }
-electromagnetism = { path = "./electromagnetism" }
-thermodynamics = { path = "./thermodynamics" }

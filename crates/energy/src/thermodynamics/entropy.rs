@@ -1,4 +1,3 @@
-//use crate::thermal::Temperature;
 use bevy::prelude::*;
 
 /// Entropy component for thermodynamic systems

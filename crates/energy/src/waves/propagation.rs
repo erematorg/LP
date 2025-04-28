@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::oscillation::{WaveParameters, wave_number, angular_frequency};
+use super::oscillation::{WaveParameters, wave_number, angular_frequency};
 
 // Calculate modified angular frequency with dispersion
 #[inline]

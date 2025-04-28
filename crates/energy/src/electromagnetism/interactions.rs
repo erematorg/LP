@@ -1,4 +1,4 @@
-use crate::fields::{ElectricField, MagneticField};
+use super::fields::{ElectricField, MagneticField};
 use bevy::prelude::*;
 
 // Speed of light (in m/s) constant physical value
