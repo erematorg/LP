@@ -1,9 +1,0 @@
-[package]
-name = "solids"
-version = "0.1.0"
-edition = "2021"
-description = "Modeling of rigid and crystalline substances with defined shape and volume properties."
-
-[dependencies]
-
-#bevy = "0.15"
