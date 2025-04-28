@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use crate::oscillation::{WaveParameters, wave_number, angular_frequency};
-use crate::propagation::WavePosition;
+use super::oscillation::{WaveParameters, wave_number, angular_frequency};
+use super::propagation::WavePosition;
 
 #[inline]
 pub fn solve_standing_wave(

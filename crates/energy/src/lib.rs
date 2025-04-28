@@ -1,8 +1,7 @@
-pub use electromagnetism;
-pub use thermodynamics;
-pub use waves;
-
 pub mod conservation;
+pub mod thermodynamics;
+pub mod electromagnetism;
+pub mod waves;
 
 /// Root energy prelude that re-exports all important items
 pub mod prelude {
@@ -12,7 +11,7 @@ pub mod prelude {
                             TransactionType, SystemConservationTracker,
                             verify_conservation, conversion_efficiency};
     
-    // Re-export from subcrates
+    // Re-export from submodules
     pub use crate::thermodynamics::prelude::*;
     pub use crate::waves::prelude::*;
     pub use crate::electromagnetism::prelude::*;
