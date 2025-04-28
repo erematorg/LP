@@ -1,8 +1,0 @@
-[package]
-name = "gases"
-version = "0.1.0"
-edition = "2021"
-description = "Modeling of compressible substances with no defined shape or volume, exhibiting rapid molecular movement."
-
-[dependencies]
-#bevy = "0.15"
