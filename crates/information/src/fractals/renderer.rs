@@ -1,4 +1,4 @@
-use crate::interpreter::SymbolType;
+use super::interpreter::SymbolType;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
@@ -74,7 +74,7 @@ fn draw_lsystem(
     };
 
     // Interpret the L-System
-    let interpreter_output = crate::interpreter::interpret(
+    let interpreter_output = super::interpreter::interpret(
         &symbols.0,
         params.angle,
         line_length,

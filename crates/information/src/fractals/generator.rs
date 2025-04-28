@@ -1,4 +1,4 @@
-use crate::grammar;
+use super::grammar;
 use std::collections::HashMap;
 
 pub fn generate(axiom: &str, rules: &HashMap<char, &str>, iterations: usize) -> String {
