@@ -1,10 +1,5 @@
 use bevy::prelude::*;
-use forces::core::gravity::{
-    calculate_gravitational_attraction, calculate_orbital_velocity, GravityAffected, GravityParams,
-    GravitySource,
-};
-use forces::core::newton_laws::{apply_forces, integrate_positions, AppliedForce, Mass, Velocity};
-
+use forces::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {

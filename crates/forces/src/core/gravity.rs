@@ -1,4 +1,4 @@
-use crate::newton_laws::{AppliedForce, Mass};
+use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
 /// A trait for computing the squared norm of a vector efficiently
