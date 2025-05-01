@@ -1,3 +1,6 @@
+//IMPORTANT DISCLAIMER: The fractals appraoch along JSON based and current predetermined/hardcoded appraoch will get override by PBMPM principles.
+// This is a temporary solution until we have a more dynamic and flexible system in place.
+
 pub mod data_loader;
 pub mod fractals;
 pub mod generator;
