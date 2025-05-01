@@ -1,6 +1,6 @@
 # ![Life's Progress Logo](/logo.png)
 
-[![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/u2J25aGy8c)
+[![Discord](https://img.shields.io/discord/1177787606432489564?label=Discord&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/u2J25aGy8c)
 [![CI](https://github.com/bevyengine/bevy/workflows/CI/badge.svg)](https://github.com/erematorg/LP/actions)
 
 A systemic 2D platformer where life emerges from fundamental physics within a dynamic ecosystem.
