@@ -5,4 +5,15 @@ edition = "2021"
 description = "Systems handling pattern emergence, complexity formation, and the organization principles that enable order from chaos."
 
 [dependencies]
-fractals = { path = "./fractals" }
+
+bevy = "0.15"
+
+# Bevy Prototype Lyon for 2D shapes temporary until future Bevy release handles necessary needs.
+bevy_prototype_lyon = "0.13"
+
+
+# Serde for serialization and deserialization
+serde = "1.0"
+
+# Serde JSON for JSON serialization and deserialization
+serde_json = "1.0"

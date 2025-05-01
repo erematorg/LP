@@ -9,27 +9,43 @@ pub mod trackers;
 ///
 /// This includes the most common types in this crate, re-exported for your convenience.
 pub mod prelude {
-    // Core interfaces
-    pub use crate::core::interfaces::{AIModule, ActionExecutor};
-    pub use crate::core::utility::{Behavior, UtilityScore, determine_behavior};
+    // Core interfaces - now directly from crate root
+    pub use crate::{AIModule, ActionExecutor};
     
-    // New big-brain inspired components
-    pub use crate::core::scorers::{Score, Scorer, ScorerContext};
-    pub use crate::core::actions::{Action, ActionContext, ActionState};
-    pub use crate::core::thinkers::{Thinker, Choice, ActionType, Picker, FirstToScore, Highest, HasThinker};
+    // Re-export module preludes
+    pub use crate::core::prelude::*;
+    pub use crate::trackers::prelude::*;
+    pub use crate::memory::prelude::*;
+    pub use crate::personality::prelude::*;
+    pub use crate::relationships::prelude::*;
+    pub use crate::drives::prelude::*;
+}
+
+use bevy::prelude::*;
+use crate::core::utility::UtilityScore;
+
+/// Base trait for all AI modules
+pub trait AIModule: Send + Sync {
+    /// Update the module's internal state
+    fn update(&mut self);
     
-    // Trackers
-    pub use crate::trackers::perception_tracker::Perception;
-    pub use crate::trackers::needs_tracker::NeedsTracker;
-    pub use crate::trackers::base_tracker::EntityTracker;
+    /// Calculate the utility value of this module
+    fn utility(&self) -> UtilityScore;
+}
+
+/// Trait for executing actions based on behavior decisions
+pub trait ActionExecutor {
+    /// Move toward a target position
+    fn move_toward(&mut self, target: Vec2, speed: f32) -> bool;
     
-    // Memory system
-    pub use crate::memory::types::{MemoryEvent, MemoryEventType, MemoryTimestamp};
+    /// Perform an attack action
+    fn attack(&mut self, target: Option<Entity>) -> bool;
     
-    // Personality and relationships
-    pub use crate::personality::traits::Personality;
-    pub use crate::relationships::social::{SocialNetwork, RelationshipType, RelationshipStrength};
+    /// Move away from a threat  
+    fn flee_from(&mut self, threat: Vec2) -> bool;
     
-    // Needs and drives
-    pub use crate::drives::needs::{Need, NeedType};
+    /// Idle/rest at current position
+    fn idle(&mut self, duration: f32) -> bool;
+    
+    fn cleanup(&mut self);
 }
