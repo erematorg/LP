@@ -1,8 +1,0 @@
-[package]
-name = "fluids"
-version = "0.1.0"
-edition = "2021"
-description = "Modeling of continuous substance flow and behavior under various physical conditions."
-
-[dependencies]
-#bevy = "0.15"

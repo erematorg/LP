@@ -1,8 +1,0 @@
-[package]
-name = "plasma"
-version = "0.1.0"
-edition = "2021"
-description = "Modeling of ionized gas-like substance with free-flowing electrically charged particles exhibiting collective behavior."
-
-[dependencies]
-#bevy = "0.15"
