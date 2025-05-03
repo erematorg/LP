@@ -1,5 +1,7 @@
+// crates/systems/ai/src/core/scorers.rs
 use crate::prelude::*;
 use bevy::prelude::*;
+use crate::core::evaluators::Evaluator;
 
 /// Component representing a score between 0.0 and 1.0
 #[derive(Debug, Clone, Copy)]
@@ -16,7 +18,7 @@ impl Score {
 }
 
 /// Trait for components that evaluate world state and produce scores
-pub trait Scorer: Send + Sync {
+pub trait Scorer: Send + Sync + std::fmt::Debug {
     /// Calculate a score based on current context
     fn score(&self, context: &ScorerContext) -> Score;
     
@@ -62,6 +64,7 @@ pub fn map_needs_to_behavior(needs: &NeedsTracker) -> Behavior {
 }
 
 // Basic scorer implementations
+#[derive(Debug)]
 pub struct PerceptionScorer;
 impl Scorer for PerceptionScorer {
     fn score(&self, context: &ScorerContext) -> Score {
@@ -73,6 +76,7 @@ impl Scorer for PerceptionScorer {
     }
 }
 
+#[derive(Debug)]
 pub struct NeedScorer {
     pub need_type: NeedType,
 }
@@ -102,6 +106,7 @@ impl Scorer for NeedScorer {
 pub enum CompositeMode { AllOrNothing, Sum, Product, Max }
 
 /// Combines multiple scorers using a specified strategy
+#[derive(Debug)]
 pub struct CompositeScorer {
     scorers: Vec<Box<dyn Scorer + Send + Sync>>,
     weights: Vec<f32>,
@@ -171,4 +176,52 @@ impl Scorer for CompositeScorer {
     }
     
     fn label(&self) -> &str { &self.name }
+}
+
+/// Composite scorer that applies an Evaluator to a base Scorer
+/// This allows for transformation of scores through various curve functions
+#[derive(Debug)]
+pub struct EvaluatingScorer {
+    /// The base scorer that provides the initial score
+    scorer: Box<dyn Scorer + Send + Sync>,
+    /// The evaluator that transforms the score
+    evaluator: Box<dyn Evaluator + Send + Sync>,
+    /// Name for debugging purposes
+    name: String,
+}
+
+impl EvaluatingScorer {
+    /// Create a new EvaluatingScorer with the specified base scorer and evaluator
+    pub fn new(scorer: Box<dyn Scorer + Send + Sync>, evaluator: Box<dyn Evaluator + Send + Sync>) -> Self {
+        let scorer_label = scorer.label().to_string();
+        let name = format!("Evaluating({})", scorer_label);
+        Self {
+            scorer,
+            evaluator,
+            name,
+        }
+    }
+    
+    /// Create with a custom name
+    pub fn with_name(mut self, name: &str) -> Self {
+        self.name = name.to_string();
+        self
+    }
+}
+
+impl Scorer for EvaluatingScorer {
+    fn score(&self, context: &ScorerContext) -> Score {
+        // Get the inner score
+        let inner_score = self.scorer.score(context).value();
+        
+        // Apply the evaluator to transform the score
+        let evaluated_score = self.evaluator.evaluate(inner_score);
+        
+        // Return the evaluated score
+        Score::new(evaluated_score)
+    }
+    
+    fn label(&self) -> &str {
+        &self.name
+    }
 }
