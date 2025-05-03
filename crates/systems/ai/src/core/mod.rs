@@ -1,8 +1,8 @@
-pub mod utility;
 pub mod actions;
+pub mod evaluators;
 pub mod scorers;
 pub mod thinkers;
-
+pub mod utility;
 /// Prelude for the core AI module.
 /// 
 /// This includes the most common types in the core module,
