@@ -1,10 +1,12 @@
+use bevy::prelude::*;
+
 pub mod conservation;
 pub mod thermodynamics;
 pub mod electromagnetism;
 pub mod waves;
 
 // Add these new energy system related definitions
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum EnergyType {
     Generic,
     Thermal,
@@ -24,7 +26,7 @@ pub enum EnergyTransferError {
 }
 
 /// Core trait for all energy-based systems in the simulation
-/// This complements the existing EnergyQuantity and EnergyTransfer components
+/// This complements the existing EnergyQuantity component
 pub trait EnergySystem {
     // Core energy tracking 
     fn total_energy(&self) -> f32;
@@ -51,8 +53,8 @@ pub trait EnergySystem {
     }
     
     // Create an EnergyTransaction for the ledger (optional)
-    fn create_transaction(&self, amount: f32, source: Option<bevy::prelude::Entity>, 
-                         destination: Option<bevy::prelude::Entity>) -> conservation::EnergyTransaction {
+    fn create_transaction(&self, amount: f32, source: Option<Entity>, 
+                         destination: Option<Entity>) -> conservation::EnergyTransaction {
         conservation::EnergyTransaction {
             transaction_type: if amount > 0.0 {
                 conservation::TransactionType::Input
@@ -73,10 +75,16 @@ pub mod prelude {
     pub use super::{EnergySystem, EnergyTransferError, EnergyType};
     
     // Re-export from conservation
-    pub use crate::conservation::{EnergyQuantity, EnergyTransfer, EnergyConversion, 
-                            EnergyTransaction, EnergyAccountingLedger, 
-                            TransactionType, SystemConservationTracker,
-                            verify_conservation, conversion_efficiency};
+    pub use crate::conservation::{
+        EnergyQuantity, 
+        EnergyTransferEvent, 
+        EnergyAccountingLedger, 
+        TransactionType, 
+        EnergyConservationTracker,
+        verify_conservation, 
+        conversion_efficiency,
+        EnergyConservationPlugin
+    };
     
     // Re-export from submodules
     pub use crate::thermodynamics::prelude::*;
