@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 /// Wave parameters for configuring wave behavior
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Copy, Reflect, Default)]
 pub struct WaveParameters {
     /// Wave propagation speed (units/second)
     pub speed: f32,
@@ -21,26 +21,13 @@ pub struct WaveParameters {
     pub dispersion_factor: f32,
 }
 
-impl Default for WaveParameters {
-    fn default() -> Self {
-        Self {
-            speed: 1.0,
-            amplitude: 1.0,
-            wavelength: 1.0,
-            phase: 0.0,
-            direction: Vec2::X,
-            displacement_axis: Vec2::Y,
-            damping: 0.0,
-            dispersion_factor: 0.0, // Default: no dispersion
-        }
-    }
-}
-
+/// Calculate wave number (spatial frequency)
 #[inline]
 pub fn wave_number(wavelength: f32) -> f32 {
     2.0 * std::f32::consts::PI / wavelength
 }
 
+/// Calculate angular frequency
 #[inline]
 pub fn angular_frequency(speed: f32, wave_number: f32) -> f32 {
     speed * wave_number
@@ -53,4 +40,50 @@ pub fn damping_from_half_life(half_life: f32) -> f32 {
         return 0.0;
     }
     (2.0_f32.ln()) / half_life
+}
+
+/// Create a wave with modified parameters
+pub fn create_wave(
+    speed: f32, 
+    amplitude: f32, 
+    wavelength: f32,
+    phase: f32,
+    direction: Vec2,
+    displacement_axis: Vec2,
+    damping: f32,
+    dispersion_factor: f32
+) -> WaveParameters {
+    WaveParameters {
+        speed,
+        amplitude,
+        wavelength,
+        phase,
+        direction: direction.normalize(),
+        displacement_axis: displacement_axis.normalize(),
+        damping,
+        dispersion_factor,
+    }
+}
+
+/// Event for wave generation or modification
+#[derive(Event, Debug)]
+pub struct WaveGenerationEvent {
+    /// Parameters of the generated wave
+    pub parameters: WaveParameters,
+    /// Optional source entity
+    pub source: Option<Entity>,
+}
+
+/// System for wave parameter validation
+pub fn validate_wave_parameters(
+    mut wave_generation_events: EventReader<WaveGenerationEvent>,
+) {
+    for event in wave_generation_events.read() {
+        // Validate wave parameters
+        assert!(event.parameters.amplitude >= 0.0, "Wave amplitude must be non-negative");
+        assert!(event.parameters.wavelength > 0.0, "Wavelength must be positive");
+        assert!(event.parameters.speed >= 0.0, "Wave speed must be non-negative");
+        
+        // Optional: Log or handle invalid parameters
+    }
 }
