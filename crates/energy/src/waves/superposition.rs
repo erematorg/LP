@@ -25,6 +25,10 @@ pub fn solve_standing_wave(
         .unwrap_or(base_wave)
 }
 
+/// Marker component for standing waves
+#[derive(Component, Reflect, Default)]
+pub struct StandingWaveMarker;
+
 /// System for updating standing waves specifically
 pub fn update_standing_waves(
     time: Res<Time>,
@@ -40,10 +44,25 @@ pub fn update_standing_waves(
     }
 }
 
-/// Marker component for standing waves
-#[derive(Component)]
-pub struct StandingWaveMarker;
+/// Event for standing wave modifications
+#[derive(Event)]
+pub struct StandingWaveModificationEvent {
+    pub entity: Entity,
+    pub new_parameters: WaveParameters,
+}
 
+/// System to handle wave parameter modifications
+pub fn handle_wave_modifications(
+    mut commands: Commands,
+    mut wave_mod_events: EventReader<StandingWaveModificationEvent>,
+) {
+    for event in wave_mod_events.read() {
+        commands.entity(event.entity)
+            .insert(event.new_parameters.clone());
+    }
+}
+
+/// Create a standing wave
 pub fn create_standing_wave(
     amplitude: f32,
     wavelength: f32,
@@ -52,7 +71,7 @@ pub fn create_standing_wave(
     direction: Vec2,
     displacement_axis: Vec2,
     damping: f32,
-    dispersion_factor: f32 // New parameter
+    dispersion_factor: f32
 ) -> WaveParameters {
     WaveParameters {
         amplitude,
@@ -62,6 +81,21 @@ pub fn create_standing_wave(
         direction: direction.normalize(),
         displacement_axis: displacement_axis.normalize(),
         damping,
-        dispersion_factor, // Add the new field
+        dispersion_factor,
+    }
+}
+
+/// Plugin for standing wave systems
+pub struct StandingWavePlugin;
+
+impl Plugin for StandingWavePlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .register_type::<StandingWaveMarker>()
+            .add_event::<StandingWaveModificationEvent>()
+            .add_systems(Update, (
+                update_standing_waves,
+                handle_wave_modifications
+            ));
     }
 }
