@@ -8,14 +8,14 @@ pub const MAGNETIC_CONSTANT_DIV_4PI: f32 = 1e-7;
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
 pub struct ElectricField {
     /// Magnitude and direction of the electric field
-    pub field: Vec3,
+    pub field: Vec2,
     /// Position of the field
-    pub position: Vec3,
+    pub position: Vec2,
 }
 
 impl ElectricField {
     /// Create a new electric field
-    pub fn new(field: Vec3, position: Vec3) -> Self {
+    pub fn new(field: Vec2, position: Vec2) -> Self {
         Self { field, position }
     }
 
@@ -25,12 +25,12 @@ impl ElectricField {
     }
 
     /// Calculate the electric field from a point charge
-    pub fn from_point_charge(charge: f32, charge_position: Vec3, field_position: Vec3) -> Self {
+    pub fn from_point_charge(charge: f32, charge_position: Vec2, field_position: Vec2) -> Self {
         let r = field_position - charge_position;
         let distance_squared = r.length_squared();
 
         if distance_squared < 1e-10 {
-            return Self::new(Vec3::ZERO, field_position);
+            return Self::new(Vec2::ZERO, field_position);
         }
 
         let direction = r.normalize();
@@ -54,14 +54,14 @@ impl ElectricField {
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
 pub struct MagneticField {
     /// Magnitude and direction of the magnetic field
-    pub field: Vec3,
+    pub field: Vec2,
     /// Position of the field
-    pub position: Vec3,
+    pub position: Vec2,
 }
 
 impl MagneticField {
     /// Create a new magnetic field
-    pub fn new(field: Vec3, position: Vec3) -> Self {
+    pub fn new(field: Vec2, position: Vec2) -> Self {
         Self { field, position }
     }
 
@@ -73,22 +73,22 @@ impl MagneticField {
     /// Calculate the magnetic field from a current element
     pub fn from_current_element(
         current: f32,
-        current_direction: Vec3,
-        current_position: Vec3,
-        field_position: Vec3,
+        current_direction: Vec2,
+        current_position: Vec2,
+        field_position: Vec2,
     ) -> Self {
         let r = field_position - current_position;
         let distance = r.length();
 
         if distance < 1e-10 {
-            return Self::new(Vec3::ZERO, field_position);
+            return Self::new(Vec2::ZERO, field_position);
         }
 
         let r_unit = r / distance;
 
         // Biot-Savart law: dB = (μ₀/4π) * (I dl × r̂) / r²
-        let field =
-            current_direction.cross(r_unit) * (MAGNETIC_CONSTANT_DIV_4PI * current / (distance * distance));
+        let field_magnitude = MAGNETIC_CONSTANT_DIV_4PI * current / (distance * distance);
+        let field = Vec2::new(-r_unit.y, r_unit.x) * current_direction.length() * field_magnitude;
 
         Self::new(field, field_position)
     }

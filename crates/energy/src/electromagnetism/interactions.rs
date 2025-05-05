@@ -11,7 +11,7 @@ pub struct ElectromagneticWave {
     /// Wave frequency in Hertz
     pub frequency: f32,
     /// Wave direction
-    pub direction: Vec3,
+    pub direction: Vec2,
     /// Electric field amplitude
     pub electric_amplitude: f32,
     /// Magnetic field amplitude
@@ -23,7 +23,7 @@ pub struct ElectromagneticWave {
 }
 
 impl ElectromagneticWave {
-    pub fn new(frequency: f32, direction: Vec3, electric_amplitude: f32, phase: f32) -> Self {
+    pub fn new(frequency: f32, direction: Vec2, electric_amplitude: f32, phase: f32) -> Self {
         // Calculate wavelength and wave number
         let wavelength = C / frequency;
         let wave_number = 2.0 * std::f32::consts::PI / wavelength;
@@ -42,7 +42,7 @@ impl ElectromagneticWave {
     }
 
     /// Calculate the electric and magnetic fields at a position and time
-    pub fn get_fields_at(&self, position: Vec3, time: f32) -> (ElectricField, MagneticField) {
+    pub fn get_fields_at(&self, position: Vec2, time: f32) -> (ElectricField, MagneticField) {
         // Projection of position onto wave direction
         let pos_projection = self.direction.dot(position);
 
@@ -56,17 +56,14 @@ impl ElectromagneticWave {
 
         // Electric field is perpendicular to direction
         // We'll use a simple perpendicular vector for demonstration
-        let e_direction = if self.direction.dot(Vec3::Y) < 0.9 {
-            self.direction.cross(Vec3::Y).normalize()
-        } else {
-            self.direction.cross(Vec3::X).normalize()
-        };
+        let e_direction = Vec2::new(-self.direction.y, self.direction.x);
 
         // Electric field
         let e_field = e_direction * (self.electric_amplitude * phase_factor);
 
-        // Magnetic field is perpendicular to both direction and electric field
-        let m_direction = self.direction.cross(e_direction).normalize();
+        // Magnetic field is perpendicular to direction and "out of plane" in 2D
+        // In 2D, we represent this using a vector perpendicular to the electric field
+        let m_direction = Vec2::new(-e_direction.y, e_direction.x);
         let m_field = m_direction * (self.magnetic_amplitude * phase_factor);
 
         (
