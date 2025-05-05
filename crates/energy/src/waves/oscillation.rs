@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 /// Wave parameters for configuring wave behavior
-#[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct WaveParameters {
     /// Wave propagation speed (units/second)
     pub speed: f32,
@@ -19,6 +19,76 @@ pub struct WaveParameters {
     pub damping: f32,
     /// Dispersion factor controlling wave frequency behavior
     pub dispersion_factor: f32,
+}
+
+impl Default for WaveParameters {
+    fn default() -> Self {
+        Self {
+            speed: 1.0,
+            amplitude: 1.0,
+            wavelength: 1.0,
+            phase: 0.0,
+            direction: Vec2::X,
+            displacement_axis: Vec2::Y,
+            damping: 0.0,
+            dispersion_factor: 0.0,
+        }
+    }
+}
+
+impl WaveParameters {
+    /// Builder-style method for creating custom wave parameters
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Fluent interface for setting speed
+    pub fn with_speed(mut self, speed: f32) -> Self {
+        self.speed = speed;
+        self
+    }
+
+    /// Fluent interface for setting amplitude
+    pub fn with_amplitude(mut self, amplitude: f32) -> Self {
+        self.amplitude = amplitude;
+        self
+    }
+
+    /// Fluent interface for setting wavelength
+    pub fn with_wavelength(mut self, wavelength: f32) -> Self {
+        self.wavelength = wavelength;
+        self
+    }
+
+    /// Fluent interface for setting phase
+    pub fn with_phase(mut self, phase: f32) -> Self {
+        self.phase = phase;
+        self
+    }
+
+    /// Fluent interface for setting direction
+    pub fn with_direction(mut self, direction: Vec2) -> Self {
+        self.direction = direction.normalize();
+        self
+    }
+
+    /// Fluent interface for setting displacement axis
+    pub fn with_displacement_axis(mut self, displacement_axis: Vec2) -> Self {
+        self.displacement_axis = displacement_axis.normalize();
+        self
+    }
+
+    /// Fluent interface for setting damping
+    pub fn with_damping(mut self, damping: f32) -> Self {
+        self.damping = damping;
+        self
+    }
+
+    /// Fluent interface for setting dispersion factor
+    pub fn with_dispersion_factor(mut self, dispersion_factor: f32) -> Self {
+        self.dispersion_factor = dispersion_factor;
+        self
+    }
 }
 
 /// Calculate wave number (spatial frequency)
@@ -40,29 +110,6 @@ pub fn damping_from_half_life(half_life: f32) -> f32 {
         return 0.0;
     }
     (2.0_f32.ln()) / half_life
-}
-
-/// Create a wave with modified parameters
-pub fn create_wave(
-    speed: f32, 
-    amplitude: f32, 
-    wavelength: f32,
-    phase: f32,
-    direction: Vec2,
-    displacement_axis: Vec2,
-    damping: f32,
-    dispersion_factor: f32
-) -> WaveParameters {
-    WaveParameters {
-        speed,
-        amplitude,
-        wavelength,
-        phase,
-        direction: direction.normalize(),
-        displacement_axis: displacement_axis.normalize(),
-        damping,
-        dispersion_factor,
-    }
 }
 
 /// Event for wave generation or modification
