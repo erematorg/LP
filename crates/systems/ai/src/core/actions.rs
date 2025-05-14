@@ -1,8 +1,12 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 
+/// Component linking an action to its executing entity
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Actor(pub Entity);
+
 /// State machine for action execution
-#[derive(Debug, Clone, Eq, PartialEq, Component)]
+#[derive(Debug, Clone, Eq, PartialEq, Component, Reflect)]
 pub enum ActionState {
     Init,        // Initial state
     Requested,   // Action has been requested
@@ -163,7 +167,7 @@ impl Action for Sequence {
 }
 
 /// Configures what mode the Concurrent action will run in
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum ConcurrentMode {
     /// Reaches success when any of the concurrent actions reaches Success (OR logic)
     Race,
@@ -318,8 +322,8 @@ impl Action for Concurrent {
     }
 }
 
-// Common action implementations
-
+// Basic action implementations
+#[derive(Clone, Component, Debug)]
 pub struct MoveToTarget {
     speed: f32,
 }
@@ -361,6 +365,7 @@ impl Action for MoveToTarget {
     }
 }
 
+#[derive(Clone, Component, Debug)]
 pub struct FleeFromThreat;
 
 impl Action for FleeFromThreat {
@@ -386,6 +391,7 @@ impl Action for FleeFromThreat {
     }
 }
 
+#[derive(Clone, Component, Debug)]
 pub struct AttackTarget;
 
 impl Action for AttackTarget {
@@ -407,6 +413,7 @@ impl Action for AttackTarget {
     }
 }
 
+#[derive(Clone, Component, Debug)]
 pub struct Rest {
     duration: f32,
     elapsed: f32,
