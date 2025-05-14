@@ -5,4 +5,4 @@ edition = "2021"
 description = "Core systems governing how energy manifests, transforms and flows."
 
 [dependencies]
-bevy = "0.15"
+bevy = "0.16"

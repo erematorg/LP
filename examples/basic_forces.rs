@@ -135,11 +135,14 @@ fn update_sprites(mut query: Query<(&Transform, &CelestialBody, &mut Sprite)>) {
 
 // Keep celestial bodies within bounds of the window
 fn keep_in_bounds(windows: Query<&Window>, mut query: Query<(&mut Transform, &mut Velocity)>) {
-    let window = windows.single();
+    let Ok(window) = windows.single() else {
+        return; // Exit early if we can't get the window
+    };
+    
     let width = window.width();
     let height = window.height();
 
-    // Boundary with padding
+    // Rest of the function remains the same...
     let bound_x = width / 2.0 - 50.0;
     let bound_y = height / 2.0 - 50.0;
 
