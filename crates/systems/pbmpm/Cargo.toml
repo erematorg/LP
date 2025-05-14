@@ -5,4 +5,4 @@ edition = "2021"
 description = "Material Point Method implementation for simulating continuous materials"
 
 [dependencies]
-bevy = "0.15"
+bevy = "0.16"

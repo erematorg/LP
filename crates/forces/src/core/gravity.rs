@@ -295,56 +295,30 @@ pub fn calculate_gravitational_attraction(
     // Get softening parameter squared once
     let softening_squared = gravity_params.softening * gravity_params.softening;
 
-    // Determine if we should use SIMD optimization
-    let use_simd = query.iter().count() >= 8 && affected_query.iter().count() >= 8;
+    // Collect all gravity sources once
+    let sources: Vec<(Entity, Vec3, f32)> = query
+        .iter()
+        .map(|(e, t, m)| (e, t.translation, m.value))
+        .collect();
 
-    if use_simd {
-        // Collect sources for batch processing
-        let sources: Vec<(Entity, Vec3, f32)> = query
-            .iter()
-            .map(|(e, t, m)| (e, t.translation, m.value))
-            .collect();
-
-        // Process in batches of 4 for better SIMD optimization
-        for chunk in sources.chunks(4) {
-            for (affected_entity, affected_transform, affected_mass, mut force) in
-                &mut affected_query
-            {
-                let affected_pos = affected_transform.translation;
-
-                for &(source_entity, source_pos, source_mass) in chunk {
-                    if source_entity == affected_entity {
-                        continue;
-                    }
-
-                    let direction = source_pos - affected_pos;
-                    force.force += calculate_softened_acceleration(
-                        direction,
-                        source_mass * affected_mass.value,
-                        softening_squared,
-                    );
-                }
+    // Using Bevy's built-in parallelization - processes all affected entities in parallel
+    affected_query.par_iter_mut().for_each(|(affected_entity, affected_transform, affected_mass, mut force)| {
+        let affected_pos = affected_transform.translation;
+        
+        // Calculate the force from all sources on this affected entity
+        for &(source_entity, source_pos, source_mass) in &sources {
+            if source_entity == affected_entity {
+                continue;
             }
+            
+            let direction = source_pos - affected_pos;
+            force.force += calculate_softened_acceleration(
+                direction,
+                source_mass * affected_mass.value,
+                softening_squared,
+            );
         }
-    } else {
-        // Use original non-SIMD implementation for small body counts
-        for (source_entity, source_transform, source_mass) in &query {
-            for (affected_entity, affected_transform, affected_mass, mut force) in
-                &mut affected_query
-            {
-                if source_entity == affected_entity {
-                    continue;
-                }
-
-                let direction = source_transform.translation - affected_transform.translation;
-                force.force += calculate_softened_acceleration(
-                    direction,
-                    source_mass.value * affected_mass.value,
-                    softening_squared,
-                );
-            }
-        }
-    }
+    });
 }
 
 /// System to calculate gravitational attraction using Barnes-Hut algorithm
@@ -371,21 +345,25 @@ pub fn calculate_barnes_hut_attraction(
 
     let quadtree = spatial::Quadtree::from_bodies(&bodies);
 
-    // Calculate force on each affected body
-    for (entity, transform, _, mut force) in &mut affected_query {
+    // Using Bevy's built-in parallelization for the affected bodies
+    affected_query.par_iter_mut().for_each(|(entity, transform, _, mut force)| {
         let position = transform.translation;
-
+        
         // Skip self-attraction by checking if this entity is in the tree
-        // This is a simplification - a more robust solution would filter in the recursion
         if bodies.iter().any(|&(e, _, _)| e == entity) {
-            continue;
+            return; // Skip this iteration
         }
-
+        
         // Calculate force using Barnes-Hut algorithm
-        let force_vector =
-            calculate_barnes_hut_force(position, &quadtree.root, theta, gravity_params.softening);
+        let force_vector = calculate_barnes_hut_force(
+            position, 
+            &quadtree.root, 
+            theta, 
+            gravity_params.softening
+        );
+        
         force.force += force_vector;
-    }
+    });
 }
 
 /// Calculate gravitational force using the Barnes-Hut approximation method
@@ -458,4 +436,105 @@ pub fn calculate_elliptical_orbit_velocity(
 /// Calculate escape velocity from a massive body
 pub fn calculate_escape_velocity(central_mass: f32, distance: f32) -> f32 {
     (2.0 * GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
+}
+
+/// Plugin for gravity systems
+#[derive(Default)]
+pub struct GravityPlugin {
+    /// Use Barnes-Hut optimization for n-body simulations
+    pub use_barnes_hut: bool,
+    /// Barnes-Hut accuracy parameter (lower is more accurate but slower)
+    pub barnes_hut_theta: f32,
+}
+
+impl GravityPlugin {
+    /// Create new gravity plugin with default settings
+    pub fn new() -> Self {
+        Self {
+            use_barnes_hut: true,
+            barnes_hut_theta: 0.5,
+        }
+    }
+    
+    /// Configure whether to use Barnes-Hut optimization
+    pub fn with_barnes_hut(mut self, enabled: bool) -> Self {
+        self.use_barnes_hut = enabled;
+        self
+    }
+    
+    /// Set the Barnes-Hut theta parameter
+    pub fn with_theta(mut self, theta: f32) -> Self {
+        self.barnes_hut_theta = theta.clamp(0.1, 1.0);
+        self
+    }
+}
+
+/// System set for gravity calculations
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum GravitySet {
+    /// Apply uniform gravity forces (like Earth's gravity)
+    UniformGravity,
+    /// Calculate n-body gravitational forces
+    NBodyGravity,
+}
+
+impl Plugin for GravityPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            // Register default resources if not present
+            .init_resource::<GravityParams>()
+            .init_resource::<UniformGravity>()
+            
+            // Configure gravity system sets
+            .configure_sets(
+                Update,
+                (GravitySet::UniformGravity, GravitySet::NBodyGravity).chain()
+            )
+            
+            // Add gravity systems
+            .add_systems(
+                Update,
+                apply_uniform_gravity
+                    .in_set(GravitySet::UniformGravity)
+            );
+            
+        // Add n-body gravity systems with run conditions
+        if self.use_barnes_hut {
+            let theta = self.barnes_hut_theta;
+            
+            app.add_systems(
+                Update,
+                // Use a closure to pass the theta parameter
+                (move |
+                    gravity_params: Res<GravityParams>,
+                    query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+                    affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
+                | {
+                    calculate_barnes_hut_attraction(gravity_params, query, affected_query, theta);
+                })
+                .in_set(GravitySet::NBodyGravity)
+                // Use run condition to only use Barnes-Hut for larger simulations
+                .run_if(|query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
+                    query.iter().count() >= 20
+                })
+            );
+            
+            // Fallback to simple n-body for small simulations
+            app.add_systems(
+                Update,
+                calculate_gravitational_attraction
+                    .in_set(GravitySet::NBodyGravity)
+                    .run_if(|query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
+                        query.iter().count() < 20
+                    })
+            );
+        } else {
+            // Always use simple n-body calculations if Barnes-Hut is disabled
+            app.add_systems(
+                Update,
+                calculate_gravitational_attraction
+                    .in_set(GravitySet::NBodyGravity)
+            );
+        }
+    }
 }

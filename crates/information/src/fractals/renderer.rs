@@ -1,6 +1,5 @@
 use super::interpreter::SymbolType;
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 
 // Components
 /// Component for an L-System branch
@@ -8,7 +7,7 @@ use bevy_prototype_lyon::prelude::*;
 #[allow(dead_code)]
 struct Branch {
     /// Type of this branch segment
-    symbol_type: SymbolType, //TODO: Extends it later and truly get this to work as expected
+    symbol_type: SymbolType,
 }
 
 // Resources for L-System parameters
@@ -33,6 +32,15 @@ struct LSystemRng(pub u64);
 #[derive(Resource)]
 pub struct LSystemSymbols(pub String);
 
+/// Bundle for L-System branches using Mesh2d
+#[derive(Bundle)]
+struct BranchBundle {
+    mesh: Mesh2d,
+    material: MeshMaterial2d<ColorMaterial>,
+    transform: Transform,
+    branch: Branch,
+}
+
 // Systems
 /// Spawns the camera
 fn setup_camera(mut commands: Commands) {
@@ -42,11 +50,39 @@ fn setup_camera(mut commands: Commands) {
 /// Adjust thickness based on symbol type
 fn adjust_thickness_for_symbol(thickness: f32, symbol_type: SymbolType) -> f32 {
     match symbol_type {
-        SymbolType::Core => thickness * 1.5, // Thicker for core elements
+        SymbolType::Core => thickness * 1.5,      // Thicker for core elements
         SymbolType::Bifurcation => thickness * 1.2, // Slightly thicker for branch points
-        SymbolType::Segment => thickness,    // Standard thickness
-        SymbolType::Legacy => thickness,     // Standard thickness
+        SymbolType::Segment => thickness,         // Standard thickness
+        SymbolType::Legacy => thickness,          // Standard thickness
     }
+}
+
+/// Create a line using a mesh and material
+fn create_line_mesh(
+    start: Vec2,
+    end: Vec2,
+    thickness: f32,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) -> (Mesh2d, MeshMaterial2d<ColorMaterial>, Transform) {
+    // Calculate direction and length
+    let direction = end - start;
+    let length = direction.length();
+    let angle = direction.y.atan2(direction.x);
+    
+    // Create a simple rectangle mesh for the line
+    let mesh = Mesh::from(Rectangle::new(length, thickness));
+    let mesh_handle = meshes.add(mesh);
+    
+    // Create a white material
+    let material = materials.add(ColorMaterial::from(Color::WHITE));
+    
+    // Calculate center position and rotation
+    let center = (start + end) / 2.0;
+    let transform = Transform::from_translation(center.extend(0.0))
+        .with_rotation(Quat::from_rotation_z(angle));
+    
+    (Mesh2d(mesh_handle), MeshMaterial2d(material), transform)
 }
 
 /// Draws the L-System output dynamically
@@ -56,6 +92,8 @@ fn draw_lsystem(
     params: Res<LSystemParams>,
     mut rng: ResMut<LSystemRng>,
     time: Res<Time>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // Calculate parameters
     let line_length = params.segment_length * params.scaling_factor;
@@ -96,15 +134,24 @@ fn draw_lsystem(
         // Adjust thickness based on symbol type
         let adjusted_thickness = adjust_thickness_for_symbol(base_thickness, symbol_type);
 
-        let shape = shapes::Line(start, end);
-        commands.spawn((
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shape),
-                ..default()
-            },
-            Stroke::new(Color::WHITE, adjusted_thickness),
-            Branch { symbol_type },
-        ));
+        // Create line mesh
+        let (mesh, material, transform) = create_line_mesh(
+            start,
+            end,
+            adjusted_thickness,
+            &mut meshes,
+            &mut materials,
+        );
+
+        // Create the branch bundle
+        let branch_bundle = BranchBundle {
+            mesh,
+            material,
+            transform,
+            branch: Branch { symbol_type },
+        };
+
+        commands.spawn(branch_bundle);
     }
 }
 
@@ -153,7 +200,6 @@ pub fn run_renderer(
             }),
             ..default()
         }))
-        .add_plugins(ShapePlugin)
         .add_systems(Startup, (setup_camera, draw_lsystem))
         .run();
 }

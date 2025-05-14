@@ -52,7 +52,7 @@ fn update_field_lines(
     mut charge_query: Query<&mut Transform, (With<Charge>, Without<FieldLine>)>,
 ) {
     // Update charge position
-    if let Ok(mut charge_transform) = charge_query.get_single_mut() {
+    if let Ok(mut charge_transform) = charge_query.single_mut() {
         charge_transform.translation = Vec3::new(
             100.0 * time.elapsed_secs().sin(),
             100.0 * time.elapsed_secs().cos(),
@@ -61,10 +61,10 @@ fn update_field_lines(
     }
 
     // Get charge position
-    let charge_pos = if let Ok(charge_transform) = charge_query.get_single() {
-        charge_transform.translation
+    let charge_pos = if let Ok(charge_transform) = charge_query.single() {
+        Vec2::new(charge_transform.translation.x, charge_transform.translation.y)
     } else {
-        Vec3::ZERO
+        Vec2::ZERO
     };
 
     for (mut transform, mut sprite) in field_query.iter_mut() {
@@ -72,7 +72,7 @@ fn update_field_lines(
         let field = ElectricField::from_point_charge(
             1.0, // Charge value
             charge_pos,
-            transform.translation,
+            Vec2::new(transform.translation.x, transform.translation.y),
         );
 
         let field_vec = field.field * 5.0; // Scale for visualization

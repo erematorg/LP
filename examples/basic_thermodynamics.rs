@@ -78,7 +78,7 @@ fn handle_input(
     // Toggle hot/cold mode with Space key
     if keyboard_input.just_pressed(KeyCode::Space) {
         input_state.hot_mode = !input_state.hot_mode;
-        if let Ok(mut text) = text_query.get_single_mut() {
+        if let Ok(mut text) = text_query.single_mut() {
             *text = Text(format!(
                 "Click: Set heat source\nSpace: Toggle hot/cold\nCurrent: {}",
                 if input_state.hot_mode { "Hot" } else { "Cold" }
@@ -88,12 +88,18 @@ fn handle_input(
 
     // Handle mouse clicks
     if mouse_input.just_pressed(MouseButton::Left) {
-        if let Some(cursor_position) = windows.single().cursor_position() {
-            if let Ok(world_position) = camera_q
-                .single()
-                .0
-                .viewport_to_world_2d(camera_q.single().1, cursor_position)
-            {
+        // Get window handle properly
+        let Ok(window) = windows.single() else {
+            return;
+        };
+        
+        if let Some(cursor_position) = window.cursor_position() {
+            // Get camera components properly
+            let Ok((camera, camera_transform)) = camera_q.single() else {
+                return;
+            };
+            
+            if let Ok(world_position) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
                 for (_cell, mut temp, transform) in grid_cells.iter_mut() {
                     let cell_pos = transform.translation.truncate();
                     let half_size = CELL_SIZE / 2.0;
