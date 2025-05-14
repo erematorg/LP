@@ -43,13 +43,7 @@ impl Score {
     }
 }
 
-/// Trait that must be defined by types in order to be `ScorerBuilder`s.
-/// `ScorerBuilder`s' job is to spawn new `Scorer` entities. In general, most
-/// of this is already done for you, and the only method you really have to
-/// implement is `.build()`.
-///
-/// The `build()` method MUST be implemented for any `ScorerBuilder`s you want
-/// to define.
+/// Trait for building scorer components. Must implement `build()`.
 #[reflect_trait]
 pub trait ScorerBuilder: std::fmt::Debug + Sync + Send {
     /// MUST insert your concrete Scorer component into the Scorer [`Entity`],
@@ -91,7 +85,7 @@ pub trait ScorerBuilder: std::fmt::Debug + Sync + Send {
     /// ```
     fn build(&self, cmd: &mut Commands, scorer: Entity, actor: Entity);
 
-    /// A label to display when logging using the Scorer's tracing span.
+    /// Optional label for logging.
     fn label(&self) -> Option<&str> {
         None
     }
@@ -116,8 +110,8 @@ pub fn spawn_scorer<T: ScorerBuilder + ?Sized>(
     scorer_ent
 }
 
-/// Scorer that always returns the same, fixed score. Good for combining with
-/// things creatively!
+/// Scorer that always returns the same, fixed score.
+
 #[derive(Clone, Component, Debug, Reflect)]
 pub struct FixedScore(pub f32);
 
@@ -161,31 +155,7 @@ impl ScorerBuilder for FixedScorerBuilder {
     }
 }
 
-/// Composite Scorer that takes any number of other Scorers and returns the
-/// sum of their [`Score`] values if each _individual_ [`Score`] is at or
-/// above the configured `threshold`.
-///
-/// ### Example
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         AllOrNothing::build(0.8)
-///           .push(MyScorer)
-///           .push(MyOtherScorer),
-///         MyAction);
-/// # ;
-/// # }
-/// ```
+/// Composite Scorer: sums scores if all individual scores >= threshold.
 #[derive(Component, Debug, Reflect)]
 pub struct AllOrNothing {
     threshold: f32,
@@ -218,7 +188,7 @@ pub fn all_or_nothing_system(
     {
         let mut sum = 0.0;
         for Scorer(child) in children.iter() {
-            let score = scores.get_mut(*child).expect("where is it?");
+            let score = scores.get_mut(*child).expect("score missing");
             if score.0 < *threshold {
                 sum = 0.0;
                 break;
@@ -226,7 +196,7 @@ pub fn all_or_nothing_system(
                 sum += score.0;
             }
         }
-        let mut score = scores.get_mut(aon_ent).expect("where did it go?");
+        let mut score = scores.get_mut(aon_ent).expect("score missing");
         score.set(crate::core::evaluators::clamp(sum, 0.0, 1.0));
         #[cfg(feature = "trace")]
         {
@@ -257,7 +227,6 @@ impl AllOrNothingBuilder {
         self
     }
 
-    /// Set a label for this Action.
     pub fn label(mut self, label: impl AsRef<str>) -> Self {
         self.label = Some(label.as_ref().into());
         self
@@ -286,29 +255,7 @@ impl ScorerBuilder for AllOrNothingBuilder {
     }
 }
 
-/// Composite Scorer that takes any number of other Scorers and returns the sum of their [`Score`] values if the _total_ summed [`Score`] is at or above the configured `threshold`.
-///
-/// ### Example
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         SumOfScorers::build(0.8)
-///           .push(MyScorer)
-///           .push(MyOtherScorer),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
+/// Composite Scorer: sums all scores, returns 0 if total < threshold.
 #[derive(Component, Debug, Reflect)]
 pub struct SumOfScorers {
     threshold: f32,
@@ -413,37 +360,7 @@ impl ScorerBuilder for SumOfScorersBuilder {
     }
 }
 
-/// Composite Scorer that takes any number of other Scorers and returns the
-/// product of their [`Score`]. If the resulting score is less than the
-/// threshold, it returns 0.
-///
-/// The Scorer can also apply a compensation factor based on the number of
-/// Scores passed to it. This can be enabled by passing `true` to the
-/// `use_compensation` method on the builder.
-///
-/// ### Example
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         ProductOfScorers::build(0.5)
-///           .use_compensation(true)
-///           .push(MyScorer)
-///           .push(MyOtherScorer),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
-
+/// Composite Scorer: multiplies all scores with optional compensation factor.
 #[derive(Component, Debug, Reflect)]
 pub struct ProductOfScorers {
     threshold: f32,
@@ -573,32 +490,7 @@ impl ScorerBuilder for ProductOfScorersBuilder {
     }
 }
 
-/// Composite Scorer that takes any number of other Scorers and returns the
-/// single highest value [`Score`] if  _any_ [`Score`]s are at or above the
-/// configured `threshold`.
-///
-/// ### Example
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         WinningScorer::build(0.8)
-///           .push(MyScorer)
-///           .push(MyOtherScorer),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
-
+/// Composite Scorer: returns highest score if any score >= threshold.
 #[derive(Component, Debug, Reflect)]
 pub struct WinningScorer {
     threshold: f32,
@@ -703,34 +595,7 @@ impl ScorerBuilder for WinningScorerBuilder {
     }
 }
 
-/// Composite scorer that takes a `ScorerBuilder` and applies an `Evaluator`.
-/// Note that unlike other composite scorers, `EvaluatingScorer` only takes
-/// one scorer upon building.
-///
-/// ### Example
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # #[derive(Debug, Clone)]
-/// # struct MyEvaluator;
-/// # impl Evaluator for MyEvaluator {
-/// #    fn evaluate(&self, score: f32) -> f32 {
-/// #        score
-/// #    }
-/// # }
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         EvaluatingScorer::build(MyScorer, MyEvaluator),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
+/// Applies an Evaluator to transform a single scorer's output.
 #[derive(Component, Debug, Reflect)]
 #[reflect(from_reflect = false)]
 pub struct EvaluatingScorer {
@@ -812,56 +677,7 @@ impl ScorerBuilder for EvaluatingScorerBuilder {
     }
 }
 
-/// Composite Scorer that allows more fine-grained control of how the scores
-/// are combined. The default is to apply a weighting
-///
-/// ### Example
-///
-/// Using the default measure ([`WeightedMeasure`]):
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         MeasuredScorer::build(0.5)
-///           .push(MyScorer, 0.9)
-///           .push(MyOtherScorer, 0.4),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
-///
-/// Customising the measure:
-///
-/// ```
-/// # use bevy::prelude::*;
-/// # use big_brain::prelude::*;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyScorer;
-/// # #[derive(Debug, Clone, Component, ScorerBuilder)]
-/// # struct MyOtherScorer;
-/// # #[derive(Debug, Clone, Component, ActionBuilder)]
-/// # struct MyAction;
-/// # fn main() {
-/// Thinker::build()
-///     .when(
-///         MeasuredScorer::build(0.5)
-///           .measure(ChebyshevDistance)
-///           .push(MyScorer, 0.8)
-///           .push(MyOtherScorer, 0.2),
-///         MyAction)
-/// # ;
-/// # }
-/// ```
-
+/// Composite Scorer: combines scores using customizable Measure (default: weighted).
 #[derive(Component, Debug, Reflect)]
 #[reflect(from_reflect = false)]
 pub struct MeasuredScorer {
