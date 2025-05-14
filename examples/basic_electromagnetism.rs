@@ -52,7 +52,7 @@ fn update_field_lines(
     mut charge_query: Query<&mut Transform, (With<Charge>, Without<FieldLine>)>,
 ) {
     // Update charge position
-    if let Ok(mut charge_transform) = charge_query.get_single_mut() {
+    if let Ok(mut charge_transform) = charge_query.single_mut() {
         charge_transform.translation = Vec3::new(
             100.0 * time.elapsed_secs().sin(),
             100.0 * time.elapsed_secs().cos(),
@@ -61,7 +61,7 @@ fn update_field_lines(
     }
 
     // Get charge position
-    let charge_pos = if let Ok(charge_transform) = charge_query.get_single() {
+    let charge_pos = if let Ok(charge_transform) = charge_query.single() {
         Vec2::new(charge_transform.translation.x, charge_transform.translation.y)
     } else {
         Vec2::ZERO

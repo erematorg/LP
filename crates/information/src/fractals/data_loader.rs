@@ -25,7 +25,7 @@ pub struct Template {
 
 /// Load a template from the fractals.json file
 pub fn load_template(template_name: &str) -> Result<Template, String> {
-    let file_content = fs::read_to_string("crates/information/fractals/src/fractals.json")
+    let file_content = fs::read_to_string("crates/information/src/fractals/fractals.json")
         .map_err(|_| "Error: Could not read fractals.json".to_string())?;
 
     let json: serde_json::Value = serde_json::from_str(&file_content)

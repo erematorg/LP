@@ -129,7 +129,7 @@ pub fn calculate_field_interactions(
             let interaction_strength = source_field.strength() * target_field.strength();
             
             if interaction_strength > f32::EPSILON {
-                field_interaction_events.send(ElectromagneticFieldInteractionEvent {
+                field_interaction_events.write(ElectromagneticFieldInteractionEvent {
                     source: source_entity,
                     target: target_entity,
                     interaction_strength,
@@ -146,7 +146,7 @@ pub fn calculate_field_interactions(
             let interaction_strength = source_field.strength() * target_field.strength();
             
             if interaction_strength > f32::EPSILON {
-                field_interaction_events.send(ElectromagneticFieldInteractionEvent {
+                field_interaction_events.write(ElectromagneticFieldInteractionEvent {
                     source: source_entity,
                     target: target_entity,
                     interaction_strength,
