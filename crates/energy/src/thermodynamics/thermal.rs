@@ -95,7 +95,7 @@ pub fn calculate_thermal_transfer(
         let heat_flow: f32 = (conduct1.value + conduct2.value) / 2.0 * area * temp_diff / distance.max(f32::EPSILON);
         
         if heat_flow.abs() > f32::EPSILON {
-            thermal_transfer_events.send(ThermalTransferEvent {
+            thermal_transfer_events.write(ThermalTransferEvent {
                 source: if heat_flow > 0.0 { entity1 } else { entity2 },
                 target: if heat_flow > 0.0 { entity2 } else { entity1 },
                 heat_flow: heat_flow.abs(),
