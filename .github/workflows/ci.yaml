@@ -11,6 +11,7 @@ env:
   SCCACHE_VERSION: 0.4.2
   RUSTC_WRAPPER: sccache
   SCCACHE_CACHE_SIZE: 2G
+  CARGO_INCREMENTAL: 1
 
 jobs:
   test:
@@ -21,10 +22,7 @@ jobs:
       - name: Free disk space
         run: |
           df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
           sudo apt clean
           df -h
       - name: Checkout sources
@@ -42,8 +40,7 @@ jobs:
         with:
           path: ~/.cache/sccache
           key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-sccache-
+          restore-keys: ${{ runner.os }}-sccache-
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -51,20 +48,14 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-cargo-
-      - name: Cache build output dependencies
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Cache build output
         uses: actions/cache@v4
         with:
           path: target
-          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-build-
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       - name: Start sccache server
         run: sccache --start-server
       - name: Run cargo test
@@ -73,12 +64,6 @@ jobs:
         run: sccache --show-stats
       - name: Stop sccache server
         run: sccache --stop-server || true
-      - name: Clean cargo cache
-        run: |
-          cargo clean -p "LP" || true
-          rm -rf target/debug/.fingerprint/LP-*
-          rm -rf target/debug/deps/LP-*
-          rm -rf target/debug/incremental/LP-*
 
   clippy_check:
     name: Clippy
@@ -88,10 +73,7 @@ jobs:
       - name: Free disk space
         run: |
           df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
           sudo apt clean
           df -h
       - name: Checkout sources
@@ -121,20 +103,14 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-cargo-
-      - name: Cache build output dependencies
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Cache build output
         uses: actions/cache@v4
         with:
           path: target
-          key: ${{ runner.os }}-build-clippy-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-clippy-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-build-clippy-
+          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       - name: Start sccache server
         run: sccache --start-server
       - name: Run clippy
