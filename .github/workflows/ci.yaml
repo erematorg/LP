@@ -16,24 +16,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
+          sudo apt clean
+          df -h
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Cache
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo registry
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml') }}
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-cargo-
+      - name: Cache build output dependencies
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-build-
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       - name: Run cargo test
         run: cargo test
+      - name: Clean cargo cache
+        run: |
+          cargo clean -p "LP" || true
+          rm -rf target/debug/.fingerprint/LP-*
+          rm -rf target/debug/deps/LP-*
+          rm -rf target/debug/incremental/LP-*
 
   # Run cargo clippy -- -D warnings
   clippy_check:
@@ -41,22 +65,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/boost
+          sudo apt clean
+          df -h
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.toml') }}
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-cargo-
+      - name: Cache build output dependencies
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-build-clippy-${{ hashFiles('**/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-clippy-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-build-clippy-
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       - name: Run clippy
