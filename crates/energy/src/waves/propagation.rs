@@ -18,7 +18,7 @@ pub fn dispersive_angular_frequency(params: &WaveParameters, k: f32) -> f32 {
 }
 
 /// Component to store position for wave calculations
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Reflect)]
 pub struct WavePosition(pub Vec2);
 
 impl WavePosition {
@@ -36,7 +36,7 @@ impl WavePosition {
 }
 
 /// Wave type marker component
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum WaveType {
     Traveling,
     Radial,
@@ -44,7 +44,7 @@ pub enum WaveType {
 }
 
 // Marker component for wave centers (for radial waves)
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct WaveCenterMarker;
 
 #[inline]

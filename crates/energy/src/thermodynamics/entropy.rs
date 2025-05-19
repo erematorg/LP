@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 /// Entropy component for thermodynamic systems
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct Entropy {
     /// Entropy in J/K
     pub value: f32,
@@ -16,7 +16,7 @@ impl Entropy {
 }
 
 /// Process reversibility characteristic
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum Reversibility {
     Reversible,
     Irreversible,

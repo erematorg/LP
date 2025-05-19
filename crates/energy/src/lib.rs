@@ -5,6 +5,11 @@ pub mod thermodynamics;
 pub mod electromagnetism;
 pub mod waves;
 
+pub use thermodynamics::ThermodynamicsPlugin;
+pub use conservation::EnergyConservationPlugin;
+pub use electromagnetism::ElectromagnetismPlugin;
+pub use waves::WavesPlugin;
+
 // Add these new energy system related definitions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum EnergyType {
@@ -66,6 +71,18 @@ pub trait EnergySystem {
             destination,
             timestamp: 0.0, // Current time should be passed in a real implementation
         }
+    }
+}
+
+pub struct EnergyPlugin;
+
+impl Plugin for EnergyPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<EnergyType>()
+           .add_plugins(EnergyConservationPlugin)
+           .add_plugins(ThermodynamicsPlugin)
+           .add_plugins(ElectromagnetismPlugin)
+           .add_plugins(WavesPlugin);
     }
 }
 
