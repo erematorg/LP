@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
 /// Component marking systems in thermal equilibrium
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Reflect)]
 pub struct ThermalEquilibrium {
     pub connected_entities: Vec<Entity>,
 }
 
-/// Component for phase state of matter that will use the matter crate later once implemented
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+/// Component for phase state of matter that will use the matter crate later once implemented, soon once PBMPM will be in place
+/// and the matter crate is implemented
+/// This is a placeholder for the actual phase state representation
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum PhaseState {
     Solid,
     Liquid,

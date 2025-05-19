@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 /// 2D Wave equation solver (∂²u/∂t² = c²(∂²u/∂x² + ∂²u/∂y²))
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Reflect)]
 pub struct WaveEquation2D {
     /// Grid dimensions
     pub nx: usize,
@@ -131,7 +131,7 @@ impl WaveEquation2D {
 }
 
 /// Component wrapper for the wave equation
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct WaveEquationComponent {
     pub solver: WaveEquation2D,
 }
