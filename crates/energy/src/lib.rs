@@ -1,16 +1,15 @@
 use bevy::prelude::*;
 
 pub mod conservation;
-pub mod thermodynamics;
 pub mod electromagnetism;
+pub mod thermodynamics;
 pub mod waves;
 
-pub use thermodynamics::ThermodynamicsPlugin;
 pub use conservation::EnergyConservationPlugin;
 pub use electromagnetism::ElectromagnetismPlugin;
+pub use thermodynamics::ThermodynamicsPlugin;
 pub use waves::WavesPlugin;
 
-// Add these new energy system related definitions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum EnergyType {
     Generic,
@@ -33,33 +32,37 @@ pub enum EnergyTransferError {
 /// Core trait for all energy-based systems in the simulation
 /// This complements the existing EnergyQuantity component
 pub trait EnergySystem {
-    // Core energy tracking 
+    // Core energy tracking
     fn total_energy(&self) -> f32;
-    
+
     // Energy transfer with entropy consideration
     fn transfer_energy(&mut self, energy: f32) -> Result<f32, EnergyTransferError> {
         // Default implementation could track basic conservation
         Ok(energy)
     }
-    
+
     // Transformation efficiency
     fn transformation_efficiency(&self) -> f32 {
         1.0 // Default full efficiency
     }
-    
+
     // Entropy generation during energy transfer
     fn entropy_generation(&self, _energy_transfer: f32) -> f32 {
         0.0 // Default no entropy generation
     }
-    
+
     // Energy type for this system
     fn energy_type(&self) -> EnergyType {
         EnergyType::Generic
     }
-    
+
     // Create an EnergyTransaction for the ledger (optional)
-    fn create_transaction(&self, amount: f32, source: Option<Entity>, 
-                         destination: Option<Entity>) -> conservation::EnergyTransaction {
+    fn create_transaction(
+        &self,
+        amount: f32,
+        source: Option<Entity>,
+        destination: Option<Entity>,
+    ) -> conservation::EnergyTransaction {
         conservation::EnergyTransaction {
             transaction_type: if amount > 0.0 {
                 conservation::TransactionType::Input
@@ -79,32 +82,23 @@ pub struct EnergyPlugin;
 impl Plugin for EnergyPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<EnergyType>()
-           .add_plugins(EnergyConservationPlugin)
-           .add_plugins(ThermodynamicsPlugin)
-           .add_plugins(ElectromagnetismPlugin)
-           .add_plugins(WavesPlugin);
+            .add_plugins(EnergyConservationPlugin)
+            .add_plugins(ThermodynamicsPlugin)
+            .add_plugins(ElectromagnetismPlugin)
+            .add_plugins(WavesPlugin);
     }
 }
 
-/// Root energy prelude that re-exports all important items
 pub mod prelude {
-    // Add the new trait and types to the prelude
     pub use super::{EnergySystem, EnergyTransferError, EnergyType};
-    
-    // Re-export from conservation
+
     pub use crate::conservation::{
-        EnergyQuantity, 
-        EnergyTransferEvent, 
-        EnergyAccountingLedger, 
-        TransactionType, 
-        EnergyConservationTracker,
-        verify_conservation, 
-        conversion_efficiency,
-        EnergyConservationPlugin
+        conversion_efficiency, verify_conservation, EnergyAccountingLedger,
+        EnergyConservationPlugin, EnergyConservationTracker, EnergyQuantity, EnergyTransferEvent,
+        TransactionType,
     };
-    
-    // Re-export from submodules
+
+    pub use crate::electromagnetism::prelude::*;
     pub use crate::thermodynamics::prelude::*;
     pub use crate::waves::prelude::*;
-    pub use crate::electromagnetism::prelude::*;
 }
