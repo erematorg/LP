@@ -128,21 +128,12 @@ impl AppliedForce {
 }
 
 /// Component for velocity (both linear and angular)
-#[derive(Component, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect, Default)]
 pub struct Velocity {
     /// Linear velocity in meters per second
     pub linvel: Vec3,
     /// Angular velocity in radians per second
     pub angvel: Vec3,
-}
-
-impl Default for Velocity {
-    fn default() -> Self {
-        Self {
-            linvel: Vec3::ZERO,
-            angvel: Vec3::ZERO,
-        }
-    }
 }
 
 /// System to apply forces according to Newton's Second Law (F = ma)
@@ -248,25 +239,22 @@ pub fn compute_paired_forces<T: PairedForce + Resource>(
     entities: Query<(Entity, &Transform, &Mass), With<PairedForceInteraction>>,
     mut forces: Query<&mut AppliedForce>,
 ) {
-    let entity_list = entities.iter().collect::<Vec<_>>();
+    for [(entity1, transform1, mass1), (entity2, transform2, mass2)] in entities.iter_combinations()
+    {
+        let pair = ForcePair {
+            first: (entity1, transform1, mass1),
+            second: (entity2, transform2, mass2),
+        };
 
-    for i in 0..entity_list.len() {
-        for j in (i + 1)..entity_list.len() {
-            let pair = ForcePair {
-                first: entity_list[i],
-                second: entity_list[j],
-            };
+        let (force1, force2) = paired_force.compute_pair_force(pair);
 
-            let (force1, force2) = paired_force.compute_pair_force(pair);
+        // Apply calculated forces
+        if let Ok(mut force) = forces.get_mut(entity1) {
+            force.force += force1;
+        }
 
-            // Apply calculated forces
-            if let Ok(mut force) = forces.get_mut(pair.first.0) {
-                force.force += force1;
-            }
-
-            if let Ok(mut force) = forces.get_mut(pair.second.0) {
-                force.force += force2;
-            }
+        if let Ok(mut force) = forces.get_mut(entity2) {
+            force.force += force2;
         }
     }
 }
