@@ -36,7 +36,7 @@ impl Norm for Vec2 {
 impl Distance for Vec2 {}
 
 /// Component for mass properties of an entity
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct Mass {
     /// Mass in kilograms
     pub value: f32,
@@ -86,7 +86,7 @@ impl Mass {
 }
 
 /// Component representing a force applied to an entity
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Reflect)]
 pub struct AppliedForce {
     /// Force vector in Newtons
     pub force: Vec3,
@@ -128,7 +128,7 @@ impl AppliedForce {
 }
 
 /// Component for velocity (both linear and angular)
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct Velocity {
     /// Linear velocity in meters per second
     pub linvel: Vec3,
