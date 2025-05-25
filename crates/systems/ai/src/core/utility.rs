@@ -1,6 +1,6 @@
+use crate::prelude::*;
 use bevy::prelude::*;
 use rand::prelude::*; //still plan to use bevy_rand instead
-use crate::prelude::*;
 use std::collections::HashMap;
 
 /// Represents a utility score for decision-making
@@ -28,7 +28,11 @@ impl UtilityScore {
             }
         } else {
             // If all scores are 0, distribute evenly
-            let equal_value = if scores.is_empty() { 0.0 } else { 1.0 / scores.len() as f32 };
+            let equal_value = if scores.is_empty() {
+                0.0
+            } else {
+                1.0 / scores.len() as f32
+            };
             for score in scores.iter_mut() {
                 *score = UtilityScore::new(equal_value);
             }
@@ -65,7 +69,10 @@ impl UtilityScore {
     }
 
     /// Perform weighted random selection between multiple options
-    pub fn weighted_select<T: Clone, R: Rng>(options: &[(T, UtilityScore)], rng: &mut R) -> Option<T> {
+    pub fn weighted_select<T: Clone, R: Rng>(
+        options: &[(T, UtilityScore)],
+        rng: &mut R,
+    ) -> Option<T> {
         let total_weight: f32 = options.iter().map(|(_, score)| score.value()).sum();
         if total_weight <= 0.0 || options.is_empty() {
             return None;
@@ -102,22 +109,23 @@ pub fn determine_behavior<'a>(
     if modules.is_empty() {
         return (Behavior::Idle, UtilityScore::new(0.0));
     }
-    
+
     // Create normalized version of the scores for better decision making
-    let mut normalized_scores: Vec<UtilityScore> = modules.iter().map(|(_, score, _)| *score).collect();
+    let mut normalized_scores: Vec<UtilityScore> =
+        modules.iter().map(|(_, score, _)| *score).collect();
     UtilityScore::normalize_scores(&mut normalized_scores);
-    
+
     // Find behavior with highest normalized score
     let mut best_index = 0;
     let mut best_score = normalized_scores[0];
-    
+
     for (i, score) in normalized_scores.iter().enumerate().skip(1) {
         if score > &best_score {
             best_score = *score;
             best_index = i;
         }
     }
-    
+
     // Return the original behavior and original score (not normalized)
     // This preserves the absolute utility value while making selection based on normalized scores
     let (_, original_score, behavior) = modules[best_index];
@@ -154,7 +162,7 @@ impl UtilityCache {
             ttl,
         }
     }
-    
+
     /// Get cached value if not expired
     pub fn get(&self, key: &str, current_time: f32) -> Option<UtilityScore> {
         self.cache.get(key).and_then(|cached| {
@@ -165,31 +173,41 @@ impl UtilityCache {
             }
         })
     }
-    
+
     /// Store value with timestamp
     pub fn insert(&mut self, key: String, value: UtilityScore, current_time: f32) {
-        self.cache.insert(key, CachedValue { value, timestamp: current_time });
+        self.cache.insert(
+            key,
+            CachedValue {
+                value,
+                timestamp: current_time,
+            },
+        );
     }
-    
+
     /// Get value if cached, otherwise calculate and store
-    pub fn get_or_insert_with<F>(&mut self, key: String, calculator: F, current_time: f32) -> UtilityScore 
+    pub fn get_or_insert_with<F>(
+        &mut self,
+        key: String,
+        calculator: F,
+        current_time: f32,
+    ) -> UtilityScore
     where
         F: FnOnce() -> UtilityScore,
     {
         if let Some(value) = self.get(&key, current_time) {
             return value;
         }
-        
+
         let value = calculator();
         self.insert(key, value, current_time);
         value
     }
-    
+
     /// Clean up expired entries
     pub fn cleanup(&mut self, current_time: f32) {
-        self.cache.retain(|_, cached| {
-            current_time - cached.timestamp < self.ttl
-        });
+        self.cache
+            .retain(|_, cached| current_time - cached.timestamp < self.ttl);
     }
 }
 
@@ -210,17 +228,22 @@ impl EntityUtilityCache {
             }
         })
     }
-    
+
     /// Store value with timestamp
     pub fn insert(&mut self, key: String, value: UtilityScore, current_time: f32) {
-        self.cache.insert(key, CachedValue { value, timestamp: current_time });
+        self.cache.insert(
+            key,
+            CachedValue {
+                value,
+                timestamp: current_time,
+            },
+        );
     }
-    
+
     /// Clean up expired entries
     pub fn cleanup(&mut self, current_time: f32, ttl: f32) {
-        self.cache.retain(|_, cached| {
-            current_time - cached.timestamp < ttl
-        });
+        self.cache
+            .retain(|_, cached| current_time - cached.timestamp < ttl);
     }
 }
 
@@ -230,44 +253,44 @@ pub trait CacheableModule: AIModule {
     fn cache_key(&self) -> Option<String> {
         None // Default implementation returns None (no caching)
     }
-    
+
     /// Get utility with caching if available
     fn cached_utility(
-        &self, 
+        &self,
         entity_cache: Option<&mut EntityUtilityCache>,
-        global_cache: Option<&mut UtilityCache>, 
-        current_time: f32
+        global_cache: Option<&mut UtilityCache>,
+        current_time: f32,
     ) -> UtilityScore {
         // Try to get a cache key
-        let Some(key) = self.cache_key() else { 
+        let Some(key) = self.cache_key() else {
             return self.utility(); // No key means no caching
         };
-        
+
         // Try entity cache first (better locality and parallelism)
         if let Some(entity_cache) = entity_cache {
             let ttl = global_cache.as_ref().map(|c| c.ttl).unwrap_or(0.5);
-            
+
             if let Some(value) = entity_cache.get(&key, current_time, ttl) {
                 return value;
             }
-            
+
             // Not in entity cache, calculate and store
             let value = self.utility();
             entity_cache.insert(key.clone(), value, current_time);
-            
+
             // Also update global cache if available
             if let Some(global_cache) = global_cache {
                 global_cache.insert(key, value, current_time);
             }
-            
+
             return value;
         }
-        
+
         // No entity cache, try global cache
         if let Some(global_cache) = global_cache {
             return global_cache.get_or_insert_with(key, || self.utility(), current_time);
         }
-        
+
         // No caching available, calculate directly
         self.utility()
     }
@@ -280,10 +303,10 @@ pub fn cleanup_utility_cache_system(
     mut entity_caches: Query<&mut EntityUtilityCache>,
 ) {
     let current_time = time.elapsed_secs_f64() as f32;
-    
+
     // Clean up global cache
     global_cache.cleanup(current_time);
-    
+
     // Clean up entity caches
     for mut entity_cache in &mut entity_caches {
         entity_cache.cleanup(current_time, global_cache.ttl);
@@ -298,5 +321,5 @@ pub fn get_current_time(time: &Time) -> f32 {
 /// Simple function to initialize the caching system
 pub fn setup_utility_caching(app: &mut App, ttl: f32) {
     app.insert_resource(UtilityCache::new(ttl))
-       .add_systems(Last, cleanup_utility_cache_system);
+        .add_systems(Last, cleanup_utility_cache_system);
 }

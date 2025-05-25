@@ -1,31 +1,8 @@
 use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
-trait Norm {
-    type Output;
-    fn norm_squared(self) -> Self::Output;
-}
-
-impl Norm for Vec3 {
-    type Output = f32;
-    #[inline]
-    fn norm_squared(self) -> f32 {
-        self.length_squared()
-    }
-}
-
 /// Modified gravitational constant for simulation scale
 pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
-
-#[inline]
-fn calculate_softened_acceleration(direction: Vec3, mass: f32, softening_squared: f32) -> Vec3 {
-    let distance_squared = direction.norm_squared();
-    // Apply softening to prevent singularities
-    let softened_distance_squared = distance_squared + softening_squared;
-    let force_magnitude = GRAVITATIONAL_CONSTANT * mass / softened_distance_squared;
-
-    direction.normalize() * force_magnitude
-}
 
 /// Resource for gravity simulation parameters
 #[derive(Resource, Clone, Debug)]
@@ -55,19 +32,19 @@ impl Default for UniformGravity {
 }
 
 /// Component for entities affected by gravity
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct GravityAffected;
 
 /// Marker component for gravity field measurement points
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct GravityFieldMarker;
 
 /// Component for objects that generate gravitational attraction
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct GravitySource;
 
 /// Marker for bodies with significant mass
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct MassiveBody;
 
 // Spatial partitioning structures for Barnes-Hut algorithm
@@ -169,7 +146,6 @@ mod spatial {
         }
 
         pub fn insert(&mut self, entity: Entity, position: Vec3, mass: f32) {
-            let pos_2d = Vec2::new(position.x, position.y);
             self.mass_properties.add_body(position, mass);
 
             if self.depth >= MAX_DEPTH
@@ -189,14 +165,14 @@ mod spatial {
 
                 let existing_bodies = std::mem::take(&mut self.bodies);
                 for (e, p, m) in existing_bodies {
-                    let q = self.aabb.get_quadrant(Vec2::new(p.x, p.y));
+                    let q = self.aabb.get_quadrant(p.truncate());
                     if let Some(child) = &mut self.children[q] {
                         child.insert(e, p, m);
                     }
                 }
             }
 
-            let quadrant = self.aabb.get_quadrant(pos_2d);
+            let quadrant = self.aabb.get_quadrant(position.truncate());
             if let Some(child) = &mut self.children[quadrant] {
                 child.insert(entity, position, mass);
             }
@@ -287,22 +263,24 @@ pub fn calculate_gravitational_attraction(
         .map(|(e, t, m)| (e, t.translation, m.value))
         .collect();
 
-    affected_query.par_iter_mut().for_each(|(affected_entity, affected_transform, affected_mass, mut force)| {
-        let affected_pos = affected_transform.translation;
-        
-        for &(source_entity, source_pos, source_mass) in &sources {
-            if source_entity == affected_entity {
-                continue;
+    affected_query.par_iter_mut().for_each(
+        |(affected_entity, affected_transform, affected_mass, mut force)| {
+            let affected_pos = affected_transform.translation;
+
+            for &(source_entity, source_pos, source_mass) in &sources {
+                if source_entity == affected_entity {
+                    continue;
+                }
+
+                let direction = source_pos - affected_pos;
+                let distance_squared = direction.length_squared();
+                let softened_distance_squared = distance_squared + softening_squared;
+                let force_magnitude = GRAVITATIONAL_CONSTANT * source_mass * affected_mass.value
+                    / softened_distance_squared;
+                force.force += direction.normalize() * force_magnitude;
             }
-            
-            let direction = source_pos - affected_pos;
-            force.force += calculate_softened_acceleration(
-                direction,
-                source_mass * affected_mass.value,
-                softening_squared,
-            );
-        }
-    });
+        },
+    );
 }
 
 pub fn calculate_barnes_hut_attraction(
@@ -327,22 +305,24 @@ pub fn calculate_barnes_hut_attraction(
 
     let quadtree = spatial::Quadtree::from_bodies(&bodies);
 
-    affected_query.par_iter_mut().for_each(|(entity, transform, _, mut force)| {
-        let position = transform.translation;
-        
-        if bodies.iter().any(|&(e, _, _)| e == entity) {
-            return;
-        }
-        
-        let force_vector = calculate_barnes_hut_force(
-            position, 
-            &quadtree.root, 
-            theta, 
-            gravity_params.softening
-        );
-        
-        force.force += force_vector;
-    });
+    affected_query
+        .par_iter_mut()
+        .for_each(|(entity, transform, _, mut force)| {
+            let position = transform.translation;
+
+            if bodies.iter().any(|&(e, _, _)| e == entity) {
+                return;
+            }
+
+            let force_vector = calculate_barnes_hut_force(
+                position,
+                &quadtree.root,
+                theta,
+                gravity_params.softening,
+            );
+
+            force.force += force_vector;
+        });
 }
 
 pub fn calculate_barnes_hut_force(
@@ -355,11 +335,11 @@ pub fn calculate_barnes_hut_force(
 
     if node.is_far_enough(affected_position, theta) {
         let direction = node.mass_properties.center_of_mass - affected_position;
-        return calculate_softened_acceleration(
-            direction,
-            node.mass_properties.total_mass,
-            softening_squared,
-        );
+        let distance_squared = direction.length_squared();
+        let softened_distance_squared = distance_squared + softening_squared;
+        let force_magnitude =
+            GRAVITATIONAL_CONSTANT * node.mass_properties.total_mass / softened_distance_squared;
+        return direction.normalize() * force_magnitude;
     }
 
     if node.children.iter().all(|c| c.is_none()) {
@@ -367,13 +347,18 @@ pub fn calculate_barnes_hut_force(
 
         for &(_, position, mass) in &node.bodies {
             let direction = position - affected_position;
-            let distance_squared = direction.norm_squared();
+            let distance_squared = direction.length_squared();
 
             if distance_squared < 0.001 {
                 continue;
             }
 
-            total_force += calculate_softened_acceleration(direction, mass, softening_squared);
+            total_force += {
+                let distance_squared = direction.length_squared();
+                let softened_distance_squared = distance_squared + softening_squared;
+                let force_magnitude = GRAVITATIONAL_CONSTANT * mass / softened_distance_squared;
+                direction.normalize() * force_magnitude
+            };
         }
 
         return total_force;
@@ -424,12 +409,12 @@ impl GravityPlugin {
             barnes_hut_theta: 0.5,
         }
     }
-    
+
     pub fn with_barnes_hut(mut self, enabled: bool) -> Self {
         self.use_barnes_hut = enabled;
         self
     }
-    
+
     pub fn with_theta(mut self, theta: f32) -> Self {
         self.barnes_hut_theta = theta.clamp(0.1, 1.0);
         self
@@ -446,52 +431,52 @@ pub enum GravitySet {
 
 impl Plugin for GravityPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<GravityParams>()
+        app.init_resource::<GravityParams>()
             .init_resource::<UniformGravity>()
-            
             .configure_sets(
                 Update,
-                (GravitySet::UniformGravity, GravitySet::NBodyGravity).chain()
+                (GravitySet::UniformGravity, GravitySet::NBodyGravity).chain(),
             )
-            
             .add_systems(
                 Update,
-                apply_uniform_gravity
-                    .in_set(GravitySet::UniformGravity)
+                apply_uniform_gravity.in_set(GravitySet::UniformGravity),
             );
-            
+
         if self.use_barnes_hut {
             let theta = self.barnes_hut_theta;
-            
+
             app.add_systems(
                 Update,
-                (move |
-                    gravity_params: Res<GravityParams>,
-                    query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
-                    affected_query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravityAffected>>,
-                | {
+                (move |gravity_params: Res<GravityParams>,
+                       query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+                       affected_query: Query<
+                    (Entity, &Transform, &Mass, &mut AppliedForce),
+                    With<GravityAffected>,
+                >| {
                     calculate_barnes_hut_attraction(gravity_params, query, affected_query, theta);
                 })
                 .in_set(GravitySet::NBodyGravity)
-                .run_if(|query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
-                    query.iter().count() >= 20
-                })
+                .run_if(
+                    |query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
+                        query.iter().count() >= 20
+                    },
+                ),
             );
-            
+
             app.add_systems(
                 Update,
                 calculate_gravitational_attraction
                     .in_set(GravitySet::NBodyGravity)
-                    .run_if(|query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
-                        query.iter().count() < 20
-                    })
+                    .run_if(
+                        |query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
+                            query.iter().count() < 20
+                        },
+                    ),
             );
         } else {
             app.add_systems(
                 Update,
-                calculate_gravitational_attraction
-                    .in_set(GravitySet::NBodyGravity)
+                calculate_gravitational_attraction.in_set(GravitySet::NBodyGravity),
             );
         }
     }
