@@ -15,7 +15,7 @@ pub mod prelude {
     // Re-export from newton_laws module
     pub use crate::core::newton_laws::{
         apply_forces, calculate_kinetic_energy, calculate_momentum, integrate_positions,
-        AppliedForce, Distance, ForceImpulse, Mass, Norm, PairedForce, PairedForceInteraction,
-        PhysicsPlugin, Velocity,
+        AppliedForce, Distance, ForceImpulse, Mass, NewtonLawsPlugin, Norm, PairedForce,
+        PairedForceInteraction, Velocity,
     };
 }

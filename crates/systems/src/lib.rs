@@ -1,11 +1,12 @@
-use bevy::prelude::*;
-
 pub use acoustics;
 pub use ai;
 pub use pbmpm;
 pub use save_system;
 
-/// Main systems plugin that bundles all system plugins
+use bevy::prelude::*;
+
+/// Main plugin for all systems-related functionality  
+#[derive(Default)]
 pub struct SystemsPlugin;
 
 impl Plugin for SystemsPlugin {

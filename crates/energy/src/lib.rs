@@ -1,9 +1,9 @@
-use bevy::prelude::*;
-
 pub mod conservation;
 pub mod electromagnetism;
 pub mod thermodynamics;
 pub mod waves;
+
+use bevy::prelude::*;
 
 pub use conservation::EnergyConservationPlugin;
 pub use electromagnetism::ElectromagnetismPlugin;
@@ -77,6 +77,8 @@ pub trait EnergySystem {
     }
 }
 
+/// Main plugin for all energy-related systems
+#[derive(Default)]
 pub struct EnergyPlugin;
 
 impl Plugin for EnergyPlugin {
