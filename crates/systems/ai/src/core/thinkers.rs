@@ -511,8 +511,8 @@ fn exec_picked_action(
         } else if *curr_action_state == ActionState::Init {
             *curr_action_state = ActionState::Requested;
         }
-            #[cfg(feature = "trace")]
-            trace!("Continuing execution of current action.",)
+        #[cfg(feature = "trace")]
+        trace!("Continuing execution of current action.",)
     } else {
         #[cfg(feature = "trace")]
         trace!("Falling back to `otherwise` clause.",);
