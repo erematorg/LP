@@ -1,5 +1,5 @@
 //! Core AI module for LP
-//! 
+//!
 //! Provides a utility AI system with composable scorers, actions, and thinkers.
 //! Based on the Big Brain architecture but integrated into LP's ecosystem.
 
@@ -13,41 +13,37 @@ pub mod thinkers;
 pub mod utility;
 
 /// Prelude for the core AI module.
-/// 
+///
 /// This includes the most common types you'll need when working with LP's AI system.
 /// Use with `use crate::systems::ai::core::prelude::*;`
 pub mod prelude {
     // Actions (ActionBuilder and ActionState are in actions, but Action is in thinkers)
     pub use crate::core::actions::{
-        ActionBuilder, ActionState, ConcurrentMode, Concurrently, Steps
+        ActionBuilder, ActionState, ConcurrentMode, Concurrently, Steps,
     };
-    
-    // Scorers  
+
+    // Scorers
     pub use crate::core::scorers::{
-        AllOrNothing, EvaluatingScorer, FixedScore, MeasuredScorer, ProductOfScorers, 
-        Score, ScorerBuilder, SumOfScorers, WinningScorer
+        AllOrNothing, EvaluatingScorer, FixedScore, MeasuredScorer, ProductOfScorers, Score,
+        ScorerBuilder, SumOfScorers, WinningScorer,
     };
-    
+
     // Thinkers (includes Action, Actor, etc.)
     pub use crate::core::thinkers::{
-        Action, ActionSpan, Actor, HasThinker, Scorer, ScorerSpan, Thinker, ThinkerBuilder
+        Action, ActionSpan, Actor, HasThinker, Scorer, ScorerSpan, Thinker, ThinkerBuilder,
     };
-    
+
     // Evaluators
     pub use crate::core::evaluators::{
-        Evaluator, LinearEvaluator, PowerEvaluator, SigmoidEvaluator
+        Evaluator, LinearEvaluator, PowerEvaluator, SigmoidEvaluator,
     };
-    
+
     // Measures
-    pub use crate::core::measures::{
-        ChebyshevDistance, Measure, WeightedProduct, WeightedSum
-    };
-    
+    pub use crate::core::measures::{ChebyshevDistance, Measure, WeightedProduct, WeightedSum};
+
     // Pickers
-    pub use crate::core::pickers::{
-        FirstToScore, Highest, HighestToScore, Picker
-    };
-    
+    pub use crate::core::pickers::{FirstToScore, Highest, HighestToScore, Picker};
+
     // Choices
     pub use crate::core::choices::{Choice, ChoiceBuilder};
 
@@ -60,11 +56,13 @@ use bevy::{
 };
 
 /// Core plugin for LP's AI system. Provides utility AI functionality.
-/// 
+///
 /// Add this plugin to enable AI behaviors in your app.
-/// 
+///
 /// # Example
 /// ```rust
+/// # use bevy::prelude::*;
+/// # use ai::prelude::*;
 /// App::new()
 ///     .add_plugins(DefaultPlugins)
 ///     .add_plugins(LPAIPlugin::new(PreUpdate))
@@ -79,6 +77,12 @@ pub struct LPAIPlugin {
     cleanup_schedule: Interned<dyn ScheduleLabel>,
 }
 
+impl Default for LPAIPlugin {
+    fn default() -> Self {
+        Self::new(Update)
+    }
+}
+
 impl LPAIPlugin {
     /// Create the AI plugin which runs in the specified schedule
     pub fn new(schedule: impl ScheduleLabel) -> Self {
@@ -87,7 +91,7 @@ impl LPAIPlugin {
             cleanup_schedule: Last.intern(),
         }
     }
-    
+
     /// Set the schedule for cleanup tasks (default: Last)
     pub fn with_cleanup_schedule(mut self, cleanup_schedule: impl ScheduleLabel) -> Self {
         self.cleanup_schedule = cleanup_schedule.intern();
@@ -99,14 +103,9 @@ impl Plugin for LPAIPlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(
             self.schedule.intern(),
-            (
-                AISet::Scorers,
-                AISet::Thinkers,
-                AISet::Actions,
-            ).chain(),
+            (AISet::Scorers, AISet::Thinkers, AISet::Actions).chain(),
         )
         .configure_sets(self.cleanup_schedule.intern(), AISet::Cleanup)
-        
         // Add scorer systems
         .add_systems(
             self.schedule.intern(),
@@ -118,21 +117,19 @@ impl Plugin for LPAIPlugin {
                 scorers::product_of_scorers_system,
                 scorers::winning_scorer_system,
                 scorers::evaluating_scorer_system,
-            ).in_set(AISet::Scorers),
+            )
+                .in_set(AISet::Scorers),
         )
-        
         // Add thinker systems
         .add_systems(
             self.schedule.intern(),
             thinkers::thinker_system.in_set(AISet::Thinkers),
         )
-        
         // Add action systems
         .add_systems(
             self.schedule.intern(),
             (actions::steps_system, actions::concurrent_system).in_set(AISet::Actions),
         )
-        
         // Add cleanup systems
         .add_systems(
             self.cleanup_schedule.intern(),
@@ -140,7 +137,8 @@ impl Plugin for LPAIPlugin {
                 thinkers::thinker_component_attach_system,
                 thinkers::thinker_component_detach_system,
                 thinkers::actor_gone_cleanup,
-            ).in_set(AISet::Cleanup),
+            )
+                .in_set(AISet::Cleanup),
         );
     }
 }

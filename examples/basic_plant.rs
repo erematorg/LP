@@ -1,5 +1,5 @@
 use information::fractals::prelude::*;
-use rand::prelude::*; //Will move to bevy_rand 
+use rand::prelude::*; //Will move to bevy_rand
 
 fn main() {
     // Load the multi-symbol template from fractals.json

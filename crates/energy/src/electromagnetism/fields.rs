@@ -124,10 +124,12 @@ pub fn calculate_field_interactions(
     // Electric field interactions
     for (source_entity, source_field) in electric_fields.iter() {
         for (target_entity, target_field) in electric_fields.iter() {
-            if source_entity == target_entity { continue; }
-            
+            if source_entity == target_entity {
+                continue;
+            }
+
             let interaction_strength = source_field.strength() * target_field.strength();
-            
+
             if interaction_strength > f32::EPSILON {
                 field_interaction_events.write(ElectromagneticFieldInteractionEvent {
                     source: source_entity,
@@ -141,10 +143,12 @@ pub fn calculate_field_interactions(
     // Magnetic field interactions (similar logic)
     for (source_entity, source_field) in magnetic_fields.iter() {
         for (target_entity, target_field) in magnetic_fields.iter() {
-            if source_entity == target_entity { continue; }
-            
+            if source_entity == target_entity {
+                continue;
+            }
+
             let interaction_strength = source_field.strength() * target_field.strength();
-            
+
             if interaction_strength > f32::EPSILON {
                 field_interaction_events.write(ElectromagneticFieldInteractionEvent {
                     source: source_entity,
@@ -165,10 +169,8 @@ impl Plugin for ElectromagneticFieldPlugin {
             // Register types for reflection
             .register_type::<ElectricField>()
             .register_type::<MagneticField>()
-            
             // Add electromagnetic field interaction event
             .add_event::<ElectromagneticFieldInteractionEvent>()
-            
             // Add system for field interactions
             .add_systems(Update, calculate_field_interactions);
     }

@@ -26,10 +26,8 @@ pub struct EnergyQuantity {
 impl EnergyQuantity {
     /// Create a new energy quantity
     pub fn new(value: f32, energy_type: EnergyType, max_capacity: Option<f32>) -> Self {
-        let clamped_value = max_capacity
-            .map(|max| value.min(max))
-            .unwrap_or(value);
-        
+        let clamped_value = max_capacity.map(|max| value.min(max)).unwrap_or(value);
+
         Self {
             value: clamped_value.max(0.0),
             energy_type,
@@ -55,8 +53,8 @@ impl EnergyQuantity {
 /// Energy transaction types for conservation accounting
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum TransactionType {
-    Input,   // Energy entering the system
-    Output,  // Energy leaving the system
+    Input,  // Energy entering the system
+    Output, // Energy leaving the system
 }
 
 /// Event for energy transfers between entities
@@ -118,13 +116,13 @@ impl EnergyAccountingLedger {
             TransactionType::Input => self.total_input += transaction.amount,
             TransactionType::Output => self.total_output += transaction.amount,
         }
-        
+
         self.transactions.insert(0, transaction);
         if self.transactions.len() > self.max_history {
             self.transactions.pop();
         }
     }
-    
+
     /// Get the net energy change
     pub fn net_energy_change(&self) -> f32 {
         self.total_input - self.total_output
@@ -150,20 +148,13 @@ impl Default for EnergyConservationTracker {
 }
 
 /// Utility function to verify energy conservation
-pub fn verify_conservation(
-    initial_energy: f32,
-    final_energy: f32,
-    tolerance: f32,
-) -> bool {
+pub fn verify_conservation(initial_energy: f32, final_energy: f32, tolerance: f32) -> bool {
     // First law: Energy cannot be created or destroyed
     (final_energy - initial_energy).abs() <= tolerance
 }
 
 /// Utility function to calculate conversion efficiency
-pub fn conversion_efficiency(
-    energy_input: f32,
-    energy_output: f32,
-) -> f32 {
+pub fn conversion_efficiency(energy_input: f32, energy_output: f32) -> f32 {
     if energy_input > 0.0 {
         (energy_output / energy_input).clamp(0.0, 1.0)
     } else {
@@ -183,10 +174,8 @@ impl Plugin for EnergyConservationPlugin {
             .register_type::<TransactionType>()
             .register_type::<EnergyTransaction>()
             .register_type::<EnergyAccountingLedger>()
-            
             // Add resources
             .init_resource::<EnergyConservationTracker>()
-            
             // Add event channel
             .add_event::<EnergyTransferEvent>();
     }

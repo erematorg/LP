@@ -61,7 +61,7 @@ pub trait ScorerBuilder: std::fmt::Debug + Sync + Send {
     ///
     /// ```
     /// # use bevy::prelude::*;
-    /// # use big_brain::prelude::*;
+    /// # use ai::prelude::*;
     /// #[derive(Debug, Clone, Component, ScorerBuilder)]
     /// #[scorer_label = "MyScorerLabel"] // Optional. Defaults to type name.
     /// struct MyScorer;
@@ -71,7 +71,7 @@ pub trait ScorerBuilder: std::fmt::Debug + Sync + Send {
     ///
     /// ```
     /// # use bevy::prelude::*;
-    /// # use big_brain::prelude::*;
+    /// # use ai::prelude::*;
     /// #[derive(Debug)]
     /// struct MyBuilder;
     /// #[derive(Debug, Component)]
@@ -532,7 +532,11 @@ pub fn winning_scorer_system(
             None => 0.0,
         };
         let mut score = scores.get_mut(sos_ent).expect("where did it go?");
-        score.set(crate::core::evaluators::clamp(winning_score_or_zero, 0.0, 1.0));
+        score.set(crate::core::evaluators::clamp(
+            winning_score_or_zero,
+            0.0,
+            1.0,
+        ));
         #[cfg(feature = "trace")]
         {
             let _guard = _span.span().enter();

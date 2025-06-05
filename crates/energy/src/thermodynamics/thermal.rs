@@ -87,13 +87,16 @@ pub fn calculate_thermal_transfer(
 ) {
     // Use query.iter_combinations() to efficiently compare all entities
     let mut combinations = query.iter_combinations();
-    while let Some([(entity1, temp1, conduct1), (entity2, temp2, conduct2)]) = combinations.fetch_next() {
+    while let Some([(entity1, temp1, conduct1), (entity2, temp2, conduct2)]) =
+        combinations.fetch_next()
+    {
         let temp_diff: f32 = temp1.value - temp2.value;
         let area: f32 = 1.0; // Placeholder
         let distance: f32 = 1.0; // Placeholder
-        
-        let heat_flow: f32 = (conduct1.value + conduct2.value) / 2.0 * area * temp_diff / distance.max(f32::EPSILON);
-        
+
+        let heat_flow: f32 =
+            (conduct1.value + conduct2.value) / 2.0 * area * temp_diff / distance.max(f32::EPSILON);
+
         if heat_flow.abs() > f32::EPSILON {
             thermal_transfer_events.write(ThermalTransferEvent {
                 source: if heat_flow > 0.0 { entity1 } else { entity2 },
@@ -145,10 +148,8 @@ impl Plugin for ThermalSystemPlugin {
             .register_type::<ThermalConductivity>()
             .register_type::<ThermalDiffusivity>()
             .register_type::<Emissivity>()
-            
             // Add thermal transfer event channel
             .add_event::<ThermalTransferEvent>()
-            
             // Add system for thermal calculations
             .add_systems(Update, calculate_thermal_transfer);
     }
