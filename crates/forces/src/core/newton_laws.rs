@@ -220,11 +220,11 @@ impl ForceImpulse {
     }
 }
 
-/// Plugin that adds all physics systems in the correct order
+/// Plugin that adds Newton's Laws mechanics systems in the correct order
 #[derive(Default)]
-pub struct PhysicsPlugin;
+pub struct NewtonLawsPlugin;
 
-impl Plugin for PhysicsPlugin {
+impl Plugin for NewtonLawsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ForceImpulse>().add_systems(
             Update,
