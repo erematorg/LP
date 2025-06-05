@@ -57,9 +57,7 @@ pub fn handle_wave_modifications(
     mut wave_mod_events: EventReader<StandingWaveModificationEvent>,
 ) {
     for event in wave_mod_events.read() {
-        commands
-            .entity(event.entity)
-            .insert(event.new_parameters);
+        commands.entity(event.entity).insert(event.new_parameters);
     }
 }
 
