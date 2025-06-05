@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 
 /// Acoustics plugin for physics-based sound generation
-/// 
+///
 /// Note: Acoustics in LP are generated from fundamental physics:
 /// - Sound waves are mechanical energy (from energy crate)  
 /// - Propagation requires matter medium (from matter crate)
 /// - All audio emerges from white noise + frequency filtering
 /// - No hardcoded audio files - everything is procedurally generated
+#[derive(Default)]
 pub struct AcousticsPlugin;
 
 impl Plugin for AcousticsPlugin {
@@ -33,8 +34,8 @@ pub struct AcousticMedium {
 impl Default for AcousticMedium {
     fn default() -> Self {
         Self {
-            sound_speed: 343.0, // Air at 20°C
-            density: 1.225,     // Air density kg/m³
+            sound_speed: 343.0, // Air at 20Â°C
+            density: 1.225,     // Air density kg/mÂ³
             absorption_coefficient: 0.01,
         }
     }
@@ -42,15 +43,12 @@ impl Default for AcousticMedium {
 
 /// Prelude for acoustics (minimal for now)
 pub mod prelude {
-    pub use super::{
-        AcousticsPlugin,
-        AcousticMedium,
-    };
+    pub use super::{AcousticMedium, AcousticsPlugin};
 }
 
 // TODO: Future implementation will include:
 // - Integration with energy::waves for wave propagation
-// - Matter medium interaction for realistic sound physics  
+// - Matter medium interaction for realistic sound physics
 // - White noise -> frequency filtering for emergent audio
 // - Doppler effects, reflection, interference patterns
 // - No audio files - pure procedural generation from physics

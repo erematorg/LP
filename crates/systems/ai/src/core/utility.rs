@@ -103,8 +103,8 @@ pub enum Behavior {
 }
 
 /// Selects the most appropriate behavior based on module utility scores
-pub fn determine_behavior<'a>(
-    modules: &[(&'a dyn AIModule, UtilityScore, Behavior)],
+pub fn determine_behavior(
+    modules: &[(&dyn AIModule, UtilityScore, Behavior)],
 ) -> (Behavior, UtilityScore) {
     if modules.is_empty() {
         return (Behavior::Idle, UtilityScore::new(0.0));

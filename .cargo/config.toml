@@ -1,19 +1,25 @@
-[build]
-codegen-units = 16
-
 [profile.dev]
 split-debuginfo = "unpacked"
 opt-level = 1
 debug = 1
 incremental = true
 
+# Optimize dependencies for faster builds
 [profile.dev.package."*"]
 opt-level = 3
-codegen-units = 1
+debug = false
 
+# Bevy-specific optimizations
 [profile.dev.package.bevy]
 opt-level = 3
-codegen-units = 1
+debug = false
+
+# Fast dev profile for quick iteration
+[profile.dev-fast]
+inherits = "dev"
+opt-level = 0
+debug = false
+incremental = true
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
@@ -26,3 +32,7 @@ rustflags = ["-Clink-arg=-fuse-ld=lld", "-Ctarget-cpu=native"]
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld.exe"
 rustflags = ["-Ctarget-feature=+crt-static"]
+
+# Build optimizations
+[build]
+jobs = 8

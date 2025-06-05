@@ -9,7 +9,7 @@ pub fn is_save_up_to_date(data: &Value) -> bool {
         .and_then(|v| v.as_str())
         .unwrap_or("0.0.0")
         .to_string();
-    if version == SAVE_VERSION.to_string() {
+    if version == *SAVE_VERSION {
         return true;
     }
 
@@ -36,7 +36,7 @@ pub fn upgrade_save(mut data: Value) -> Value {
 
     // Ensure missing fields are initialized dynamically
     for (key, default_value) in get_default_fields() {
-        if !data.get(key).is_some() {
+        if data.get(key).is_none() {
             eprintln!("[Info] Adding missing field: {}", key);
             data[key] = default_value.clone(); // Ensure the value is actually added
         }

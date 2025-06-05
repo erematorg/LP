@@ -24,7 +24,7 @@ impl Plugin for SystemsPlugin {
 /// This includes all system plugins for easy importing.
 pub mod prelude {
     pub use super::SystemsPlugin;
-    
+
     // Re-export all sub-crate preludes
     pub use acoustics::prelude::*;
     pub use ai::prelude::*;

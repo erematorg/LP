@@ -1,14 +1,13 @@
-use bevy::prelude::*;
 use crate::prelude::*;
-
+use bevy::prelude::*;
 
 /// Core need types representing basic drives
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NeedType {
-    Hunger,     // Need for nourishment
-    Safety,     // Need to avoid danger
-    Rest,       // Need for recuperation
-    Social,     // Need for group interaction
+    Hunger, // Need for nourishment
+    Safety, // Need to avoid danger
+    Rest,   // Need for recuperation
+    Social, // Need for group interaction
 }
 
 /// Component representing a single need
@@ -46,10 +45,7 @@ impl Need {
 }
 
 /// System for updating needs over time
-pub fn update_needs(
-    time: Res<Time>,
-    mut needs: Query<&mut Need>,
-) {
+pub fn update_needs(time: Res<Time>, mut needs: Query<&mut Need>) {
     for mut need in &mut needs {
         need.satisfaction = (need.satisfaction - need.depletion_rate * time.delta_secs()).max(0.0);
     }
@@ -80,7 +76,7 @@ impl AIModule for Need {
         // (Note: Full implementation would use time delta)
         self.satisfaction = (self.satisfaction - self.depletion_rate * 0.01).max(0.0);
     }
-    
+
     fn utility(&self) -> UtilityScore {
         // Return urgency as utility
         self.urgency()
