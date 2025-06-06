@@ -92,12 +92,12 @@ impl Plugin for EnergyPlugin {
 }
 
 pub mod prelude {
-    pub use super::{EnergySystem, EnergyTransferError, EnergyType};
+    pub use super::{EnergySystem, EnergyTransferError};
 
     pub use crate::conservation::{
         conversion_efficiency, verify_conservation, EnergyAccountingLedger,
         EnergyConservationPlugin, EnergyConservationTracker, EnergyQuantity, EnergyTransferEvent,
-        TransactionType,
+        TransactionType, EnergyType, EnergyTransaction,
     };
 
     pub use crate::electromagnetism::prelude::*;

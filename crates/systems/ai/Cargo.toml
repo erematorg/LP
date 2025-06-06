@@ -10,6 +10,7 @@ doctest = false
 [dependencies]
 bevy = "0.16"
 rand = "0.9"
+energy = { path = "../../energy" }
 
 
 [features]

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 /// Represents a utility score for decision-making
 /// Normalized between 0.0 and 1.0
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Component)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Component, Reflect)]
 pub struct UtilityScore(f32);
 
 impl UtilityScore {

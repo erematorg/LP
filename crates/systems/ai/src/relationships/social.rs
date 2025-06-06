@@ -135,20 +135,20 @@ impl SocialNetwork {
         // Apply personality modifiers
         let modified_strength = match relationship_type {
             RelationshipType::Cooperation => {
-                // More dominant personalities are less cooperative
-                base_strength * (1.0 - personality.dominance * 0.3)
+                // More competitive personalities are less cooperative
+                base_strength * (1.0 - personality.competitive_strength * 0.3)
             }
             RelationshipType::Competition => {
-                // More aggressive personalities compete more strongly
-                base_strength * (1.0 + personality.aggression * 0.5)
+                // More resource assertive personalities compete more strongly
+                base_strength * (1.0 + personality.resource_assertiveness * 0.5)
             }
             RelationshipType::Predation => {
-                // More aggressive and brave personalities have stronger predation
-                base_strength * (1.0 + personality.aggression * 0.6 + personality.bravery * 0.4)
+                // More assertive and competitive personalities have stronger predation
+                base_strength * (1.0 + personality.resource_assertiveness * 0.6 + personality.competitive_strength * 0.4)
             }
             RelationshipType::Fear => {
-                // Less brave personalities feel more fear
-                base_strength * (1.0 + (1.0 - personality.bravery) * 0.7)
+                // Less stress tolerant personalities feel more fear
+                base_strength * (1.0 + (1.0 - personality.stress_tolerance) * 0.7)
             }
             RelationshipType::Kinship => {
                 // Personality doesn't strongly affect genetic relationships
@@ -212,4 +212,31 @@ pub struct SocialRelation {
     pub strength: RelationshipStrength,
     pub relationship_type: RelationshipType,
     pub last_interaction_tick: u64,
+    /// Spatial distance when relationship was last updated (for proximity influence)
+    pub last_distance: Option<f32>,
+}
+
+impl SocialRelation {
+    /// Adjust relationship strength based on spatial proximity
+    /// Closer entities have stronger social bonds (universal for all life)
+    pub fn update_with_proximity(&mut self, current_distance: f32, proximity_influence: f32) {
+        if let Some(last_dist) = self.last_distance {
+            // Getting closer strengthens bonds, getting farther weakens them
+            let distance_change = last_dist - current_distance;
+            let proximity_modifier = distance_change * proximity_influence * 0.01;
+            self.strength.adjust(proximity_modifier);
+        }
+        self.last_distance = Some(current_distance);
+    }
+    
+    /// Calculate collective utility influence from nearby entities
+    /// Used for swarm intelligence patterns - closer entities have more influence
+    pub fn proximity_utility_modifier(&self, max_influence_distance: f32) -> f32 {
+        if let Some(distance) = self.last_distance {
+            let proximity_factor = (max_influence_distance - distance) / max_influence_distance;
+            proximity_factor.max(0.0) * self.strength.value()
+        } else {
+            0.0
+        }
+    }
 }
