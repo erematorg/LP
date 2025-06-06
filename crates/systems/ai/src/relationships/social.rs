@@ -144,7 +144,10 @@ impl SocialNetwork {
             }
             RelationshipType::Predation => {
                 // More assertive and competitive personalities have stronger predation
-                base_strength * (1.0 + personality.resource_assertiveness * 0.6 + personality.competitive_strength * 0.4)
+                base_strength
+                    * (1.0
+                        + personality.resource_assertiveness * 0.6
+                        + personality.competitive_strength * 0.4)
             }
             RelationshipType::Fear => {
                 // Less stress tolerant personalities feel more fear
@@ -228,7 +231,7 @@ impl SocialRelation {
         }
         self.last_distance = Some(current_distance);
     }
-    
+
     /// Calculate collective utility influence from nearby entities
     /// Used for swarm intelligence patterns - closer entities have more influence
     pub fn proximity_utility_modifier(&self, max_influence_distance: f32) -> f32 {

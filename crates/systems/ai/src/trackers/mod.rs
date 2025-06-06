@@ -17,7 +17,6 @@ impl Plugin for TrackerPlugin {
     }
 }
 
-
 /// Prelude for the trackers module.
 ///
 /// This includes the most common tracking components and systems.

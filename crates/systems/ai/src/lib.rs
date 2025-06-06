@@ -13,11 +13,11 @@ pub use crate::core::LPAIPlugin;
 /// This includes the most common types in this crate, re-exported for your convenience.
 pub mod prelude {
     // Main plugins for easy access
-    pub use crate::LPAIPlugin;
     pub use crate::drives::DrivesPlugin;
     pub use crate::personality::PersonalityPlugin;
     pub use crate::relationships::SocialPlugin;
     pub use crate::trackers::TrackerPlugin;
+    pub use crate::LPAIPlugin;
 
     // Core interfaces - now directly from crate root
     pub use crate::{AIModule, ActionExecutor};
@@ -29,9 +29,11 @@ pub mod prelude {
     pub use crate::personality::prelude::*;
     pub use crate::relationships::prelude::*;
     pub use crate::trackers::prelude::*;
-    
+
     // Context-aware personality system
-    pub use crate::personality::traits::{ContextAwareUtilities, update_context_aware_utilities};
+    pub use crate::personality::traits::{
+        update_collective_influence, update_context_aware_utilities, ContextAwareUtilities,
+    };
 }
 
 use crate::core::utility::UtilityScore;

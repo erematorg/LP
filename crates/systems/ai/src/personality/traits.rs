@@ -28,7 +28,11 @@ impl Default for Personality {
 
 impl Personality {
     /// Create a new personality with specified values
-    pub fn new(resource_assertiveness: f32, stress_tolerance: f32, competitive_strength: f32) -> Self {
+    pub fn new(
+        resource_assertiveness: f32,
+        stress_tolerance: f32,
+        competitive_strength: f32,
+    ) -> Self {
         Self {
             resource_assertiveness: resource_assertiveness.clamp(0.0, 1.0),
             stress_tolerance: stress_tolerance.clamp(0.0, 1.0),
@@ -88,7 +92,7 @@ impl AIModule for Personality {
 pub struct Altruistic {
     /// Strength of altruistic behavior (0.0-1.0)
     pub strength: f32,
-    /// Hunger threshold below which altruism is active (0.0-1.0) 
+    /// Hunger threshold below which altruism is active (0.0-1.0)
     pub activation_threshold: f32,
 }
 
@@ -128,7 +132,7 @@ impl Altruistic {
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct ContextAwareUtilities {
     pub resource_competition: UtilityScore,
-    pub stress_retreat: UtilityScore, 
+    pub stress_retreat: UtilityScore,
     pub competitive_behavior: UtilityScore,
     pub cooperation: UtilityScore,
     /// Collective intelligence modifier from nearby entities (swarm effects)
@@ -162,7 +166,7 @@ pub fn update_context_aware_utilities(
         let energy_level = energy_opt
             .map(|e| e.value / e.max_capacity.unwrap_or(100.0))
             .unwrap_or(0.5);
-            
+
         let recent_success = ledger_opt
             .map(|l| l.net_energy_change() / 10.0)
             .unwrap_or(0.0)
@@ -175,62 +179,101 @@ pub fn update_context_aware_utilities(
             .clamp(0.0, 1.0);
 
         // Update utilities with physics context
-        utilities.resource_competition = calculate_contextual_resource_competition(
-            personality, energy_level, recent_success
-        );
-        
-        utilities.competitive_behavior = calculate_contextual_competitive_strength(
-            personality, energy_level, recent_success
-        );
-        
-        utilities.stress_retreat = calculate_contextual_stress_retreat(
-            personality, energy_level, environmental_stress
-        );
-        
+        utilities.resource_competition =
+            calculate_contextual_resource_competition(personality, energy_level, recent_success);
+
+        utilities.competitive_behavior =
+            calculate_contextual_competitive_strength(personality, energy_level, recent_success);
+
+        utilities.stress_retreat =
+            calculate_contextual_stress_retreat(personality, energy_level, environmental_stress);
+
         utilities.cooperation = UtilityScore::new(personality.social_utility());
-        
+
         // collective_influence is calculated by separate proximity-based systems
         // when entities are near each other - starts at 0.0 for isolated entities
     }
 }
 
+/// System that calculates collective influence from nearby social relations
+/// Universal swarm intelligence - works for plant root networks, animal herds, bacterial colonies
+pub fn update_collective_influence(
+    mut utilities_query: Query<(Entity, &Transform, &mut ContextAwareUtilities)>,
+    relations_query: Query<&SocialRelation>,
+    positions_query: Query<&Transform, Without<ContextAwareUtilities>>,
+) {
+    const MAX_INFLUENCE_DISTANCE: f32 = 100.0; // Universal influence range
+
+    for (entity, transform, mut utilities) in &mut utilities_query {
+        let mut total_collective_influence = 0.0;
+        let position = transform.translation.truncate();
+
+        // Get all social relations for this entity
+        for relation in relations_query.iter() {
+            if relation.target == entity {
+                continue; // Skip self-relations
+            }
+
+            // Calculate proximity influence from this relation
+            if let Ok(target_transform) = positions_query.get(relation.target) {
+                let target_pos = target_transform.translation.truncate();
+                let distance = position.distance(target_pos);
+
+                if distance <= MAX_INFLUENCE_DISTANCE {
+                    let proximity_influence =
+                        relation.proximity_utility_modifier(MAX_INFLUENCE_DISTANCE);
+                    total_collective_influence += proximity_influence;
+                }
+            }
+        }
+
+        // Update collective influence (clamped to reasonable range)
+        utilities.collective_influence = UtilityScore::new(total_collective_influence.min(1.0));
+    }
+}
+
 fn calculate_contextual_resource_competition(
-    personality: &Personality, 
-    energy_level: f32, 
-    recent_success: f32
+    personality: &Personality,
+    energy_level: f32,
+    recent_success: f32,
 ) -> UtilityScore {
     let energy_multiplier = 1.0 + (1.0 - energy_level) * 0.5;
     let confidence_modifier = 1.0 + recent_success.clamp(-0.3, 0.3);
-    
+
     // SYSTEMIC AI: Add trait interdependency to calculations
     let stress_influence = 1.0 + (personality.stress_tolerance - 0.5) * 0.2;
     let competitive_influence = 1.0 + personality.competitive_strength * 0.15;
-    
+
     let base = personality.resource_competition_likelihood();
-    let result = base * energy_multiplier * confidence_modifier * stress_influence * competitive_influence;
-    
+    let result =
+        base * energy_multiplier * confidence_modifier * stress_influence * competitive_influence;
+
     UtilityScore::new(result)
 }
 
 fn calculate_contextual_competitive_strength(
     personality: &Personality,
     energy_level: f32,
-    recent_success: f32
+    recent_success: f32,
 ) -> UtilityScore {
-    let energy_threshold = if energy_level > 0.3 { energy_level } else { energy_level * 0.5 };
+    let energy_threshold = if energy_level > 0.3 {
+        energy_level
+    } else {
+        energy_level * 0.5
+    };
     let success_boost = 1.0 + recent_success.clamp(0.0, 0.4);
-    
+
     UtilityScore::new(personality.competitive_strength * energy_threshold * success_boost)
 }
 
 fn calculate_contextual_stress_retreat(
     personality: &Personality,
     energy_level: f32,
-    environmental_stress: f32
+    environmental_stress: f32,
 ) -> UtilityScore {
     let energy_modifier = 1.0 + (1.0 - energy_level) * 0.4;
     let stress_modifier = 1.0 + environmental_stress * 0.6;
-    
+
     let base = personality.stress_retreat_likelihood();
     UtilityScore::new(base * energy_modifier * stress_modifier)
 }

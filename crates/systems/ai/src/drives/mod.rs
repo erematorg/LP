@@ -13,7 +13,6 @@ impl Plugin for DrivesPlugin {
     }
 }
 
-
 /// Prelude for the drives module.
 ///
 /// This includes core need types and drive components.

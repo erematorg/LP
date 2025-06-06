@@ -67,15 +67,22 @@ impl ShortTermMemory {
         }
     }
 
-    pub fn remember_interaction(&mut self, entity: Entity, relationship: RelationshipType, strength: f32) {
-        self.recent_interactions.push((entity, relationship, strength));
+    pub fn remember_interaction(
+        &mut self,
+        entity: Entity,
+        relationship: RelationshipType,
+        strength: f32,
+    ) {
+        self.recent_interactions
+            .push((entity, relationship, strength));
         if self.recent_interactions.len() > self.max_memories {
             self.recent_interactions.remove(0);
         }
     }
 
     pub fn recall_relationship(&self, entity: Entity) -> Option<f32> {
-        self.recent_interactions.iter()
+        self.recent_interactions
+            .iter()
             .filter(|(e, _, _)| *e == entity)
             .map(|(_, _, strength)| *strength)
             .last() // Most recent interaction
