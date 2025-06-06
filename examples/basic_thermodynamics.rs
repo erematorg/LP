@@ -92,14 +92,16 @@ fn handle_input(
         let Ok(window) = windows.single() else {
             return;
         };
-        
+
         if let Some(cursor_position) = window.cursor_position() {
             // Get camera components properly
             let Ok((camera, camera_transform)) = camera_q.single() else {
                 return;
             };
-            
-            if let Ok(world_position) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
+
+            if let Ok(world_position) =
+                camera.viewport_to_world_2d(camera_transform, cursor_position)
+            {
                 for (_cell, mut temp, transform) in grid_cells.iter_mut() {
                     let cell_pos = transform.translation.truncate();
                     let half_size = CELL_SIZE / 2.0;

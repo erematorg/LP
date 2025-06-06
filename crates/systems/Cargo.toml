@@ -5,6 +5,7 @@ edition = "2021"
 description = "Core simulation infrastructure components that manage and support the virtual universe rather than represent parts of it."
 
 [dependencies]
+bevy = "0.16"
 save_system = { path = "./save_system" }
 pbmpm = { path = "./pbmpm" }
 acoustics = { path = "./acoustics" }

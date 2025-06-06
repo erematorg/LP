@@ -1,6 +1,37 @@
-# Ignore build artifacts
-/target
+# Rust build artifacts
+/target/
+**/target/
 Cargo.lock
 
-# Ignore save files
+# IDE and editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Rust-specific
+**/*.rs.bk
+*.pdb
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Application save files
 save.json

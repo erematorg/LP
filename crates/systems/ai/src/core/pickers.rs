@@ -20,7 +20,7 @@ pub trait Picker: std::fmt::Debug + Sync + Send {
 /// ### Example
 ///
 /// ```
-/// # use big_brain::prelude::*;
+/// # use ai::prelude::*;
 /// # fn main() {
 /// Thinker::build()
 ///     .picker(FirstToScore::new(0.8))
@@ -56,7 +56,7 @@ impl Picker for FirstToScore {
 /// ### Example
 ///
 /// ```
-/// # use big_brain::prelude::*;
+/// # use ai::prelude::*;
 /// # fn main() {
 /// Thinker::build()
 ///     .picker(Highest)
@@ -90,7 +90,7 @@ impl Picker for Highest {
 /// ### Example
 ///
 /// ```
-/// # use big_brain::prelude::*;
+/// # use ai::prelude::*;
 /// # fn main() {
 /// Thinker::build()
 ///     .picker(HighestToScore::new(0.8))

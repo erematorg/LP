@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
 /// Component marking systems in thermal equilibrium
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Reflect)]
 pub struct ThermalEquilibrium {
     pub connected_entities: Vec<Entity>,
 }
 
-/// Component for phase state of matter that will use the matter crate later once implemented
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+/// Component for phase state of matter that will use the matter crate later once implemented, soon once PBMPM will be in place
+/// and the matter crate is implemented
+/// This is a placeholder for the actual phase state representation
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum PhaseState {
     Solid,
     Liquid,
@@ -16,7 +18,7 @@ pub enum PhaseState {
 }
 
 /// Weighted equilibrium parameters
-#[derive(Component, Debug, Clone, Copy)]  
+#[derive(Component, Debug, Clone, Copy)]
 pub struct ThermalProperties {
     pub thermal_mass: f32,
 }
@@ -27,23 +29,23 @@ pub fn is_in_equilibrium(
     temp_b: f32,
     props_a: &ThermalProperties,
     props_b: &ThermalProperties,
-    tolerance: f32
+    tolerance: f32,
 ) -> bool {
     // Weighted equilibrium considers both temperature and thermal properties
-    let weighted_diff = (temp_a - temp_b).abs() /
-        (1.0 + (props_a.thermal_mass * props_b.thermal_mass).sqrt());
-    weighted_diff <= tolerance  
+    let weighted_diff =
+        (temp_a - temp_b).abs() / (1.0 + (props_a.thermal_mass * props_b.thermal_mass).sqrt());
+    weighted_diff <= tolerance
 }
 
 pub fn equilibrium_time_estimate(
     temp_diff: f32, // Initial temperature difference
     props_a: &ThermalProperties,
     props_b: &ThermalProperties,
-    heat_transfer_rate: f32, // Rate of heat transfer (W)  
+    heat_transfer_rate: f32, // Rate of heat transfer (W)
 ) -> f32 {
     // More sophisticated estimate considering thermal masses
     let combined_thermal_mass = props_a.thermal_mass + props_b.thermal_mass;
-    if heat_transfer_rate > 0.0 { 
+    if heat_transfer_rate > 0.0 {
         // Weighted by combined thermal mass
         combined_thermal_mass * temp_diff / heat_transfer_rate
     } else {

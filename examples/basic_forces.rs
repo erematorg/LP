@@ -138,7 +138,7 @@ fn keep_in_bounds(windows: Query<&Window>, mut query: Query<(&mut Transform, &mu
     let Ok(window) = windows.single() else {
         return; // Exit early if we can't get the window
     };
-    
+
     let width = window.width();
     let height = window.height();
 
