@@ -29,6 +29,9 @@ pub mod prelude {
     pub use crate::personality::prelude::*;
     pub use crate::relationships::prelude::*;
     pub use crate::trackers::prelude::*;
+    
+    // Context-aware personality system
+    pub use crate::personality::traits::{ContextAwareUtilities, update_context_aware_utilities};
 }
 
 use crate::core::utility::UtilityScore;
