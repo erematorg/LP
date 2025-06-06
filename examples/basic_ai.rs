@@ -4,6 +4,13 @@ use systems::ai::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        // Add our modular AI plugins
+        .add_plugins((
+            LPAIPlugin::default(),      // Core utility AI framework
+            SocialPlugin,               // Social relationship system
+            TrackerPlugin,              // Entity tracking system
+            DrivesPlugin,               // Biological drives system
+        ))
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.15)))
         .add_systems(Startup, setup)
         .add_systems(
@@ -27,14 +34,12 @@ struct CreatureAction {
 
 #[derive(Component)]
 struct Creature {
-    social_network: SocialNetwork,
     perception: Perception,
     velocity: Vec2,
     lifespan: f32,
     hunger: f32,
     action: CreatureAction,
     using_concurrent_actions: bool,
-    // Simple field to track if this creature is altruistic
     altruistic: bool,
 }
 
@@ -61,14 +66,12 @@ fn setup(mut commands: Commands) {
             Transform::from_translation(Vec3::new(x, y, 0.0)),
             Visibility::default(),
             Creature {
-                social_network: SocialNetwork::default(),
                 perception: Perception::new(200.0),
                 velocity: Vec2::new(0.0, 0.0),
                 lifespan: 30.0,
                 hunger: 0.0,
                 action: CreatureAction::default(),
                 using_concurrent_actions: true,
-                // Enable altruism for creatures with odd indices
                 altruistic: i % 2 == 1,
             },
         ));
@@ -149,17 +152,17 @@ fn update_creatures_and_perception(
                 .perception
                 .update(position, &food_for_perception, time.elapsed_secs());
 
-            // Update relationships
-            let hunger = creature.hunger;
+            // Update relationships using Relations system
             let current_tick = (time.elapsed_secs() * 10.0) as u64;
 
             for (food_entity, _) in &food_for_perception {
-                creature.social_network.add_or_update_relationship(
-                    *food_entity,
-                    RelationshipType::Cooperation,
-                    0.8 + hunger * 0.2,
-                    current_tick,
-                );
+                // Add cooperation relationship using Relations
+                commands.entity(entity).insert(SocialRelation {
+                    target: *food_entity,
+                    strength: RelationshipStrength::new(0.8 + creature.hunger * 0.2),
+                    relationship_type: RelationshipType::Cooperation,
+                    last_interaction_tick: current_tick,
+                });
             }
 
             // Update lifespan and hunger with action tracking
@@ -178,29 +181,14 @@ fn update_creatures_and_perception(
 
             if creature.hunger > 0.3 && !active_food.is_empty() {
                 if creature.using_concurrent_actions {
-                    // Strategy 1: Social-based approach (existing logic)
-                    let mut social_target = None;
+                    // Strategy 1: Relations-based social approach
+                    // Note: This demonstrates Relations integration structure
+                    // For now using simplified logic until Relations queries are available in systems
+                    let mut social_target: Option<Vec2> = None;
                     let mut social_score = 0.0;
-                    let food_relationships = creature
-                        .social_network
-                        .query_relationships(Some(RelationshipType::Cooperation), Some(0.5));
-
-                    for (food_entity, relation) in &food_relationships {
-                        if let Some((_, food_pos)) =
-                            active_food.iter().find(|(e, _)| e == food_entity)
-                        {
-                            let dist = position.distance(food_pos.truncate());
-                            let score = relation.strength.value() * (1.0 - dist / 400.0);
-
-                            if score > social_score {
-                                social_score = score;
-                                social_target = Some(food_pos.truncate());
-                            }
-                        }
-                    }
 
                     // Strategy 2: Direct distance-based approach
-                    let mut direct_target = None;
+                    let mut direct_target: Option<Vec2> = None;
                     let mut closest_dist = f32::MAX;
 
                     for (_, food_pos) in &active_food {
@@ -243,13 +231,13 @@ fn update_creatures_and_perception(
                                         if let Some(alt_pos) = alternative {
                                             direct_target = Some(alt_pos);
                                             closest_dist = alt_dist;
-                                            // Add positive relationship with the creature we helped
-                                            creature.social_network.add_or_update_relationship(
-                                                *other_entity,
-                                                RelationshipType::Cooperation,
-                                                0.9, // Strong cooperative relationship
-                                                current_tick,
-                                            );
+                                            // Add positive relationship with the creature we helped using Relations
+                                            commands.entity(entity).insert(SocialRelation {
+                                                target: *other_entity,
+                                                strength: RelationshipStrength::new(0.9),
+                                                relationship_type: RelationshipType::Cooperation,
+                                                last_interaction_tick: current_tick,
+                                            });
                                         }
                                         break;
                                     }
@@ -258,48 +246,16 @@ fn update_creatures_and_perception(
                         }
                     }
 
-                    // Race mode: Use the strategy with higher score
-                    let social_value = social_score;
-                    let direct_value = if closest_dist < f32::MAX {
-                        1.0 - (closest_dist / 500.0)
-                    } else {
-                        0.0
-                    };
-
-                    if social_value > direct_value && social_target.is_some() {
-                        let food_pos = social_target.unwrap();
-                        let direction = (food_pos - position).normalize_or_zero();
-                        movement = direction * (40.0 + 30.0 * creature.hunger);
-                    } else if direct_target.is_some() {
+                    // Use direct distance approach (Relations queries will be added in future systems)
+                    if direct_target.is_some() {
                         let food_pos = direct_target.unwrap();
                         let direction = (food_pos - position).normalize_or_zero();
                         movement = direction * (40.0 + 30.0 * creature.hunger);
                     }
                 } else {
-                    // Original single-strategy logic
-                    let food_relationships = creature
-                        .social_network
-                        .query_relationships(Some(RelationshipType::Cooperation), Some(0.5));
-
-                    let mut target_food = None;
-                    let mut best_score = 0.0;
-
-                    for (food_entity, relation) in &food_relationships {
-                        if let Some((_, food_pos)) =
-                            active_food.iter().find(|(e, _)| e == food_entity)
-                        {
-                            let dist = position.distance(food_pos.truncate());
-                            let score = relation.strength.value() * (1.0 - dist / 400.0);
-
-                            if score > best_score {
-                                best_score = score;
-                                target_food = Some(food_pos.truncate());
-                            }
-                        }
-                    }
-
-                    if let Some(food_pos) = target_food {
-                        let direction = (food_pos - position).normalize_or_zero();
+                    // Simplified single-strategy logic - direct approach to nearest food
+                    if let Some((_, food_pos)) = active_food.first() {
+                        let direction = (food_pos.truncate() - position).normalize_or_zero();
                         movement = direction * (40.0 + 30.0 * creature.hunger);
                     }
                 }

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 
+#[derive(Component)]
 pub struct Perception {
     pub visible_entities: Vec<(Entity, Vec2, f32)>, // Entity, position, distance
     pub detection_radius: f32,

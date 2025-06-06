@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub type EntityId = Entity;
 
 /// Normalized relationship value between entities
-#[derive(Debug, Clone, Copy, Component)]
+#[derive(Debug, Clone, Copy, Component, Reflect)]
 pub struct RelationshipStrength(f32);
 
 impl RelationshipStrength {
@@ -30,7 +30,7 @@ impl RelationshipStrength {
 }
 
 /// Core ecological relationship types
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
 pub enum RelationshipType {
     Cooperation, // Mutual benefit
     Competition, // Resource rivals
@@ -40,7 +40,7 @@ pub enum RelationshipType {
 }
 
 /// Single relationship between two entities
-#[derive(Debug, Clone, Component)]
+#[derive(Debug, Clone, Component, Reflect)]
 pub struct EntityRelationship {
     pub strength: RelationshipStrength,
     pub relationship_type: RelationshipType,
@@ -55,7 +55,7 @@ impl EntityRelationship {
 }
 
 /// Component that stores all relationships an entity maintains
-#[derive(Debug, Default, Component)]
+#[derive(Debug, Default, Component, Reflect)]
 pub struct SocialNetwork {
     relationships: HashMap<EntityId, HashMap<RelationshipType, EntityRelationship>>,
 }
@@ -193,7 +193,6 @@ pub fn get_relationship_strength(
         .map(|relationship| relationship.strength)
 }
 
-// In relationships/social.rs
 impl AIModule for SocialNetwork {
     fn update(&mut self) {
         // In a real implementation, this would decay old relationships
@@ -204,4 +203,13 @@ impl AIModule for SocialNetwork {
         // Calculate overall social interaction utility
         social_behavior_utility(self)
     }
+}
+
+// Optional Relations-based components (alternative to HashMap approach)
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct SocialRelation {
+    pub target: Entity,
+    pub strength: RelationshipStrength,
+    pub relationship_type: RelationshipType,
+    pub last_interaction_tick: u64,
 }

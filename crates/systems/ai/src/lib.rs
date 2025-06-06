@@ -12,8 +12,11 @@ pub use crate::core::LPAIPlugin;
 ///
 /// This includes the most common types in this crate, re-exported for your convenience.
 pub mod prelude {
-    // Main plugin for easy access
+    // Main plugins for easy access
     pub use crate::LPAIPlugin;
+    pub use crate::drives::DrivesPlugin;
+    pub use crate::relationships::SocialPlugin;
+    pub use crate::trackers::TrackerPlugin;
 
     // Core interfaces - now directly from crate root
     pub use crate::{AIModule, ActionExecutor};
