@@ -6,7 +6,7 @@ use bevy::prelude::*;
 const C: f32 = 299_792_458.0;
 
 /// Represents an electromagnetic wave component
-#[derive(Debug, Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct ElectromagneticWave {
     /// Wave frequency in Hertz
     pub frequency: f32,
@@ -74,7 +74,7 @@ impl ElectromagneticWave {
 }
 
 /// Material electromagnetic properties component
-#[derive(Debug, Clone, Copy, Component)]
+#[derive(Debug, Clone, Copy, Component, Reflect)]
 pub struct MaterialProperties {
     /// Electric permittivity
     pub permittivity: f32,

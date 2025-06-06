@@ -122,15 +122,22 @@ pub struct WaveGenerationEvent {
 }
 
 /// System for wave parameter validation
-pub fn validate_wave_parameters(
-    mut wave_generation_events: EventReader<WaveGenerationEvent>,
-) {
+pub fn validate_wave_parameters(mut wave_generation_events: EventReader<WaveGenerationEvent>) {
     for event in wave_generation_events.read() {
         // Validate wave parameters
-        assert!(event.parameters.amplitude >= 0.0, "Wave amplitude must be non-negative");
-        assert!(event.parameters.wavelength > 0.0, "Wavelength must be positive");
-        assert!(event.parameters.speed >= 0.0, "Wave speed must be non-negative");
-        
+        assert!(
+            event.parameters.amplitude >= 0.0,
+            "Wave amplitude must be non-negative"
+        );
+        assert!(
+            event.parameters.wavelength > 0.0,
+            "Wavelength must be positive"
+        );
+        assert!(
+            event.parameters.speed >= 0.0,
+            "Wave speed must be non-negative"
+        );
+
         // Optional: Log or handle invalid parameters
     }
 }

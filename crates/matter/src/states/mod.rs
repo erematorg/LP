@@ -1,7 +1,7 @@
-pub mod solids;
 pub mod fluids;
 pub mod gases;
 pub mod plasma;
+pub mod solids;
 
 /// Prelude for the matter states module.
 ///

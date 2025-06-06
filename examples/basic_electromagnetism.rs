@@ -62,7 +62,10 @@ fn update_field_lines(
 
     // Get charge position
     let charge_pos = if let Ok(charge_transform) = charge_query.single() {
-        Vec2::new(charge_transform.translation.x, charge_transform.translation.y)
+        Vec2::new(
+            charge_transform.translation.x,
+            charge_transform.translation.y,
+        )
     } else {
         Vec2::ZERO
     };
