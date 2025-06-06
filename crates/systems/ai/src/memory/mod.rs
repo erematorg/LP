@@ -4,5 +4,5 @@ pub mod types;
 ///
 /// This includes types for storing and managing entity memories.
 pub mod prelude {
-    pub use crate::memory::types::{MemoryEvent, MemoryEventType, MemoryTimestamp};
+    pub use crate::memory::types::{MemoryEvent, MemoryEventType, MemoryTimestamp, ShortTermMemory};
 }
