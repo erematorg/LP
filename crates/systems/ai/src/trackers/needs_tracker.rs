@@ -1,7 +1,8 @@
-///use bevy::prelude::*;
 use crate::prelude::*;
+use bevy::prelude::*;
 
 /// Tracks and manages needs for an entity
+#[derive(Component)]
 pub struct NeedsTracker {
     needs: Vec<Need>,
     most_urgent_need: Option<(NeedType, UtilityScore)>,

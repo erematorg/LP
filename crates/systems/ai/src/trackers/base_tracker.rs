@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 /// Core tracker for monitoring entities
+#[derive(Component)]
 pub struct EntityTracker {
     /// Entities being tracked
     tracked_entities: HashMap<Entity, TrackedEntity>,
@@ -99,4 +100,14 @@ impl EntityTracker {
             .max_by(|a, b| a.1.importance.partial_cmp(&b.1.importance).unwrap())
             .map(|(e, data)| (*e, data))
     }
+}
+
+// Optional Relations-based tracking component (alternative to HashMap approach)
+#[derive(Component, Debug, Clone)]
+pub struct TrackingRelation {
+    pub target: Entity,
+    pub last_seen_position: Vec2,
+    pub visual_contact: bool,
+    pub ticks_since_seen: u32,
+    pub importance: f32,
 }
