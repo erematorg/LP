@@ -51,3 +51,33 @@ impl AIModule for MemoryEvent {
         self.importance
     }
 }
+
+/// Simple short-term memory for AI decisions
+#[derive(Component, Debug, Clone, Reflect, Default)]
+pub struct ShortTermMemory {
+    pub recent_interactions: Vec<(Entity, RelationshipType, f32)>, // who, what, strength
+    pub max_memories: usize,
+}
+
+impl ShortTermMemory {
+    pub fn new(max_memories: usize) -> Self {
+        Self {
+            recent_interactions: Vec::new(),
+            max_memories,
+        }
+    }
+
+    pub fn remember_interaction(&mut self, entity: Entity, relationship: RelationshipType, strength: f32) {
+        self.recent_interactions.push((entity, relationship, strength));
+        if self.recent_interactions.len() > self.max_memories {
+            self.recent_interactions.remove(0);
+        }
+    }
+
+    pub fn recall_relationship(&self, entity: Entity) -> Option<f32> {
+        self.recent_interactions.iter()
+            .filter(|(e, _, _)| *e == entity)
+            .map(|(_, _, strength)| *strength)
+            .last() // Most recent interaction
+    }
+}

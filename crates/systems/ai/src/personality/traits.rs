@@ -2,7 +2,7 @@ use crate::prelude::*;
 use bevy::prelude::*;
 
 /// Core personality traits for AI entities
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Reflect)]
 pub struct Personality {
     /// Affects aggression and attack likelihood (0.0-1.0)
     pub aggression: f32,
@@ -75,5 +75,47 @@ impl AIModule for Personality {
     fn utility(&self) -> UtilityScore {
         // Return a base utility score for personality-driven behaviors
         UtilityScore::new(0.5)
+    }
+}
+
+/// Component marking an entity as having altruistic tendencies
+/// Universal trait applicable to any creature type in LP ecosystem
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct Altruistic {
+    /// Strength of altruistic behavior (0.0-1.0)
+    pub strength: f32,
+    /// Hunger threshold below which altruism is active (0.0-1.0) 
+    pub activation_threshold: f32,
+}
+
+impl Default for Altruistic {
+    fn default() -> Self {
+        Self {
+            strength: 0.7,
+            activation_threshold: 0.7, // Only altruistic when hunger < 70%
+        }
+    }
+}
+
+impl Altruistic {
+    pub fn new(strength: f32, activation_threshold: f32) -> Self {
+        Self {
+            strength: strength.clamp(0.0, 1.0),
+            activation_threshold: activation_threshold.clamp(0.0, 1.0),
+        }
+    }
+
+    /// Check if entity should exhibit altruistic behavior given current hunger
+    pub fn should_be_altruistic(&self, hunger_level: f32) -> bool {
+        hunger_level < self.activation_threshold
+    }
+
+    /// Get altruistic behavior utility score
+    pub fn altruistic_utility(&self, hunger_level: f32) -> UtilityScore {
+        if self.should_be_altruistic(hunger_level) {
+            UtilityScore::new(self.strength)
+        } else {
+            UtilityScore::new(0.0)
+        }
     }
 }

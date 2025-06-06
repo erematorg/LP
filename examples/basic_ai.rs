@@ -10,6 +10,7 @@ fn main() {
             SocialPlugin,               // Social relationship system
             TrackerPlugin,              // Entity tracking system
             DrivesPlugin,               // Biological drives system
+            PersonalityPlugin,          // Personality and behavioral traits
         ))
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.15)))
         .add_systems(Startup, setup)
@@ -40,7 +41,6 @@ struct Creature {
     hunger: f32,
     action: CreatureAction,
     using_concurrent_actions: bool,
-    altruistic: bool,
 }
 
 #[derive(Component)]
@@ -57,7 +57,7 @@ fn setup(mut commands: Commands) {
         let x = ((i % 4) as f32 - 1.5) * 80.0;
         let y = (i as f32 / 4.0).floor() * 100.0 - 50.0;
 
-        commands.spawn((
+        let mut entity_commands = commands.spawn((
             Sprite {
                 color: Color::srgb(0.2, 0.9, 0.2),
                 custom_size: Some(Vec2::new(20.0, 20.0)),
@@ -72,9 +72,13 @@ fn setup(mut commands: Commands) {
                 hunger: 0.0,
                 action: CreatureAction::default(),
                 using_concurrent_actions: true,
-                altruistic: i % 2 == 1,
             },
         ));
+
+        // Add Altruistic component to creatures with odd indices
+        if i % 2 == 1 {
+            entity_commands.insert(Altruistic::default());
+        }
     }
 
     // Spawn food patches
@@ -103,7 +107,7 @@ fn setup(mut commands: Commands) {
 fn update_creatures_and_perception(
     mut commands: Commands,
     mut params: ParamSet<(
-        Query<(Entity, &mut Transform, &mut Creature)>,
+        Query<(Entity, &mut Transform, &mut Creature, Option<&Altruistic>)>,
         Query<(Entity, &Transform, &Food)>,
     )>,
     time: Res<Time>,
@@ -122,12 +126,12 @@ fn update_creatures_and_perception(
         .collect();
 
     // Get a list of creatures and their positions first for altruistic behavior
-    let creatures: Vec<(Entity, Vec2, f32)> = {
+    let creatures: Vec<(Entity, Vec2, f32, bool)> = {
         let query = params.p0();
         query
             .iter()
-            .map(|(entity, transform, creature)| {
-                (entity, transform.translation.truncate(), creature.hunger)
+            .map(|(entity, transform, creature, altruistic)| {
+                (entity, transform.translation.truncate(), creature.hunger, altruistic.is_some())
             })
             .collect()
     };
@@ -139,7 +143,7 @@ fn update_creatures_and_perception(
     {
         let mut query = params.p0();
 
-        for (entity, transform, mut creature) in query.iter_mut() {
+        for (entity, transform, mut creature, altruistic) in query.iter_mut() {
             // First update perception
             let position = transform.translation.truncate();
 
@@ -199,47 +203,48 @@ fn update_creatures_and_perception(
                         }
                     }
 
-                    // Simple altruistic behavior - if this creature is altruistic and not too hungry,
-                    // check if other creatures are closer to the target food and hungrier
-                    if creature.altruistic && creature.hunger < 0.7 {
-                        if let Some(target_pos) = direct_target {
-                            for (other_entity, other_pos, other_hunger) in &creatures {
-                                if *other_entity != entity {
-                                    let other_distance = other_pos.distance(target_pos);
-                                    let self_distance = position.distance(target_pos);
+                    // Altruistic behavior using Altruistic component
+                    if let Some(altruistic_trait) = altruistic {
+                        if altruistic_trait.should_be_altruistic(creature.hunger) {
+                            if let Some(target_pos) = direct_target {
+                                for (other_entity, other_pos, other_hunger, _) in &creatures {
+                                    if *other_entity != entity {
+                                        let other_distance = other_pos.distance(target_pos);
+                                        let self_distance = position.distance(target_pos);
 
-                                    // If another creature is closer and hungrier, look for a different food
-                                    if other_distance < self_distance
-                                        && *other_hunger > creature.hunger + 0.2
-                                    {
-                                        // Find alternative food
-                                        let mut alternative = None;
-                                        let mut alt_dist = f32::MAX;
+                                        // If another creature is closer and hungrier, look for a different food
+                                        if other_distance < self_distance
+                                            && *other_hunger > creature.hunger + 0.2
+                                        {
+                                            // Find alternative food
+                                            let mut alternative = None;
+                                            let mut alt_dist = f32::MAX;
 
-                                        for (_, food_pos) in &active_food {
-                                            let fp = food_pos.truncate();
-                                            if fp.distance(target_pos) > 50.0 {
-                                                // Different food
-                                                let dist = position.distance(fp);
-                                                if dist < alt_dist {
-                                                    alt_dist = dist;
-                                                    alternative = Some(fp);
+                                            for (_, food_pos) in &active_food {
+                                                let fp = food_pos.truncate();
+                                                if fp.distance(target_pos) > 50.0 {
+                                                    // Different food
+                                                    let dist = position.distance(fp);
+                                                    if dist < alt_dist {
+                                                        alt_dist = dist;
+                                                        alternative = Some(fp);
+                                                    }
                                                 }
                                             }
-                                        }
 
-                                        if let Some(alt_pos) = alternative {
-                                            direct_target = Some(alt_pos);
-                                            closest_dist = alt_dist;
-                                            // Add positive relationship with the creature we helped using Relations
-                                            commands.entity(entity).insert(SocialRelation {
-                                                target: *other_entity,
-                                                strength: RelationshipStrength::new(0.9),
-                                                relationship_type: RelationshipType::Cooperation,
-                                                last_interaction_tick: current_tick,
-                                            });
+                                            if let Some(alt_pos) = alternative {
+                                                direct_target = Some(alt_pos);
+                                                closest_dist = alt_dist;
+                                                // Add positive relationship with the creature we helped using Relations
+                                                commands.entity(entity).insert(SocialRelation {
+                                                    target: *other_entity,
+                                                    strength: RelationshipStrength::new(0.9),
+                                                    relationship_type: RelationshipType::Cooperation,
+                                                    last_interaction_tick: current_tick,
+                                                });
+                                            }
+                                            break;
                                         }
-                                        break;
                                     }
                                 }
                             }
@@ -278,7 +283,7 @@ fn update_creatures_and_perception(
         let mut query = params.p0();
 
         for (entity_id, velocity) in velocities {
-            if let Ok((_, mut transform, _)) = query.get_mut(entity_id) {
+            if let Ok((_, mut transform, _, _)) = query.get_mut(entity_id) {
                 // Update position
                 transform.translation.x += velocity.x * time.delta_secs();
                 transform.translation.y += velocity.y * time.delta_secs();
@@ -344,8 +349,8 @@ fn respawn_food(mut food_query: Query<(&mut Food, &mut Visibility)>, time: Res<T
     }
 }
 
-fn update_visuals(mut query: Query<(&Creature, &mut Sprite)>) {
-    for (creature, mut sprite) in &mut query {
+fn update_visuals(mut query: Query<(&Creature, &mut Sprite, Option<&Altruistic>)>) {
+    for (creature, mut sprite, altruistic) in &mut query {
         // Base color based on hunger
         let mut red = 0.2 + creature.hunger * 0.6;
         let green = 0.9 - creature.hunger * 0.3;
@@ -357,7 +362,7 @@ fn update_visuals(mut query: Query<(&Creature, &mut Sprite)>) {
         }
 
         // Add purple tint for altruistic creatures
-        if creature.altruistic {
+        if altruistic.is_some() {
             red += 0.1;
             blue += 0.1;
         }

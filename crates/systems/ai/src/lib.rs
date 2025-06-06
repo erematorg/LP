@@ -15,6 +15,7 @@ pub mod prelude {
     // Main plugins for easy access
     pub use crate::LPAIPlugin;
     pub use crate::drives::DrivesPlugin;
+    pub use crate::personality::PersonalityPlugin;
     pub use crate::relationships::SocialPlugin;
     pub use crate::trackers::TrackerPlugin;
 
