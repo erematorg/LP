@@ -16,7 +16,6 @@ impl Plugin for SocialPlugin {
     }
 }
 
-
 /// Prelude for the relationships module.
 ///
 /// This includes social relationships and network components.

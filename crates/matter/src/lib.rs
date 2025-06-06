@@ -15,7 +15,7 @@ impl Plugin for MatterPlugin {
         //     GasesPlugin,
         //     PlasmaPlugin,
         // ));
-        
+
         // For now, just register the plugin to establish the structure
         app.insert_resource(MatterSystemsInitialized);
     }
@@ -28,7 +28,7 @@ pub struct MatterSystemsInitialized;
 pub mod prelude {
     // Main plugin export
     pub use crate::MatterPlugin;
-    
+
     // Re-export from states module when ready
     //pub use crate::states::prelude::*;
 }

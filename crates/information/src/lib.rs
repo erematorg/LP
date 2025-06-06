@@ -21,7 +21,7 @@ pub struct InformationSystemsInitialized;
 pub mod prelude {
     // Main plugin export
     pub use crate::InformationPlugin;
-    
+
     // Re-export from fractals module
     pub use crate::fractals::prelude::*;
 

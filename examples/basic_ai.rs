@@ -6,11 +6,11 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // Add our modular AI plugins
         .add_plugins((
-            LPAIPlugin::default(),      // Core utility AI framework
-            SocialPlugin,               // Social relationship system
-            TrackerPlugin,              // Entity tracking system
-            DrivesPlugin,               // Biological drives system
-            PersonalityPlugin,          // Personality and behavioral traits
+            LPAIPlugin::default(), // Core utility AI framework
+            SocialPlugin,          // Social relationship system
+            TrackerPlugin,         // Entity tracking system
+            DrivesPlugin,          // Biological drives system
+            PersonalityPlugin,     // Personality and behavioral traits
         ))
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.15)))
         .add_systems(Startup, setup)
@@ -63,32 +63,33 @@ fn setup(mut commands: Commands) {
         let x = ((i % 4) as f32 - 1.5) * 80.0;
         let y = (i as f32 / 4.0).floor() * 100.0 - 50.0;
 
-        let entity = commands.spawn((
-            Sprite {
-                color: Color::srgb(0.2, 0.9, 0.2),
-                custom_size: Some(Vec2::new(20.0, 20.0)),
-                ..default()
-            },
-            Transform::from_translation(Vec3::new(x, y, 0.0)),
-            Visibility::default(),
-            Creature {
-                perception: Perception::new(200.0),
-                velocity: Vec2::new(0.0, 0.0),
-                lifespan: 30.0,
-                hunger: 0.0,
-                action: CreatureAction::default(),
-                using_concurrent_actions: true,
-            },
-            // AI components - all start neutral, diverge through experience  
-            Personality::default(),
-        )).id();
+        let entity = commands
+            .spawn((
+                Sprite {
+                    color: Color::srgb(0.2, 0.9, 0.2),
+                    custom_size: Some(Vec2::new(20.0, 20.0)),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(x, y, 0.0)),
+                Visibility::default(),
+                Creature {
+                    perception: Perception::new(200.0),
+                    velocity: Vec2::new(0.0, 0.0),
+                    lifespan: 30.0,
+                    hunger: 0.0,
+                    action: CreatureAction::default(),
+                    using_concurrent_actions: true,
+                },
+                // AI components - all start neutral, diverge through experience
+                Personality::default(),
+            ))
+            .id();
 
-        // Add dynamic state label text  
+        // Add dynamic state label text
         commands.spawn((
             Text2d::new("Neutral"),
             TextLayout::new_with_justify(JustifyText::Center),
-            Transform::from_translation(Vec3::new(x, y + 25.0, 1.0))
-                .with_scale(Vec3::splat(0.5)), // Half the size
+            Transform::from_translation(Vec3::new(x, y + 25.0, 1.0)).with_scale(Vec3::splat(0.5)), // Half the size
             CreatureLabel { creature: entity },
         ));
 
@@ -98,7 +99,7 @@ fn setup(mut commands: Commands) {
         if i % 2 == 1 {
             entity_commands.insert(Altruistic::default());
         }
-        
+
         // Add context-aware utilities component to enable physics-based decision making
         entity_commands.insert(ContextAwareUtilities::default());
     }
@@ -129,7 +130,13 @@ fn setup(mut commands: Commands) {
 fn update_creatures_and_perception(
     mut commands: Commands,
     mut params: ParamSet<(
-        Query<(Entity, &mut Transform, &mut Creature, Option<&Altruistic>, &Personality)>,
+        Query<(
+            Entity,
+            &mut Transform,
+            &mut Creature,
+            Option<&Altruistic>,
+            &Personality,
+        )>,
         Query<(Entity, &Transform, &Food)>,
     )>,
     time: Res<Time>,
@@ -153,7 +160,12 @@ fn update_creatures_and_perception(
         query
             .iter()
             .map(|(entity, transform, creature, altruistic, _)| {
-                (entity, transform.translation.truncate(), creature.hunger, altruistic.is_some())
+                (
+                    entity,
+                    transform.translation.truncate(),
+                    creature.hunger,
+                    altruistic.is_some(),
+                )
             })
             .collect()
     };
@@ -188,6 +200,7 @@ fn update_creatures_and_perception(
                     strength: RelationshipStrength::new(0.8 + creature.hunger * 0.2),
                     relationship_type: RelationshipType::Cooperation,
                     last_interaction_tick: current_tick,
+                    last_distance: None,
                 });
             }
 
@@ -195,7 +208,6 @@ fn update_creatures_and_perception(
             creature.lifespan -= time.delta_secs();
             creature.hunger = (creature.hunger + time.delta_secs() * 0.1).min(1.0);
             creature.action.action_attempts += 1;
-
 
             // Despawn if lifespan expires or hunger reaches maximum
             if creature.lifespan <= 0.0 || creature.hunger >= 1.0 {
@@ -257,8 +269,10 @@ fn update_creatures_and_perception(
                                                 commands.entity(entity).insert(SocialRelation {
                                                     target: *other_entity,
                                                     strength: RelationshipStrength::new(0.9),
-                                                    relationship_type: RelationshipType::Cooperation,
+                                                    relationship_type:
+                                                        RelationshipType::Cooperation,
                                                     last_interaction_tick: current_tick,
+                                                    last_distance: None,
                                                 });
                                             }
                                             break;
@@ -273,14 +287,15 @@ fn update_creatures_and_perception(
                     if direct_target.is_some() {
                         let food_pos = direct_target.unwrap();
                         let direction = (food_pos - position).normalize_or_zero();
-                        
+
                         // Movement speed influenced by evolved personality traits
                         let base_speed = 30.0;
                         let hunger_urgency = creature.hunger * 25.0;
                         let assertiveness_boost = personality.resource_assertiveness * 15.0;
                         let stress_modifier = 1.0 + (1.0 - personality.stress_tolerance) * 0.3;
-                        let total_speed = (base_speed + hunger_urgency + assertiveness_boost) * stress_modifier;
-                        
+                        let total_speed =
+                            (base_speed + hunger_urgency + assertiveness_boost) * stress_modifier;
+
                         movement = direction * total_speed;
                     }
                 } else {
@@ -354,21 +369,24 @@ fn handle_food_consumption(
                 creature.action.last_action_result = ActionState::Success;
 
                 // SUCCESS = PERSONALITY EVOLUTION! Less hardcoded, more emergent
-                personality.resource_assertiveness = (personality.resource_assertiveness + 0.01).min(1.0);
-                personality.competitive_strength = (personality.competitive_strength + 0.005).min(1.0);
-                
+                personality.resource_assertiveness =
+                    (personality.resource_assertiveness + 0.01).min(1.0);
+                personality.competitive_strength =
+                    (personality.competitive_strength + 0.005).min(1.0);
+
                 // SYSTEMIC AI: Traits affect each other creating emergent behavior patterns
                 // Success builds confidence but also competitive drive
                 personality.stress_tolerance = (personality.stress_tolerance + 0.003).min(1.0);
-                
+
                 // High assertiveness creates stress over time (aggressive behavior is taxing)
                 if personality.resource_assertiveness > 0.7 {
                     personality.stress_tolerance = (personality.stress_tolerance - 0.001).max(0.0);
                 }
-                
+
                 // Competitive strength influences assertiveness (winners become more bold)
                 if personality.competitive_strength > 0.6 {
-                    personality.resource_assertiveness = (personality.resource_assertiveness + 0.002).min(1.0);
+                    personality.resource_assertiveness =
+                        (personality.resource_assertiveness + 0.002).min(1.0);
                 }
 
                 food.active = false;
@@ -417,36 +435,51 @@ fn update_visuals(mut query: Query<(&Creature, &mut Sprite, Option<&Altruistic>)
 
 fn update_personality_labels(
     mut commands: Commands,
-    creature_query: Query<(Entity, &Personality, &Creature, &Transform, Option<&Altruistic>)>,
-    mut label_query: Query<(Entity, &mut Text2d, &mut Transform, &CreatureLabel), Without<Creature>>,
+    creature_query: Query<(
+        Entity,
+        &Personality,
+        &Creature,
+        &Transform,
+        Option<&Altruistic>,
+    )>,
+    mut label_query: Query<
+        (Entity, &mut Text2d, &mut Transform, &CreatureLabel),
+        Without<Creature>,
+    >,
 ) {
     for (label_entity, mut text, mut label_transform, label) in &mut label_query {
-        if let Ok((_, personality, creature, creature_transform, altruistic)) = creature_query.get(label.creature) {
+        if let Ok((_, personality, creature, creature_transform, altruistic)) =
+            creature_query.get(label.creature)
+        {
             // Update label position to follow creature
             label_transform.translation.x = creature_transform.translation.x;
             label_transform.translation.y = creature_transform.translation.y + 25.0;
-            
+
             // Core AI states showing emergent personality development
             let state = if creature.hunger > 0.8 {
                 "Starving"
-            } else if creature.action.last_action_result == ActionState::Success && altruistic.is_some() {
+            } else if creature.action.last_action_result == ActionState::Success
+                && altruistic.is_some()
+            {
                 "Altruistic"
             } else if creature.hunger > 0.3 {
                 if personality.resource_assertiveness > 0.6 && personality.stress_tolerance < 0.4 {
                     "Aggressive"
                 } else if personality.resource_assertiveness > 0.6 {
-                    "Competitive" 
+                    "Competitive"
                 } else {
                     "Seeking"
                 }
-            } else if personality.resource_assertiveness > 0.6 || personality.competitive_strength > 0.6 {
+            } else if personality.resource_assertiveness > 0.6
+                || personality.competitive_strength > 0.6
+            {
                 "Evolved"
             } else if personality.stress_tolerance > 0.7 {
                 "Calm"
             } else {
                 "Neutral"
             };
-            
+
             **text = state.to_string();
         } else {
             // Creature died, despawn the label
