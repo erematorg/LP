@@ -2,7 +2,7 @@ use crate::prelude::*;
 use bevy::prelude::*;
 
 /// Core need types representing basic drives
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
 pub enum NeedType {
     Hunger, // Need for nourishment
     Safety, // Need to avoid danger
@@ -11,7 +11,7 @@ pub enum NeedType {
 }
 
 /// Component representing a single need
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Reflect)]
 pub struct Need {
     /// Type of need
     pub need_type: NeedType,
