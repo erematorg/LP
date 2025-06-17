@@ -8,7 +8,7 @@ use std::sync::Arc;
 /// of the Thinker that spawned it, and the actual Action system executing the
 /// Action itself.
 #[derive(Debug, Clone, Component, Eq, PartialEq, Reflect)]
-#[component(storage = "SparseSet")]
+#[component(storage = "Table")]
 pub enum ActionState {
     /// Initial state. No action should be performed.
     Init,

@@ -88,7 +88,9 @@ impl MagneticField {
 
         // Biot-Savart law: dB = (μ₀/4π) * (I dl × r̂) / r²
         let field_magnitude = MAGNETIC_CONSTANT_DIV_4PI * current / (distance * distance);
-        let field = Vec2::new(-r_unit.y, r_unit.x) * current_direction.length() * field_magnitude;
+        let field = Vec2::new(-r_unit.y, r_unit.x)
+            * (current_direction.x * r_unit.y - current_direction.y * r_unit.x)
+            * field_magnitude;
 
         Self::new(field, field_position)
     }

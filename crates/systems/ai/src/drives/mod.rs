@@ -7,7 +7,9 @@ use bevy::prelude::*;
 pub struct DrivesPlugin;
 
 impl Plugin for DrivesPlugin {
-    fn build(&self, _app: &mut App) {
+    fn build(&self, app: &mut App) {
+        app.register_type::<needs::Need>()
+            .register_type::<needs::NeedType>();
         // Simple plugin - just makes drives available
         // Systems will be added later when we have proper integration
     }

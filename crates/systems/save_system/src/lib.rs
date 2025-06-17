@@ -3,20 +3,29 @@ use bevy::prelude::*;
 pub mod save_system;
 pub mod versioning;
 
-/// Plugin for save/load functionality with versioning support
-#[derive(Default)]
 pub struct SaveSystemPlugin;
 
 impl Plugin for SaveSystemPlugin {
-    fn build(&self, _app: &mut App) {
-        // TODO: Will add save/load systems when needed
-        // For now, just register the plugin
+    fn build(&self, app: &mut App) {
+        app.init_resource::<save_system::GameTracker>()
+            .register_type::<save_system::Saveable>()
+            .register_type::<save_system::GameState>()
+            .register_type::<save_system::GameEvent>()
+            .register_type::<save_system::SaveMetadata>();
     }
 }
 
-/// Prelude for easy importing
+impl Default for SaveSystemPlugin {
+    fn default() -> Self {
+        Self
+    }
+}
+
 pub mod prelude {
     pub use super::SaveSystemPlugin;
-    pub use crate::save_system::{load, save};
+    pub use crate::save_system::{
+        get_save_directory, get_save_path, load, load_game_data, save, save_game_data, GameEvent,
+        GameSaveData, GameSnapshot, GameState, GameTracker, SaveMetadata, Saveable, WorldSaveExt,
+    };
     pub use crate::versioning::{is_save_up_to_date, upgrade_save, SAVE_VERSION};
 }
