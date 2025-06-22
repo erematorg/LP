@@ -35,3 +35,8 @@ Thumbs.db
 
 # Application save files
 save.json
+
+# MCP and Serena files
+.mcp.json
+.serena/
+CLAUDE.md

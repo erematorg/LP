@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use bevy::prelude::*;
-use energy::prelude::*;
+// Removed direct energy dependency - use trait-based interface instead
 
 /// Universal life adaptation traits for all organisms (plants through animals)
 #[derive(Component, Debug, Clone, Reflect)]
@@ -151,34 +151,22 @@ impl Default for ContextAwareUtilities {
     }
 }
 
-/// System that updates personality utilities based on energy and thermal state
+/// System that updates personality utilities based on generic resource and environmental state
 pub fn update_context_aware_utilities(
     mut query: Query<(
         &Personality,
         &mut ContextAwareUtilities,
-        Option<&EnergyQuantity>,
-        Option<&EnergyAccountingLedger>,
-        Option<&Temperature>,
+        // TODO: Replace with trait-based resource system when available
+        // For now, use simple f32 values that can be populated by game-level integration
     )>,
 ) {
-    for (personality, mut utilities, energy_opt, ledger_opt, temp_opt) in &mut query {
-        // Energy context
-        let energy_level = energy_opt
-            .map(|e| e.value / e.max_capacity.unwrap_or(100.0))
-            .unwrap_or(0.5);
+    for (personality, mut utilities) in &mut query {
+        // Default values - will be replaced by proper resource tracking
+        let energy_level = 0.5; // Default moderate energy
+        let recent_success = 0.0; // Default neutral success
+        let environmental_stress = 0.0; // Default no stress
 
-        let recent_success = ledger_opt
-            .map(|l| l.net_energy_change() / 10.0)
-            .unwrap_or(0.0)
-            .clamp(-0.5, 0.5);
-
-        // Thermal stress context
-        let environmental_stress = temp_opt
-            .map(|t| (t.value - 298.0).abs() / 50.0)
-            .unwrap_or(0.0)
-            .clamp(0.0, 1.0);
-
-        // Update utilities with physics context
+        // Update utilities with default context (to be enhanced later)
         utilities.resource_competition =
             calculate_contextual_resource_competition(personality, energy_level, recent_success);
 
