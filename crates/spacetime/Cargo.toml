@@ -1,7 +1,0 @@
-[package]
-name = "spacetime"
-version = "0.1.0"
-edition = "2021"
-description = "Dimensional framework providing the canvas on which all simulation events unfold, governing locality and causality."
-
-[dependencies]
