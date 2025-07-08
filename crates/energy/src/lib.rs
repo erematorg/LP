@@ -10,16 +10,8 @@ pub use electromagnetism::ElectromagnetismPlugin;
 pub use thermodynamics::ThermodynamicsPlugin;
 pub use waves::WavesPlugin;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
-pub enum EnergyType {
-    Generic,
-    Thermal,
-    Kinetic,
-    Potential,
-    Chemical,
-    Electromagnetic,
-    Solar,
-}
+// Re-export EnergyType from conservation module
+pub use conservation::EnergyType;
 
 #[derive(Debug)]
 pub enum EnergyTransferError {
@@ -73,6 +65,32 @@ pub trait EnergySystem {
             source,
             destination,
             timestamp: 0.0, // Current time should be passed in a real implementation
+            transfer_rate: 0.0, // Default to instantaneous transfer
+            duration: 0.0, // Default to instantaneous transfer
+        }
+    }
+
+    // Create a flux transaction for sustained energy flow
+    fn create_flux_transaction(
+        &self,
+        rate: f32,
+        duration: f32,
+        source: Option<Entity>,
+        destination: Option<Entity>,
+        timestamp: f32,
+    ) -> conservation::EnergyTransaction {
+        conservation::EnergyTransaction {
+            transaction_type: if rate > 0.0 {
+                conservation::TransactionType::Input
+            } else {
+                conservation::TransactionType::Output
+            },
+            amount: rate.abs() * duration, // Total energy = rate × time
+            source,
+            destination,
+            timestamp,
+            transfer_rate: rate.abs(),
+            duration,
         }
     }
 }
