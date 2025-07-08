@@ -96,6 +96,10 @@ pub struct EnergyTransaction {
     pub destination: Option<Entity>,
     /// Timestamp when the transaction occurred
     pub timestamp: f32,
+    /// Transfer rate (Watts = Joules/second) - for flux tracking
+    pub transfer_rate: f32,
+    /// Duration of the transfer (seconds) - for sustained flows
+    pub duration: f32,
 }
 
 impl Default for EnergyAccountingLedger {
@@ -126,6 +130,47 @@ impl EnergyAccountingLedger {
     /// Get the net energy change
     pub fn net_energy_change(&self) -> f32 {
         self.total_input - self.total_output
+    }
+
+    /// Calculate average transfer rate from recent transactions
+    pub fn average_transfer_rate(&self, time_window: f32) -> f32 {
+        if self.transactions.is_empty() {
+            return 0.0;
+        }
+
+        let current_time = self.transactions.first().map(|t| t.timestamp).unwrap_or(0.0);
+        let cutoff_time = current_time - time_window;
+
+        let recent_transactions: Vec<&EnergyTransaction> = self.transactions
+            .iter()
+            .take_while(|t| t.timestamp >= cutoff_time)
+            .collect();
+
+        if recent_transactions.is_empty() {
+            return 0.0;
+        }
+
+        let total_rate: f32 = recent_transactions.iter().map(|t| t.transfer_rate).sum();
+        total_rate / recent_transactions.len() as f32
+    }
+
+    /// Get current energy flux (sum of all active transfer rates)
+    pub fn current_flux(&self, current_time: f32, active_duration: f32) -> f32 {
+        let cutoff_time = current_time - active_duration;
+        
+        self.transactions
+            .iter()
+            .filter(|t| t.timestamp >= cutoff_time && t.duration > 0.0)
+            .map(|t| t.transfer_rate)
+            .sum()
+    }
+
+    /// Find transactions involving a specific entity
+    pub fn transactions_with_entity(&self, entity: Entity) -> Vec<&EnergyTransaction> {
+        self.transactions
+            .iter()
+            .filter(|t| t.source == Some(entity) || t.destination == Some(entity))
+            .collect()
     }
 }
 

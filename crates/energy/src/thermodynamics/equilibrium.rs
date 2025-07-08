@@ -57,23 +57,21 @@ pub fn equilibrium_time_estimate(
 
 /// Zeroth Law: Apply transitivity to thermal equilibrium relationships
 /// If A is in equilibrium with C and B is in equilibrium with C, then A is in equilibrium with B
-pub fn apply_equilibrium_transitivity(
-    equilibrium_relationships: &mut Vec<(Entity, Entity)>,
-) {
+pub fn apply_equilibrium_transitivity(equilibrium_relationships: &mut Vec<(Entity, Entity)>) {
     let mut changed = true;
-    
+
     // Keep applying transitivity until no new relationships are found
     while changed {
         changed = false;
         let current_relationships = equilibrium_relationships.clone();
-        
+
         // For each pair of existing relationships
         for (a, c) in &current_relationships {
             for (b, c2) in &current_relationships {
                 // If both A and B are in equilibrium with the same entity C
                 if c == c2 && a != b {
                     let new_relationship = if a < b { (*a, *b) } else { (*b, *a) };
-                    
+
                     // Add the transitive relationship A↔B if it doesn't exist
                     if !equilibrium_relationships.contains(&new_relationship) {
                         equilibrium_relationships.push(new_relationship);
@@ -92,7 +90,7 @@ pub fn find_equilibrium_group(
 ) -> Vec<Entity> {
     let mut group = vec![entity];
     let mut to_process = vec![entity];
-    
+
     while let Some(current) = to_process.pop() {
         // Find all entities connected to current entity
         for (a, b) in equilibrium_relationships {
@@ -103,7 +101,7 @@ pub fn find_equilibrium_group(
             } else {
                 None
             };
-            
+
             if let Some(connected_entity) = connected {
                 if !group.contains(&connected_entity) {
                     group.push(connected_entity);
@@ -112,7 +110,7 @@ pub fn find_equilibrium_group(
             }
         }
     }
-    
+
     group
 }
 
@@ -125,7 +123,8 @@ pub fn validate_equilibrium_group_consistency(
 ) -> bool {
     // Zeroth Law: all entities in same group must have same temperature
     if let Some(first_temp) = temperatures.iter().find(|(e, _)| entities.contains(e)) {
-        temperatures.iter()
+        temperatures
+            .iter()
             .filter(|(e, _)| entities.contains(e))
             .all(|(_, temp)| (temp - first_temp.1).abs() <= tolerance)
     } else {

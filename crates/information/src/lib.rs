@@ -10,12 +10,12 @@ pub use measures::MutualInformationPlugin;
 pub trait InformationProcessor: Send + Sync {
     /// Calculate information content for this system
     fn information_content(&self) -> f64;
-    
+
     /// Get information type identifier
     fn information_type(&self) -> &'static str {
         "generic"
     }
-    
+
     /// Calculate Shannon entropy for this system's state  
     /// Uses domain-independent entropy calculation
     fn entropy(&self) -> f64 {
@@ -31,7 +31,7 @@ impl Plugin for InformationPlugin {
     fn build(&self, app: &mut App) {
         // Add information theory systems
         app.add_plugins(MutualInformationPlugin)
-           .insert_resource(InformationSystemsInitialized);
+            .insert_resource(InformationSystemsInitialized);
     }
 }
 
@@ -45,7 +45,7 @@ pub mod prelude {
 
     // Re-export from fractals module
     pub use crate::fractals::prelude::*;
-    
+
     // Re-export from measures module
     pub use crate::measures::prelude::*;
 }
