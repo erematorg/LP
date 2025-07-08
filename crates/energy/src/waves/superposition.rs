@@ -61,8 +61,8 @@ pub fn handle_wave_modifications(
     }
 }
 
-/// Create a standing wave
-pub fn create_standing_wave(
+/// Create wave parameters for standing wave calculation
+pub fn create_standing_wave_parameters(
     amplitude: f32,
     wavelength: f32,
     frequency: f32,

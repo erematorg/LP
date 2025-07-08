@@ -35,7 +35,7 @@ pub mod prelude {
         WaveCenterMarker, WavePosition, WaveType,
     };
     pub use crate::waves::superposition::{
-        create_standing_wave, solve_standing_wave, update_standing_waves, StandingWaveMarker,
+        create_standing_wave_parameters, solve_standing_wave, update_standing_waves, StandingWaveMarker,
     };
     pub use crate::waves::wave_equation::{
         update_wave_equation, WaveEquation2D, WaveEquationComponent,
