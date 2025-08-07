@@ -138,10 +138,15 @@ impl EnergyAccountingLedger {
             return 0.0;
         }
 
-        let current_time = self.transactions.first().map(|t| t.timestamp).unwrap_or(0.0);
+        let current_time = self
+            .transactions
+            .first()
+            .map(|t| t.timestamp)
+            .unwrap_or(0.0);
         let cutoff_time = current_time - time_window;
 
-        let recent_transactions: Vec<&EnergyTransaction> = self.transactions
+        let recent_transactions: Vec<&EnergyTransaction> = self
+            .transactions
             .iter()
             .take_while(|t| t.timestamp >= cutoff_time)
             .collect();
@@ -157,7 +162,7 @@ impl EnergyAccountingLedger {
     /// Get current energy flux (sum of all active transfer rates)
     pub fn current_flux(&self, current_time: f32, active_duration: f32) -> f32 {
         let cutoff_time = current_time - active_duration;
-        
+
         self.transactions
             .iter()
             .filter(|t| t.timestamp >= cutoff_time && t.duration > 0.0)

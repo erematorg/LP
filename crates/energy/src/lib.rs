@@ -66,7 +66,7 @@ pub trait EnergySystem {
             destination,
             timestamp: 0.0, // Current time should be passed in a real implementation
             transfer_rate: 0.0, // Default to instantaneous transfer
-            duration: 0.0, // Default to instantaneous transfer
+            duration: 0.0,  // Default to instantaneous transfer
         }
     }
 
@@ -113,9 +113,9 @@ pub mod prelude {
     pub use super::{EnergySystem, EnergyTransferError};
 
     pub use crate::conservation::{
-        conversion_efficiency, verify_conservation, EnergyAccountingLedger,
-        EnergyConservationPlugin, EnergyConservationTracker, EnergyQuantity, EnergyTransaction,
-        EnergyTransferEvent, EnergyType, TransactionType,
+        EnergyAccountingLedger, EnergyConservationPlugin, EnergyConservationTracker,
+        EnergyQuantity, EnergyTransaction, EnergyTransferEvent, EnergyType, TransactionType,
+        conversion_efficiency, verify_conservation,
     };
 
     pub use crate::electromagnetism::prelude::*;

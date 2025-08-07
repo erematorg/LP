@@ -17,6 +17,6 @@ impl Plugin for PersonalityPlugin {
 ///
 /// This includes personality traits and related components.
 pub mod prelude {
-    pub use crate::personality::traits::{Altruistic, Personality};
     pub use crate::personality::PersonalityPlugin;
+    pub use crate::personality::traits::{Altruistic, Personality};
 }

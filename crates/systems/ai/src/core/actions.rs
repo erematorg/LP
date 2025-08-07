@@ -218,7 +218,10 @@ pub fn steps_system(
             }
             Cancelled => {
                 #[cfg(feature = "trace")]
-                trace!("StepsAction has been cancelled. Cancelling current step {:?} before finalizing.", active_ent);
+                trace!(
+                    "StepsAction has been cancelled. Cancelling current step {:?} before finalizing.",
+                    active_ent
+                );
                 let mut step_state = states.get_mut(active_ent).expect("oops");
                 if matches!(*step_state, Requested | Executing | Init) {
                     *step_state = Cancelled;
@@ -349,7 +352,9 @@ pub fn concurrent_system(
                                 failed_idx = Some(idx);
                                 all_success = false;
                                 #[cfg(feature = "trace")]
-                                trace!("Join action has failed. Cancelling all other actions that haven't completed yet.");
+                                trace!(
+                                    "Join action has failed. Cancelling all other actions that haven't completed yet."
+                                );
                             }
                             Success => {}
                             _ => {
@@ -385,7 +390,9 @@ pub fn concurrent_system(
                                 succeed_idx = Some(idx);
                                 all_failure = false;
                                 #[cfg(feature = "trace")]
-                                trace!("Race action has succeeded. Cancelling all other actions that haven't completed yet.");
+                                trace!(
+                                    "Race action has succeeded. Cancelling all other actions that haven't completed yet."
+                                );
                             }
                             _ => {
                                 all_failure = false;

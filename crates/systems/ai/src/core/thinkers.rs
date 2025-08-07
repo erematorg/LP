@@ -9,8 +9,8 @@ use std::{
 
 use bevy::{
     log::{
-        tracing::{field, span, Span},
         Level,
+        tracing::{Span, field, span},
     },
     prelude::*,
 };
@@ -306,16 +306,16 @@ pub fn thinker_system(
             ActionState::Cancelled => {
                 debug!("Cleaning up.");
                 if let Some(current) = &mut thinker.current_action {
-                    let action_span = action_spans.get(current.0 .0).expect("Where is it?");
+                    let action_span = action_spans.get(current.0.0).expect("Where is it?");
                     debug!("Cancelling current action.");
                     let state = action_states
-                        .get_mut(current.0 .0)
+                        .get_mut(current.0.0)
                         .expect("Missing current action")
                         .clone();
                     match state {
                         ActionState::Success | ActionState::Failure => {
                             debug!("Action already wrapped up.");
-                            if let Ok(mut ent) = cmd.get_entity(current.0 .0) {
+                            if let Ok(mut ent) = cmd.get_entity(current.0.0) {
                                 ent.despawn();
                             }
                             thinker.current_action = None;
@@ -325,7 +325,7 @@ pub fn thinker_system(
                         }
                         _ => {
                             let mut state =
-                                action_states.get_mut(current.0 .0).expect("Missing action");
+                                action_states.get_mut(current.0.0).expect("Missing action");
                             debug!("Action still executing. Cancelling it.");
                             action_span.span.in_scope(|| {
                                 debug!("Cancelling action.");

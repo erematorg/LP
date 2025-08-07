@@ -1,4 +1,4 @@
-use super::oscillation::{angular_frequency, wave_number, WaveParameters};
+use super::oscillation::{WaveParameters, angular_frequency, wave_number};
 use super::propagation::WavePosition;
 use bevy::prelude::*;
 

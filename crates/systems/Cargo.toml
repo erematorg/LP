@@ -1,7 +1,7 @@
 [package]
 name = "systems"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Core simulation infrastructure components that manage and support the virtual universe rather than represent parts of it."
 
 [dependencies]
