@@ -21,8 +21,8 @@ impl Plugin for TrackerPlugin {
 ///
 /// This includes the most common tracking components and systems.
 pub mod prelude {
+    pub use crate::trackers::TrackerPlugin;
     pub use crate::trackers::base_tracker::{EntityTracker, TrackedEntity, TrackingRelation};
     pub use crate::trackers::needs_tracker::NeedsTracker;
     pub use crate::trackers::perception_tracker::Perception;
-    pub use crate::trackers::TrackerPlugin;
 }

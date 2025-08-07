@@ -36,8 +36,8 @@ impl MutualInfo {
         let mut mi = 0.0;
         for ((x, y), &joint_count) in &joint_counts {
             let p_xy = joint_count as f64 / n;
-            let p_x = *x_counts.get(&x).unwrap() as f64 / n;
-            let p_y = *y_counts.get(&y).unwrap() as f64 / n;
+            let p_x = *x_counts.get(x).unwrap() as f64 / n;
+            let p_y = *y_counts.get(y).unwrap() as f64 / n;
 
             // Only add to MI if all probabilities are positive
             if p_xy > 0.0 {

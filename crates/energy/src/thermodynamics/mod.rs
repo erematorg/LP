@@ -22,15 +22,15 @@ impl Plugin for ThermodynamicsPlugin {
 
 pub mod prelude {
     pub use super::entropy::{
-        entropy_change_heat_transfer, entropy_change_irreversible, is_valid_process,
-        total_entropy_change, Entropy, Reversibility,
+        Entropy, Reversibility, entropy_change_heat_transfer, entropy_change_irreversible,
+        is_valid_process, total_entropy_change,
     };
     pub use super::equilibrium::{
-        apply_equilibrium_transitivity, equilibrium_time_estimate, find_equilibrium_group,
-        is_in_equilibrium, validate_equilibrium_group_consistency, PhaseState, ThermalEquilibrium,
-        ThermalProperties,
+        PhaseState, ThermalEquilibrium, ThermalProperties, apply_equilibrium_transitivity,
+        equilibrium_time_estimate, find_equilibrium_group, is_in_equilibrium,
+        validate_equilibrium_group_consistency,
     };
     pub use super::thermal::{
-        thermal_utils::heat_conduction, Temperature, ThermalConductivity, ThermalDiffusivity,
+        Temperature, ThermalConductivity, ThermalDiffusivity, thermal_utils::heat_conduction,
     };
 }

@@ -151,6 +151,7 @@ fn draw_lsystem(
 }
 
 /// Bevy app to render the L-System
+#[allow(clippy::too_many_arguments)]
 pub fn run_renderer(
     output: &str,
     angle: f32,
