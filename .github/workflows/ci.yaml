@@ -28,7 +28,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: ci
+          shared-key: test-suite
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -59,7 +59,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: ci
+          shared-key: clippy-lint
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -79,6 +79,11 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: format-check
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

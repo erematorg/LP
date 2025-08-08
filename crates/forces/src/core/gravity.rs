@@ -95,12 +95,18 @@ mod spatial {
         pub center_of_mass: Vec3,
     }
 
-    impl MassProperties {
-        pub fn new() -> Self {
+    impl Default for MassProperties {
+        fn default() -> Self {
             Self {
                 total_mass: 0.0,
                 center_of_mass: Vec3::ZERO,
             }
+        }
+    }
+
+    impl MassProperties {
+        pub fn new() -> Self {
+            Self::default()
         }
 
         pub fn add_body(&mut self, position: Vec3, mass: f32) {

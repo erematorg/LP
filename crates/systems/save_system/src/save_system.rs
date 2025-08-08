@@ -341,8 +341,10 @@ pub fn save_game_data(
         entities.insert(entity_id, entity_data);
     }
 
-    let mut metadata = SaveMetadata::default();
-    metadata.playtime_seconds = game_time;
+    let metadata = SaveMetadata {
+        playtime_seconds: game_time,
+        ..Default::default()
+    };
 
     let save_data = GameSaveData {
         version: crate::versioning::SAVE_VERSION.to_string(),
