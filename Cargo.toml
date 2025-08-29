@@ -30,7 +30,7 @@ forces = { path = "crates/forces" }
 information = { path = "crates/information" }
 matter = { path = "crates/matter" }
 
-bevy = "0.16"
+bevy = { version = "0.16", features = ["dynamic_linking"] }
 
 glam = "0.29.2"
 
