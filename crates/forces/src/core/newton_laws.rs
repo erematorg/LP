@@ -98,6 +98,12 @@ pub struct AppliedForce {
     pub elapsed: f32,
 }
 
+impl Default for AppliedForce {
+    fn default() -> Self {
+        Self::new(Vec3::ZERO)
+    }
+}
+
 impl AppliedForce {
     pub fn new(force: Vec3) -> Self {
         Self {

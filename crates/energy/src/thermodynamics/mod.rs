@@ -4,6 +4,14 @@ pub mod thermal;
 
 use bevy::prelude::*;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ThermodynamicsSet {
+    /// Calculate thermal transfers and conduction
+    ThermalTransfer,
+    /// Update entropy and equilibrium states
+    Equilibrium,
+}
+
 pub struct ThermodynamicsPlugin;
 
 impl Plugin for ThermodynamicsPlugin {
@@ -16,7 +24,14 @@ impl Plugin for ThermodynamicsPlugin {
             .register_type::<equilibrium::ThermalEquilibrium>()
             .register_type::<equilibrium::PhaseState>()
             .add_event::<thermal::ThermalTransferEvent>()
-            .add_systems(Update, thermal::calculate_thermal_transfer);
+            .configure_sets(
+                Update,
+                (ThermodynamicsSet::ThermalTransfer, ThermodynamicsSet::Equilibrium).chain(),
+            )
+            .add_systems(
+                Update,
+                thermal::calculate_thermal_transfer.in_set(ThermodynamicsSet::ThermalTransfer),
+            );
     }
 }
 
