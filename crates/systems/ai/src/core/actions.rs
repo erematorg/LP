@@ -4,6 +4,10 @@ use crate::core::thinkers::{Action, ActionSpan, Actor};
 use bevy::prelude::*;
 use std::sync::Arc;
 
+// Error message constants to reduce repetition
+const ACTION_STATE_ERROR: &str =
+    "Failed to find action state component for concurrent action entity";
+
 /// The current state for an Action. These states are changed by a combination
 /// of the Thinker that spawned it, and the actual Action system executing the
 /// Action itself.
@@ -341,105 +345,101 @@ pub fn concurrent_system(
                     "Initializing Concurrently action with {} children.",
                     concurrent_action.actions.len()
                 );
-                let mut current_state = states_q
-                    .get_mut(seq_ent)
-                    .expect("Failed to find action state component for concurrent action entity");
+                let mut current_state = states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR);
                 *current_state = Executing;
                 for action in concurrent_action.actions.iter() {
                     let child_ent = action.entity();
-                    let mut child_state = states_q.get_mut(child_ent).expect(
-                        "Failed to find action state component for concurrent action entity",
-                    );
+                    let mut child_state = states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                     *child_state = Requested;
                 }
             }
-            Executing => {
-                match concurrent_action.mode {
-                    ConcurrentMode::Join => {
-                        let mut all_success = true;
-                        let mut failed_idx = None;
-                        for (idx, action) in concurrent_action.actions.iter().enumerate() {
-                            let child_ent = action.entity();
-                            let mut child_state = states_q.get_mut(child_ent).expect("Failed to find action state component for concurrent action entity");
-                            match *child_state {
-                                Failure => {
-                                    failed_idx = Some(idx);
-                                    all_success = false;
-                                    #[cfg(feature = "trace")]
-                                    trace!(
-                                        "Join action has failed. Cancelling all other actions that haven't completed yet."
-                                    );
-                                }
-                                Success => {}
-                                _ => {
-                                    all_success = false;
-                                    if failed_idx.is_some() {
-                                        *child_state = Cancelled;
-                                    }
-                                }
+            Executing => match concurrent_action.mode {
+                ConcurrentMode::Join => {
+                    let mut all_success = true;
+                    let mut failed_idx = None;
+                    for (idx, action) in concurrent_action.actions.iter().enumerate() {
+                        let child_ent = action.entity();
+                        let mut child_state =
+                            states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
+                        match *child_state {
+                            Failure => {
+                                failed_idx = Some(idx);
+                                all_success = false;
+                                #[cfg(feature = "trace")]
+                                trace!(
+                                    "Join action has failed. Cancelling all other actions that haven't completed yet."
+                                );
                             }
-                        }
-                        if all_success {
-                            *states_q.get_mut(seq_ent).expect("Failed to find action state component for concurrent action entity") = Success;
-                        } else if let Some(idx) = failed_idx {
-                            for action in concurrent_action.actions.iter().take(idx) {
-                                let child_ent = action.entity();
-                                let mut child_state = states_q.get_mut(child_ent).expect("Failed to find action state component for concurrent action entity");
-                                if !matches!(*child_state, Failure | Success) {
+                            Success => {}
+                            _ => {
+                                all_success = false;
+                                if failed_idx.is_some() {
                                     *child_state = Cancelled;
                                 }
                             }
-                            *states_q.get_mut(seq_ent).expect("Failed to find action state component for concurrent action entity") = Failure;
                         }
                     }
-                    ConcurrentMode::Race => {
-                        let mut all_failure = true;
-                        let mut succeed_idx = None;
-                        for (idx, action) in concurrent_action.actions.iter().enumerate() {
+                    if all_success {
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Success;
+                    } else if let Some(idx) = failed_idx {
+                        for action in concurrent_action.actions.iter().take(idx) {
                             let child_ent = action.entity();
-                            let mut child_state = states_q.get_mut(child_ent).expect("Failed to find action state component for concurrent action entity");
-                            match *child_state {
-                                Failure => {}
-                                Success => {
-                                    succeed_idx = Some(idx);
-                                    all_failure = false;
-                                    #[cfg(feature = "trace")]
-                                    trace!(
-                                        "Race action has succeeded. Cancelling all other actions that haven't completed yet."
-                                    );
-                                }
-                                _ => {
-                                    all_failure = false;
-                                    if succeed_idx.is_some() {
-                                        *child_state = Cancelled;
-                                    }
-                                }
+                            let mut child_state =
+                                states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
+                            if !matches!(*child_state, Failure | Success) {
+                                *child_state = Cancelled;
                             }
                         }
-                        if all_failure {
-                            *states_q.get_mut(seq_ent).expect("Failed to find action state component for concurrent action entity") = Failure;
-                        } else if let Some(idx) = succeed_idx {
-                            for action in concurrent_action.actions.iter().take(idx) {
-                                let child_ent = action.entity();
-                                let mut child_state = states_q.get_mut(child_ent).expect("Failed to find action state component for concurrent action entity");
-                                if !matches!(*child_state, Failure | Success) {
-                                    *child_state = Cancelled;
-                                }
-                            }
-                            *states_q.get_mut(seq_ent).expect("Failed to find action state component for concurrent action entity") = Success;
-                        }
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Failure;
                     }
                 }
-            }
+                ConcurrentMode::Race => {
+                    let mut all_failure = true;
+                    let mut succeed_idx = None;
+                    for (idx, action) in concurrent_action.actions.iter().enumerate() {
+                        let child_ent = action.entity();
+                        let mut child_state =
+                            states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
+                        match *child_state {
+                            Failure => {}
+                            Success => {
+                                succeed_idx = Some(idx);
+                                all_failure = false;
+                                #[cfg(feature = "trace")]
+                                trace!(
+                                    "Race action has succeeded. Cancelling all other actions that haven't completed yet."
+                                );
+                            }
+                            _ => {
+                                all_failure = false;
+                                if succeed_idx.is_some() {
+                                    *child_state = Cancelled;
+                                }
+                            }
+                        }
+                    }
+                    if all_failure {
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Failure;
+                    } else if let Some(idx) = succeed_idx {
+                        for action in concurrent_action.actions.iter().take(idx) {
+                            let child_ent = action.entity();
+                            let mut child_state =
+                                states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
+                            if !matches!(*child_state, Failure | Success) {
+                                *child_state = Cancelled;
+                            }
+                        }
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Success;
+                    }
+                }
+            },
             Cancelled => {
                 let mut all_done = true;
                 let mut any_failed = false;
                 let mut any_success = false;
                 for action in concurrent_action.actions.iter() {
                     let child_ent = action.entity();
-                    let mut child_state = states_q.get_mut(child_ent).expect(
-                        "Failed to find action state component for concurrent action entity",
-                    );
+                    let mut child_state = states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                     match *child_state {
                         Init => {}
                         Success => any_success = true,
@@ -451,9 +451,7 @@ pub fn concurrent_system(
                     }
                 }
                 if all_done {
-                    let mut state_var = states_q.get_mut(seq_ent).expect(
-                        "Failed to find action state component for concurrent action entity",
-                    );
+                    let mut state_var = states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR);
                     match concurrent_action.mode {
                         ConcurrentMode::Race => {
                             if any_success {
