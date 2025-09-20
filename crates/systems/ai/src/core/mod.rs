@@ -1,7 +1,7 @@
 //! Core AI module for LP
 //!
-//! Provides a utility AI system with composable scorers, actions, and thinkers.
-//! Based on the Big Brain architecture but integrated into LP's ecosystem.
+//! Provides a utility AI system with composable scorers, actions, and thinkers
+//! for sophisticated agent behavior in dynamic ecosystems.
 
 pub mod actions;
 pub mod choices;

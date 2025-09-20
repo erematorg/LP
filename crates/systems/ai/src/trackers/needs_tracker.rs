@@ -41,7 +41,7 @@ impl AIModule for NeedsTracker {
 
         // Find most urgent need
         let mut most_urgent = None;
-        let mut highest_urgency = UtilityScore::new(0.0);
+        let mut highest_urgency = UtilityScore::ZERO;
 
         for need in &self.needs {
             let urgency = need.urgency();
@@ -58,6 +58,6 @@ impl AIModule for NeedsTracker {
         // Return the urgency of the most urgent need, or zero if no needs
         self.most_urgent_need
             .map(|(_, urgency)| urgency)
-            .unwrap_or(UtilityScore::new(0.0))
+            .unwrap_or(UtilityScore::ZERO)
     }
 }
