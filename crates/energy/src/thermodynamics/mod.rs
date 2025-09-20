@@ -26,7 +26,11 @@ impl Plugin for ThermodynamicsPlugin {
             .add_event::<thermal::ThermalTransferEvent>()
             .configure_sets(
                 Update,
-                (ThermodynamicsSet::ThermalTransfer, ThermodynamicsSet::Equilibrium).chain(),
+                (
+                    ThermodynamicsSet::ThermalTransfer,
+                    ThermodynamicsSet::Equilibrium,
+                )
+                    .chain(),
             )
             .add_systems(
                 Update,

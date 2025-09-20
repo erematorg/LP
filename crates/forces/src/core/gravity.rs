@@ -371,11 +371,8 @@ pub fn calculate_barnes_hut_force(
     }
 
     let mut total_force = Vec3::ZERO;
-    for child in &node.children {
-        if let Some(child_node) = child {
-            total_force +=
-                calculate_barnes_hut_force(affected_position, child_node, theta, softening);
-        }
+    for child_node in node.children.iter().flatten() {
+        total_force += calculate_barnes_hut_force(affected_position, child_node, theta, softening);
     }
 
     total_force

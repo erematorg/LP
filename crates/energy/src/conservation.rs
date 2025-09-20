@@ -145,18 +145,23 @@ impl EnergyAccountingLedger {
             .unwrap_or(0.0);
         let cutoff_time = current_time - time_window;
 
-        let recent_transactions: Vec<&EnergyTransaction> = self
+        let mut total_rate = 0.0;
+        let mut count = 0;
+
+        for transaction in self
             .transactions
             .iter()
             .take_while(|t| t.timestamp >= cutoff_time)
-            .collect();
-
-        if recent_transactions.is_empty() {
-            return 0.0;
+        {
+            total_rate += transaction.transfer_rate;
+            count += 1;
         }
 
-        let total_rate: f32 = recent_transactions.iter().map(|t| t.transfer_rate).sum();
-        total_rate / recent_transactions.len() as f32
+        if count == 0 {
+            0.0
+        } else {
+            total_rate / count as f32
+        }
     }
 
     /// Get current energy flux (sum of all active transfer rates)
