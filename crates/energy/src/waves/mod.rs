@@ -17,15 +17,18 @@ impl Plugin for WavesPlugin {
             .register_type::<superposition::StandingWaveMarker>()
             .register_type::<wave_equation::WaveEquationComponent>()
             .add_event::<oscillation::WaveGenerationEvent>()
-            .add_systems(Update, propagation::update_wave_displacements)
-            .add_systems(Update, superposition::update_standing_waves)
-            .add_systems(Update, wave_equation::update_wave_equation);
+            .add_systems(
+                Update,
+                (
+                    propagation::update_wave_displacements,
+                    superposition::update_standing_waves,
+                    wave_equation::update_wave_equation,
+                ),
+            );
     }
 }
 
 /// The waves prelude.
-///
-/// This includes the most common types for wave systems.
 pub mod prelude {
     pub use crate::waves::oscillation::{
         WaveParameters, angular_frequency, damping_from_half_life, wave_number,

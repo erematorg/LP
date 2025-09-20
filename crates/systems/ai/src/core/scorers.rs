@@ -24,14 +24,9 @@ impl Score {
 
     /// Set the `Score`'s value.
     ///
-    /// ### Panics
-    ///
-    /// Panics if `value` isn't within `0.0..=1.0`.
+    /// Values outside `0.0..=1.0` will be automatically clamped to the valid range.
     pub fn set(&mut self, value: f32) {
-        if !(0.0..=1.0).contains(&value) {
-            panic!("Score value must be between 0.0 and 1.0");
-        }
-        self.0 = value;
+        self.0 = value.clamp(0.0, 1.0);
     }
 
     /// Set the `Score`'s value. Allows values outside the range `0.0..=1.0`
@@ -290,13 +285,17 @@ pub fn sum_of_scorers_system(
     {
         let mut sum = 0.0;
         for Scorer(child) in children.iter() {
-            let score = scores.get_mut(*child).expect("where is it?");
+            let score = scores
+                .get_mut(*child)
+                .expect("Failed to find score component for SumOfScorers child");
             sum += score.0;
         }
         if sum < *threshold {
             sum = 0.0;
         }
-        let mut score = scores.get_mut(sos_ent).expect("where did it go?");
+        let mut score = scores
+            .get_mut(sos_ent)
+            .expect("Failed to find score component for SumOfScorers entity");
         score.set(crate::core::evaluators::clamp(sum, 0.0, 1.0));
         #[cfg(feature = "trace")]
         {
@@ -400,7 +399,9 @@ pub fn product_of_scorers_system(
         let mut num_scorers = 0;
 
         for Scorer(child) in children.iter() {
-            let score = scores.get_mut(*child).expect("where is it?");
+            let score = scores
+                .get_mut(*child)
+                .expect("Failed to find score component for ProductOfScorers child");
             product *= score.0;
             num_scorers += 1;
         }
@@ -417,7 +418,9 @@ pub fn product_of_scorers_system(
             product = 0.0;
         }
 
-        let mut score = scores.get_mut(sos_ent).expect("where did it go?");
+        let mut score = scores
+            .get_mut(sos_ent)
+            .expect("Failed to find score component for ProductOfScorers entity");
         score.set(product.clamp(0.0, 1.0));
         #[cfg(feature = "trace")]
         {
@@ -515,23 +518,20 @@ pub fn winning_scorer_system(
 ) {
     for (sos_ent, mut winning_scorer, _span) in query.iter_mut() {
         let (threshold, children) = (winning_scorer.threshold, &mut winning_scorer.scorers);
-        let mut all_scores = children
+        let winning_score_or_zero = children
             .iter()
-            .map(|Scorer(e)| scores.get(*e).expect("where is it?"))
-            .collect::<Vec<&Score>>();
-
-        all_scores.sort_by(|a, b| a.get().partial_cmp(&b.get()).unwrap_or(Ordering::Equal));
-        let winning_score_or_zero = match all_scores.last() {
-            Some(s) => {
-                if s.get() < threshold {
-                    0.0
-                } else {
-                    s.get()
-                }
-            }
-            None => 0.0,
-        };
-        let mut score = scores.get_mut(sos_ent).expect("where did it go?");
+            .map(|Scorer(e)| {
+                scores
+                    .get(*e)
+                    .expect("Failed to find score component for WinningScorer child")
+            })
+            .map(|score| score.get())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .filter(|&score| score >= threshold)
+            .unwrap_or(0.0);
+        let mut score = scores
+            .get_mut(sos_ent)
+            .expect("Failed to find score component for WinningScorer entity");
         score.set(crate::core::evaluators::clamp(
             winning_score_or_zero,
             0.0,
@@ -631,10 +631,12 @@ pub fn evaluating_scorer_system(
         // Get the inner score
         let inner_score = scores
             .get(eval_scorer.scorer.0)
-            .expect("where did it go?")
+            .expect("Failed to find score component for TrustScorer inner scorer")
             .get();
         // Get composite score
-        let mut score = scores.get_mut(sos_ent).expect("where did it go?");
+        let mut score = scores
+            .get_mut(sos_ent)
+            .expect("Failed to find score component for TrustScorer entity");
         score.set(crate::core::evaluators::clamp(
             eval_scorer.evaluator.evaluate(inner_score),
             0.0,
@@ -723,10 +725,19 @@ pub fn measured_scorers_system(
         let measured_score = measure.calculate(
             children
                 .iter()
-                .map(|(scorer, weight)| (scores.get(scorer.0).expect("where is it?"), *weight))
+                .map(|(scorer, weight)| {
+                    (
+                        scores
+                            .get(scorer.0)
+                            .expect("Failed to find score component for WeightedScorer child"),
+                        *weight,
+                    )
+                })
                 .collect::<Vec<_>>(),
         );
-        let mut score = scores.get_mut(sos_ent).expect("where did it go?");
+        let mut score = scores
+            .get_mut(sos_ent)
+            .expect("Failed to find score component for WeightedScorer entity");
 
         if measured_score < *threshold {
             score.set(0.0);
