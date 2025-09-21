@@ -15,9 +15,9 @@ pub mod prelude {
     pub use super::grammar::apply_rules;
 
     // Interpreter and renderer
-    pub use super::interpreter::{interpret, InterpreterOutput, SymbolType};
+    pub use super::interpreter::{InterpreterOutput, SymbolType, interpret};
     pub use super::renderer::run_renderer;
 
     // Data loading
-    pub use super::data_loader::{load_template, Parameters, Template};
+    pub use super::data_loader::{Parameters, Template, load_template};
 }

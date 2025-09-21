@@ -27,6 +27,8 @@ jobs:
       
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: test-suite
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -34,8 +36,17 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       
+      - name: Quick check
+        run: cargo check --workspace
+
       - name: Run tests
         run: cargo test --workspace
+
+      - name: Check documentation
+        run: cargo doc --workspace --no-deps
+      
+      - name: Check lockfile consistency
+        run: cargo update --workspace --locked
 
   clippy:
     name: Clippy
@@ -50,6 +61,8 @@ jobs:
       
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: clippy-lint
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -60,7 +73,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       
       - name: Run clippy
-        run: cargo clippy --workspace -- -A clippy::upper-case-acronyms -A clippy::new-without-default -A clippy::manual-flatten -A clippy::excessive-precision -A clippy::too-many-arguments
+        run: cargo clippy --workspace -- -A clippy::upper-case-acronyms -A clippy::manual-flatten -A clippy::excessive-precision -A clippy::too-many-arguments
 
   format:
     name: Format
@@ -69,6 +82,11 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: format-check
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

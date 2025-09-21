@@ -9,8 +9,8 @@ use std::{
 
 use bevy::{
     log::{
-        tracing::{field, span, Span},
         Level,
+        tracing::{Span, field, span},
     },
     prelude::*,
 };
@@ -285,7 +285,7 @@ pub fn thinker_system(
 
         let thinker_state = action_states
             .get_mut(thinker_ent)
-            .expect("Where is it?")
+            .expect("Failed to find action state component for thinker")
             .clone();
 
         let thinker_span = thinker.span.clone();
@@ -293,12 +293,16 @@ pub fn thinker_system(
 
         match thinker_state {
             ActionState::Init => {
-                let mut act_state = action_states.get_mut(thinker_ent).expect("???");
+                let mut act_state = action_states
+                    .get_mut(thinker_ent)
+                    .expect("Failed to find action state component for thinker entity");
                 debug!("Initializing thinker.");
                 *act_state = ActionState::Requested;
             }
             ActionState::Requested => {
-                let mut act_state = action_states.get_mut(thinker_ent).expect("???");
+                let mut act_state = action_states
+                    .get_mut(thinker_ent)
+                    .expect("Failed to find action state component for thinker entity");
                 debug!("Starting execution.");
                 *act_state = ActionState::Executing;
             }
@@ -306,16 +310,18 @@ pub fn thinker_system(
             ActionState::Cancelled => {
                 debug!("Cleaning up.");
                 if let Some(current) = &mut thinker.current_action {
-                    let action_span = action_spans.get(current.0 .0).expect("Where is it?");
+                    let action_span = action_spans
+                        .get(current.0.0)
+                        .expect("Failed to find action span for current action");
                     debug!("Cancelling current action.");
                     let state = action_states
-                        .get_mut(current.0 .0)
+                        .get_mut(current.0.0)
                         .expect("Missing current action")
                         .clone();
                     match state {
                         ActionState::Success | ActionState::Failure => {
                             debug!("Action already wrapped up.");
-                            if let Ok(mut ent) = cmd.get_entity(current.0 .0) {
+                            if let Ok(mut ent) = cmd.get_entity(current.0.0) {
                                 ent.despawn();
                             }
                             thinker.current_action = None;
@@ -325,7 +331,7 @@ pub fn thinker_system(
                         }
                         _ => {
                             let mut state =
-                                action_states.get_mut(current.0 .0).expect("Missing action");
+                                action_states.get_mut(current.0.0).expect("Missing action");
                             debug!("Action still executing. Cancelling it.");
                             action_span.span.in_scope(|| {
                                 debug!("Cancelling action.");
@@ -334,7 +340,9 @@ pub fn thinker_system(
                         }
                     }
                 } else {
-                    let mut act_state = action_states.get_mut(thinker_ent).expect("???");
+                    let mut act_state = action_states
+                        .get_mut(thinker_ent)
+                        .expect("Failed to find action state component for thinker entity");
                     debug!("No current action. Completing as Success.");
                     *act_state = ActionState::Success;
                 }
@@ -347,7 +355,9 @@ pub fn thinker_system(
                     trace!("Action picked. Executing picked action.");
                     let action = choice.action.clone();
                     let scorer = choice.scorer;
-                    let score = scores.get(choice.scorer.0).expect("Where is it?");
+                    let score = scores
+                        .get(choice.scorer.0)
+                        .expect("Failed to find score component for chosen scorer");
                     exec_picked_action(
                         &mut cmd,
                         *actor,
@@ -382,7 +392,9 @@ pub fn thinker_system(
                         false,
                     );
                 } else if let Some((action_ent, _)) = &thinker.current_action {
-                    let action_span = action_spans.get(action_ent.0).expect("Where is it?");
+                    let action_span = action_spans
+                        .get(action_ent.0)
+                        .expect("Failed to find action span for action entity");
                     let _guard = action_span.span.enter();
                     let mut curr_action_state = action_states
                         .get_mut(action_ent.0)
@@ -469,7 +481,9 @@ fn exec_picked_action(
             *curr_action_state,
             ActionState::Success | ActionState::Failure
         );
-        let action_span = action_spans.get(action_ent.0).expect("Where is it?");
+        let action_span = action_spans
+            .get(action_ent.0)
+            .expect("Failed to find action span for action entity");
         let _guard = action_span.span.enter();
         if (!Arc::ptr_eq(current_id, &picked_action.0) && override_current) || previous_done {
             if !previous_done {
@@ -492,7 +506,9 @@ fn exec_picked_action(
                         ent.despawn();
                     }
                     if let Some((Scorer(ent), score)) = scorer_info {
-                        let scorer_span = scorer_spans.get(*ent).expect("Where is it?");
+                        let scorer_span = scorer_spans
+                            .get(*ent)
+                            .expect("Failed to find scorer span for scorer entity");
                         let _guard = scorer_span.span.enter();
                         debug!("Winning score: {}", score.get());
                     }
@@ -518,7 +534,9 @@ fn exec_picked_action(
         trace!("Falling back to `otherwise` clause.",);
 
         if let Some((Scorer(ent), score)) = scorer_info {
-            let scorer_span = scorer_spans.get(*ent).expect("Where is it?");
+            let scorer_span = scorer_spans
+                .get(*ent)
+                .expect("Failed to find scorer span for scorer entity");
             let _guard = scorer_span.span.enter();
             debug!("Winning score: {}", score.get());
         }

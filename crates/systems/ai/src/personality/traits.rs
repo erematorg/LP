@@ -1,6 +1,10 @@
+use crate::core::utility::UtilityScore;
 use crate::prelude::*;
 use bevy::prelude::*;
 // Removed direct energy dependency - use trait-based interface instead
+
+// Constants for social influence calculations
+const MAX_INFLUENCE_DISTANCE: f32 = 100.0; // Universal influence range
 
 /// Universal life adaptation traits for all organisms (plants through animals)
 #[derive(Component, Debug, Clone, Reflect)]
@@ -34,9 +38,9 @@ impl Personality {
         competitive_strength: f32,
     ) -> Self {
         Self {
-            resource_assertiveness: resource_assertiveness.clamp(0.0, 1.0),
-            stress_tolerance: stress_tolerance.clamp(0.0, 1.0),
-            competitive_strength: competitive_strength.clamp(0.0, 1.0),
+            resource_assertiveness: UtilityScore::clamp_trait_value(resource_assertiveness),
+            stress_tolerance: UtilityScore::clamp_trait_value(stress_tolerance),
+            competitive_strength: UtilityScore::clamp_trait_value(competitive_strength),
         }
     }
 
@@ -82,7 +86,7 @@ impl AIModule for Personality {
 
     fn utility(&self) -> UtilityScore {
         // Return a base utility score for personality-driven behaviors
-        UtilityScore::new(0.5)
+        UtilityScore::HALF
     }
 }
 
@@ -123,7 +127,7 @@ impl Altruistic {
         if self.should_be_altruistic(hunger_level) {
             UtilityScore::new(self.strength)
         } else {
-            UtilityScore::new(0.0)
+            UtilityScore::ZERO
         }
     }
 }
@@ -142,11 +146,11 @@ pub struct ContextAwareUtilities {
 impl Default for ContextAwareUtilities {
     fn default() -> Self {
         Self {
-            resource_competition: UtilityScore::new(0.5),
-            stress_retreat: UtilityScore::new(0.5),
-            competitive_behavior: UtilityScore::new(0.5),
-            cooperation: UtilityScore::new(0.5),
-            collective_influence: UtilityScore::new(0.0),
+            resource_competition: UtilityScore::HALF,
+            stress_retreat: UtilityScore::HALF,
+            competitive_behavior: UtilityScore::HALF,
+            cooperation: UtilityScore::HALF,
+            collective_influence: UtilityScore::ZERO,
         }
     }
 }
@@ -190,8 +194,6 @@ pub fn update_collective_influence(
     relations_query: Query<&SocialRelation>,
     positions_query: Query<&Transform, Without<ContextAwareUtilities>>,
 ) {
-    const MAX_INFLUENCE_DISTANCE: f32 = 100.0; // Universal influence range
-
     for (entity, transform, mut utilities) in &mut utilities_query {
         let mut total_collective_influence = 0.0;
         let position = transform.translation.truncate();

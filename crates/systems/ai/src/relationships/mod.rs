@@ -20,9 +20,9 @@ impl Plugin for SocialPlugin {
 ///
 /// This includes social relationships and network components.
 pub mod prelude {
-    pub use crate::relationships::social::{
-        get_relationship_strength, EntityRelationship, RelationshipStrength, RelationshipType,
-        SocialNetwork, SocialRelation,
-    };
     pub use crate::relationships::SocialPlugin;
+    pub use crate::relationships::social::{
+        EntityRelationship, RelationshipStrength, RelationshipType, SocialNetwork, SocialRelation,
+        get_relationship_strength,
+    };
 }

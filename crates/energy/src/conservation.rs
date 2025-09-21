@@ -26,6 +26,18 @@ pub struct EnergyQuantity {
 impl EnergyQuantity {
     /// Create a new energy quantity
     pub fn new(value: f32, energy_type: EnergyType, max_capacity: Option<f32>) -> Self {
+        debug_assert!(
+            value >= 0.0,
+            "Energy cannot be negative (violates conservation)"
+        );
+        debug_assert!(
+            value < 1e20,
+            "Energy exceeds realistic bounds (nuclear scale ~1e20 J)"
+        );
+        if let Some(max) = max_capacity {
+            debug_assert!(max > 0.0, "Energy capacity must be positive");
+        }
+
         let clamped_value = max_capacity.map(|max| value.min(max)).unwrap_or(value);
 
         Self {
@@ -138,26 +150,36 @@ impl EnergyAccountingLedger {
             return 0.0;
         }
 
-        let current_time = self.transactions.first().map(|t| t.timestamp).unwrap_or(0.0);
+        let current_time = self
+            .transactions
+            .first()
+            .map(|t| t.timestamp)
+            .unwrap_or(0.0);
         let cutoff_time = current_time - time_window;
 
-        let recent_transactions: Vec<&EnergyTransaction> = self.transactions
+        let mut total_rate = 0.0;
+        let mut count = 0;
+
+        for transaction in self
+            .transactions
             .iter()
             .take_while(|t| t.timestamp >= cutoff_time)
-            .collect();
-
-        if recent_transactions.is_empty() {
-            return 0.0;
+        {
+            total_rate += transaction.transfer_rate;
+            count += 1;
         }
 
-        let total_rate: f32 = recent_transactions.iter().map(|t| t.transfer_rate).sum();
-        total_rate / recent_transactions.len() as f32
+        if count == 0 {
+            0.0
+        } else {
+            total_rate / count as f32
+        }
     }
 
     /// Get current energy flux (sum of all active transfer rates)
     pub fn current_flux(&self, current_time: f32, active_duration: f32) -> f32 {
         let cutoff_time = current_time - active_duration;
-        
+
         self.transactions
             .iter()
             .filter(|t| t.timestamp >= cutoff_time && t.duration > 0.0)

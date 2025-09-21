@@ -8,13 +8,13 @@ pub use calculation::*;
 pub struct MutualInformationPlugin;
 
 impl Plugin for MutualInformationPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, _app: &mut App) {
         // For now just register the plugin - future Bevy integration here
         // Could add systems for real-time MI calculation between entities
     }
 }
 
 pub mod prelude {
-    pub use super::calculation::*;
     pub use super::MutualInformationPlugin;
+    pub use super::calculation::*;
 }

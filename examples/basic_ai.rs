@@ -19,10 +19,9 @@ fn main() {
             (
                 update_creatures_and_perception,
                 handle_food_consumption,
-                respawn_food,
-                update_visuals,
-                update_personality_labels,
-            ),
+                (respawn_food, update_visuals, update_personality_labels),
+            )
+                .chain(),
         )
         .run();
 }

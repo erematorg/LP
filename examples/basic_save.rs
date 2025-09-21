@@ -20,10 +20,7 @@ impl Default for GameData {
 
 fn main() {
     let path = "save.json";
-    let mut data = match load::<GameData>(path) {
-        Ok(data) => data,
-        Err(_) => GameData::default(),
-    };
+    let mut data = load::<GameData>(path).unwrap_or_default();
 
     data.score += 1;
     println!("Score: {}", data.score);

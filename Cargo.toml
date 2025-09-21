@@ -1,7 +1,7 @@
 [package]
 name = "LP"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "A systemic 2D platformer in a dynamic living ecosystem.."
 license = "Apache-2.0"
 
@@ -30,7 +30,7 @@ forces = { path = "crates/forces" }
 information = { path = "crates/information" }
 matter = { path = "crates/matter" }
 
-bevy = "0.16"
+bevy = { version = "0.16", features = ["dynamic_linking"] }
 
 glam = "0.29.2"
 

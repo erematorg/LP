@@ -1,7 +1,7 @@
 [package]
 name = "information"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Systems handling pattern emergence, complexity formation, and the organization principles that enable order from chaos."
 
 [dependencies]

@@ -1,7 +1,7 @@
 use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
-/// Modified gravitational constant for simulation scale
+// Simulation constants
 pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Resource for gravity simulation parameters
@@ -47,10 +47,11 @@ pub struct GravitySource;
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct MassiveBody;
 
-// Spatial partitioning structures for Barnes-Hut algorithm
+// Barnes-Hut spatial partitioning
 mod spatial {
     use bevy::prelude::*;
 
+    // Algorithm parameters
     const MAX_DEPTH: usize = 8;
     const MAX_BODIES_PER_NODE: usize = 8;
 
@@ -95,12 +96,18 @@ mod spatial {
         pub center_of_mass: Vec3,
     }
 
-    impl MassProperties {
-        pub fn new() -> Self {
+    impl Default for MassProperties {
+        fn default() -> Self {
             Self {
                 total_mass: 0.0,
                 center_of_mass: Vec3::ZERO,
             }
+        }
+    }
+
+    impl MassProperties {
+        pub fn new() -> Self {
+            Self::default()
         }
 
         pub fn add_body(&mut self, position: Vec3, mass: f32) {
@@ -365,11 +372,8 @@ pub fn calculate_barnes_hut_force(
     }
 
     let mut total_force = Vec3::ZERO;
-    for child in &node.children {
-        if let Some(child_node) = child {
-            total_force +=
-                calculate_barnes_hut_force(affected_position, child_node, theta, softening);
-        }
+    for child_node in node.children.iter().flatten() {
+        total_force += calculate_barnes_hut_force(affected_position, child_node, theta, softening);
     }
 
     total_force

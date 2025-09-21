@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-/// Stefan-Boltzmann constant (W/(m²·K⁴))
-pub const STEFAN_BOLTZMANN: f32 = 5.67e-8;
+// Physical constants
+pub const STEFAN_BOLTZMANN: f32 = 5.67e-8; // W/(m²·K⁴)
 
 /// Temperature component for thermal systems
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
@@ -12,6 +12,14 @@ pub struct Temperature {
 
 impl Temperature {
     pub fn new(kelvin: f32) -> Self {
+        debug_assert!(
+            kelvin >= 0.0,
+            "Temperature below absolute zero violates thermodynamics"
+        );
+        debug_assert!(
+            kelvin < 1e8,
+            "Temperature exceeds realistic stellar core bounds (~1e8 K)"
+        );
         Self {
             value: kelvin.max(0.0),
         }
