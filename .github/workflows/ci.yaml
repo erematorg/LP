@@ -36,9 +36,12 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       
+      - name: Quick check
+        run: cargo check --workspace
+
       - name: Run tests
         run: cargo test --workspace
-      
+
       - name: Check documentation
         run: cargo doc --workspace --no-deps
       
