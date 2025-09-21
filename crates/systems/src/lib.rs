@@ -5,7 +5,7 @@ pub use save_system;
 
 use bevy::prelude::*;
 
-/// Main plugin for all systems-related functionality  
+/// Systems domain plugin
 #[derive(Default)]
 pub struct SystemsPlugin;
 
@@ -20,9 +20,7 @@ impl Plugin for SystemsPlugin {
     }
 }
 
-/// The systems prelude.
-///
-/// This includes all system plugins for easy importing.
+/// Common systems plugins
 pub mod prelude {
     pub use super::SystemsPlugin;
 

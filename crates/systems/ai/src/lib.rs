@@ -5,12 +5,10 @@ pub mod personality;
 pub mod relationships;
 pub mod trackers;
 
-/// Main AI plugin that provides the complete AI system
+/// Core AI plugin with utility-based decision making
 pub use crate::core::LPAIPlugin;
 
-/// The AI prelude.
-///
-/// This includes the most common types in this crate, re-exported for your convenience.
+/// Common AI types and plugins
 pub mod prelude {
     // Main plugins for easy access
     pub use crate::LPAIPlugin;

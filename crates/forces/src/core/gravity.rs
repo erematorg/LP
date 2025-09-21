@@ -1,7 +1,7 @@
 use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
-/// Modified gravitational constant for simulation scale
+// Simulation constants
 pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Resource for gravity simulation parameters
@@ -47,10 +47,11 @@ pub struct GravitySource;
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct MassiveBody;
 
-// Spatial partitioning structures for Barnes-Hut algorithm
+// Barnes-Hut spatial partitioning
 mod spatial {
     use bevy::prelude::*;
 
+    // Algorithm parameters
     const MAX_DEPTH: usize = 8;
     const MAX_BODIES_PER_NODE: usize = 8;
 
