@@ -24,14 +24,9 @@ impl Score {
 
     /// Set the `Score`'s value.
     ///
-    /// ### Panics
-    ///
-    /// Panics if `value` isn't within `0.0..=1.0`.
+    /// Values outside `0.0..=1.0` will be automatically clamped to the valid range.
     pub fn set(&mut self, value: f32) {
-        if !(0.0..=1.0).contains(&value) {
-            panic!("Score value must be between 0.0 and 1.0");
-        }
-        self.0 = value;
+        self.0 = value.clamp(0.0, 1.0);
     }
 
     /// Set the `Score`'s value. Allows values outside the range `0.0..=1.0`
