@@ -3,19 +3,17 @@ pub mod core;
 use bevy::prelude::*;
 pub use core::newton_laws::NewtonLawsPlugin;
 
-/// Force application interface for physical forces
+/// Interface for applying forces to entities
 pub trait ForceApplicator: Send + Sync {
     /// Apply a force to an entity
     fn apply_force(&self, entity: Entity, force: Vec3);
-
     /// Get the force magnitude
     fn get_magnitude(&self) -> f32;
-
     /// Get the force direction
     fn get_direction(&self) -> Vec3;
 }
 
-/// Main plugin for all force-related systems
+/// Forces domain plugin
 #[derive(Default)]
 pub struct ForcesPlugin;
 
@@ -33,9 +31,7 @@ impl Plugin for ForcesPlugin {
     }
 }
 
-/// The forces prelude.
-///
-/// This includes the most common types in this crate, re-exported for your convenience.
+/// Common forces types and functions
 pub mod prelude {
     // Core interfaces from crate root
     pub use crate::{ForceApplicator, ForcesPlugin};

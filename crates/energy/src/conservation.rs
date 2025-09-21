@@ -26,6 +26,18 @@ pub struct EnergyQuantity {
 impl EnergyQuantity {
     /// Create a new energy quantity
     pub fn new(value: f32, energy_type: EnergyType, max_capacity: Option<f32>) -> Self {
+        debug_assert!(
+            value >= 0.0,
+            "Energy cannot be negative (violates conservation)"
+        );
+        debug_assert!(
+            value < 1e20,
+            "Energy exceeds realistic bounds (nuclear scale ~1e20 J)"
+        );
+        if let Some(max) = max_capacity {
+            debug_assert!(max > 0.0, "Energy capacity must be positive");
+        }
+
         let clamped_value = max_capacity.map(|max| value.min(max)).unwrap_or(value);
 
         Self {
