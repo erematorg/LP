@@ -46,6 +46,14 @@ pub struct Mass {
 
 impl Mass {
     pub fn new(value: f32) -> Self {
+        debug_assert!(
+            value > 0.0,
+            "Mass cannot be negative or zero in real physics"
+        );
+        debug_assert!(
+            value < 1e30,
+            "Mass exceeds realistic bounds (solar mass ~2e30 kg)"
+        );
         Self {
             value: value.max(0.001), // Prevent zero or negative mass
             is_infinite: false,
@@ -96,6 +104,12 @@ pub struct AppliedForce {
     pub duration: Option<f32>,
     /// Elapsed time since force began
     pub elapsed: f32,
+}
+
+impl Default for AppliedForce {
+    fn default() -> Self {
+        Self::new(Vec3::ZERO)
+    }
 }
 
 impl AppliedForce {

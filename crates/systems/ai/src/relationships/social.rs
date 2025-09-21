@@ -1,3 +1,4 @@
+use crate::core::utility::UtilityScore;
 use crate::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -11,7 +12,7 @@ pub struct RelationshipStrength(f32);
 
 impl RelationshipStrength {
     pub fn new(value: f32) -> Self {
-        Self(value.clamp(0.0, 1.0))
+        Self(UtilityScore::clamp_trait_value(value))
     }
 
     pub fn value(&self) -> f32 {
@@ -25,7 +26,7 @@ impl RelationshipStrength {
 
     /// Modify relationship by amount (can be positive or negative)
     pub fn adjust(&mut self, amount: f32) {
-        self.0 = (self.0 + amount).clamp(0.0, 1.0);
+        self.0 = UtilityScore::clamp_trait_value(self.0 + amount);
     }
 }
 
@@ -179,7 +180,7 @@ pub fn social_behavior_utility(relationships: &SocialNetwork) -> UtilityScore {
     if count > 0 {
         UtilityScore::new(total_utility / count as f32)
     } else {
-        UtilityScore::new(0.0)
+        UtilityScore::ZERO
     }
 }
 

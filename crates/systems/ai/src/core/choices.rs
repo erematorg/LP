@@ -22,7 +22,7 @@ impl Choice {
     pub fn calculate(&self, scores: &Query<&Score>) -> f32 {
         scores
             .get(self.scorer.0)
-            .expect("Where did the score go?")
+            .expect("Failed to find score component for choice scorer")
             .0
     }
 }

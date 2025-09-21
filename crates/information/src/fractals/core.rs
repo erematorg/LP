@@ -6,6 +6,12 @@ pub struct RuleManager<'a> {
     rules: HashMap<char, &'a str>,
 }
 
+impl Default for RuleManager<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> RuleManager<'a> {
     /// Create a new RuleManager.
     pub fn new() -> Self {

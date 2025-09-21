@@ -1,3 +1,4 @@
+use crate::core::utility::UtilityScore;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -27,9 +28,9 @@ impl Need {
     pub fn new(need_type: NeedType, satisfaction: f32, depletion_rate: f32, priority: f32) -> Self {
         Self {
             need_type,
-            satisfaction: satisfaction.clamp(0.0, 1.0),
+            satisfaction: UtilityScore::clamp_trait_value(satisfaction),
             depletion_rate: depletion_rate.max(0.0),
-            priority: priority.clamp(0.0, 1.0),
+            priority: UtilityScore::clamp_trait_value(priority),
         }
     }
 
@@ -57,7 +58,7 @@ pub fn get_most_urgent_need(
     needs: Query<&Need>,
 ) -> Option<(NeedType, UtilityScore)> {
     let mut most_urgent = None;
-    let mut highest_urgency = UtilityScore::new(0.0);
+    let mut highest_urgency = UtilityScore::ZERO;
 
     for need in needs.iter_many(std::iter::once(entity)) {
         let urgency = need.urgency();

@@ -18,6 +18,7 @@ pub struct InterpreterOutput {
 }
 
 /// Interprets L-System symbols and computes positions and directions for rendering
+#[allow(clippy::too_many_arguments)]
 pub fn interpret(
     symbols: &str,
     rotation_angle: f32,

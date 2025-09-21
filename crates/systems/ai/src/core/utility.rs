@@ -9,6 +9,11 @@ use std::collections::HashMap;
 pub struct UtilityScore(f32);
 
 impl UtilityScore {
+    /// Common utility score constants
+    pub const ZERO: Self = Self(0.0);
+    pub const HALF: Self = Self(0.5);
+    pub const MAX: Self = Self(1.0);
+
     /// Create a new utility score, clamping to valid range
     pub fn new(value: f32) -> Self {
         Self(value.clamp(0.0, 1.0))
@@ -17,6 +22,11 @@ impl UtilityScore {
     /// Get the raw score value
     pub fn value(&self) -> f32 {
         self.0
+    }
+
+    /// Helper function for clamping trait values to valid range
+    pub fn clamp_trait_value(value: f32) -> f32 {
+        value.clamp(0.0, 1.0)
     }
 
     /// Normalize a collection of scores to sum to 1.0
@@ -107,7 +117,7 @@ pub fn determine_behavior(
     modules: &[(&dyn AIModule, UtilityScore, Behavior)],
 ) -> (Behavior, UtilityScore) {
     if modules.is_empty() {
-        return (Behavior::Idle, UtilityScore::new(0.0));
+        return (Behavior::Idle, UtilityScore::ZERO);
     }
 
     // Create normalized version of the scores for better decision making

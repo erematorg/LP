@@ -85,6 +85,6 @@ impl ShortTermMemory {
             .iter()
             .filter(|(e, _, _)| *e == entity)
             .map(|(_, _, strength)| *strength)
-            .last() // Most recent interaction
+            .next_back() // Most recent interaction (more efficient for DoubleEndedIterator)
     }
 }

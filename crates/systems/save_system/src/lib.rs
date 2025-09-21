@@ -24,8 +24,9 @@ impl Default for SaveSystemPlugin {
 pub mod prelude {
     pub use super::SaveSystemPlugin;
     pub use crate::save_system::{
-        get_save_directory, get_save_path, load, load_game_data, save, save_game_data, GameEvent,
-        GameSaveData, GameSnapshot, GameState, GameTracker, SaveMetadata, Saveable, WorldSaveExt,
+        GameEvent, GameSaveData, GameSnapshot, GameState, GameTracker, SaveMetadata, Saveable,
+        WorldSaveExt, get_save_directory, get_save_path, load, load_game_data, save,
+        save_game_data,
     };
-    pub use crate::versioning::{is_save_up_to_date, upgrade_save, SAVE_VERSION};
+    pub use crate::versioning::{SAVE_VERSION, is_save_up_to_date, upgrade_save};
 }

@@ -17,12 +17,12 @@ fn main() {
             Update,
             (
                 reset_forces,
-                calculate_gravitational_attraction.after(reset_forces),
-                apply_forces.after(calculate_gravitational_attraction),
-                integrate_positions.after(apply_forces),
-                update_sprites.after(integrate_positions),
-                keep_in_bounds.after(integrate_positions),
-            ),
+                calculate_gravitational_attraction,
+                apply_forces,
+                integrate_positions,
+                (update_sprites, keep_in_bounds),
+            )
+                .chain(),
         )
         .run();
 }

@@ -5,19 +5,17 @@ pub mod personality;
 pub mod relationships;
 pub mod trackers;
 
-/// Main AI plugin that provides the complete AI system
+/// Core AI plugin with utility-based decision making
 pub use crate::core::LPAIPlugin;
 
-/// The AI prelude.
-///
-/// This includes the most common types in this crate, re-exported for your convenience.
+/// Common AI types and plugins
 pub mod prelude {
     // Main plugins for easy access
+    pub use crate::LPAIPlugin;
     pub use crate::drives::DrivesPlugin;
     pub use crate::personality::PersonalityPlugin;
     pub use crate::relationships::SocialPlugin;
     pub use crate::trackers::TrackerPlugin;
-    pub use crate::LPAIPlugin;
 
     // Core interfaces - now directly from crate root
     pub use crate::{AIModule, ActionExecutor};
@@ -32,7 +30,7 @@ pub mod prelude {
 
     // Context-aware personality system
     pub use crate::personality::traits::{
-        update_collective_influence, update_context_aware_utilities, ContextAwareUtilities,
+        ContextAwareUtilities, update_collective_influence, update_context_aware_utilities,
     };
 }
 

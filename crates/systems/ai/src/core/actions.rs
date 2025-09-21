@@ -4,6 +4,10 @@ use crate::core::thinkers::{Action, ActionSpan, Actor};
 use bevy::prelude::*;
 use std::sync::Arc;
 
+// Error message constants to reduce repetition
+const ACTION_STATE_ERROR: &str =
+    "Failed to find action state component for concurrent action entity";
+
 /// The current state for an Action. These states are changed by a combination
 /// of the Thinker that spawned it, and the actual Action system executing the
 /// Action itself.
@@ -184,7 +188,9 @@ pub fn steps_system(
                         #[cfg(feature = "trace")]
                         trace!("Step {:?} failed. Failing entire StepsAction.", active_ent);
                         let step_state = step_state.clone();
-                        let mut seq_state = states.get_mut(seq_ent).expect("idk");
+                        let mut seq_state = states
+                            .get_mut(seq_ent)
+                            .expect("Failed to find action state for sequence entity");
                         *seq_state = step_state;
                         if let Ok(mut ent) = cmd.get_entity(steps_action.active_ent.entity()) {
                             ent.despawn();
@@ -194,7 +200,9 @@ pub fn steps_system(
                         #[cfg(feature = "trace")]
                         trace!("StepsAction completed all steps successfully.");
                         let step_state = step_state.clone();
-                        let mut seq_state = states.get_mut(seq_ent).expect("idk");
+                        let mut seq_state = states
+                            .get_mut(seq_ent)
+                            .expect("Failed to find action state for sequence entity");
                         *seq_state = step_state;
                         if let Ok(mut ent) = cmd.get_entity(steps_action.active_ent.entity()) {
                             ent.despawn();
@@ -218,8 +226,13 @@ pub fn steps_system(
             }
             Cancelled => {
                 #[cfg(feature = "trace")]
-                trace!("StepsAction has been cancelled. Cancelling current step {:?} before finalizing.", active_ent);
-                let mut step_state = states.get_mut(active_ent).expect("oops");
+                trace!(
+                    "StepsAction has been cancelled. Cancelling current step {:?} before finalizing.",
+                    active_ent
+                );
+                let mut step_state = states
+                    .get_mut(active_ent)
+                    .expect("Failed to find action state for active step entity");
                 if matches!(*step_state, Requested | Executing | Init) {
                     *step_state = Cancelled;
                 } else if matches!(*step_state, Failure | Success) {
@@ -318,7 +331,10 @@ pub fn concurrent_system(
 ) {
     use ActionState::*;
     for (seq_ent, concurrent_action, _span) in concurrent_q.iter() {
-        let current_state = states_q.get_mut(seq_ent).expect("uh oh").clone();
+        let current_state = states_q
+            .get_mut(seq_ent)
+            .expect("Failed to find action state for concurrent sequence entity")
+            .clone();
         #[cfg(feature = "trace")]
         let _guard = _span.span.enter();
 
@@ -329,11 +345,11 @@ pub fn concurrent_system(
                     "Initializing Concurrently action with {} children.",
                     concurrent_action.actions.len()
                 );
-                let mut current_state = states_q.get_mut(seq_ent).expect("uh oh");
+                let mut current_state = states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR);
                 *current_state = Executing;
                 for action in concurrent_action.actions.iter() {
                     let child_ent = action.entity();
-                    let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                    let mut child_state = states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                     *child_state = Requested;
                 }
             }
@@ -343,13 +359,16 @@ pub fn concurrent_system(
                     let mut failed_idx = None;
                     for (idx, action) in concurrent_action.actions.iter().enumerate() {
                         let child_ent = action.entity();
-                        let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                        let mut child_state =
+                            states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                         match *child_state {
                             Failure => {
                                 failed_idx = Some(idx);
                                 all_success = false;
                                 #[cfg(feature = "trace")]
-                                trace!("Join action has failed. Cancelling all other actions that haven't completed yet.");
+                                trace!(
+                                    "Join action has failed. Cancelling all other actions that haven't completed yet."
+                                );
                             }
                             Success => {}
                             _ => {
@@ -361,16 +380,17 @@ pub fn concurrent_system(
                         }
                     }
                     if all_success {
-                        *states_q.get_mut(seq_ent).expect("uh oh") = Success;
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Success;
                     } else if let Some(idx) = failed_idx {
                         for action in concurrent_action.actions.iter().take(idx) {
                             let child_ent = action.entity();
-                            let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                            let mut child_state =
+                                states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                             if !matches!(*child_state, Failure | Success) {
                                 *child_state = Cancelled;
                             }
                         }
-                        *states_q.get_mut(seq_ent).expect("uh oh") = Failure;
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Failure;
                     }
                 }
                 ConcurrentMode::Race => {
@@ -378,14 +398,17 @@ pub fn concurrent_system(
                     let mut succeed_idx = None;
                     for (idx, action) in concurrent_action.actions.iter().enumerate() {
                         let child_ent = action.entity();
-                        let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                        let mut child_state =
+                            states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                         match *child_state {
                             Failure => {}
                             Success => {
                                 succeed_idx = Some(idx);
                                 all_failure = false;
                                 #[cfg(feature = "trace")]
-                                trace!("Race action has succeeded. Cancelling all other actions that haven't completed yet.");
+                                trace!(
+                                    "Race action has succeeded. Cancelling all other actions that haven't completed yet."
+                                );
                             }
                             _ => {
                                 all_failure = false;
@@ -396,16 +419,17 @@ pub fn concurrent_system(
                         }
                     }
                     if all_failure {
-                        *states_q.get_mut(seq_ent).expect("uh oh") = Failure;
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Failure;
                     } else if let Some(idx) = succeed_idx {
                         for action in concurrent_action.actions.iter().take(idx) {
                             let child_ent = action.entity();
-                            let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                            let mut child_state =
+                                states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                             if !matches!(*child_state, Failure | Success) {
                                 *child_state = Cancelled;
                             }
                         }
-                        *states_q.get_mut(seq_ent).expect("uh oh") = Success;
+                        *states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR) = Success;
                     }
                 }
             },
@@ -415,7 +439,7 @@ pub fn concurrent_system(
                 let mut any_success = false;
                 for action in concurrent_action.actions.iter() {
                     let child_ent = action.entity();
-                    let mut child_state = states_q.get_mut(child_ent).expect("uh oh");
+                    let mut child_state = states_q.get_mut(child_ent).expect(ACTION_STATE_ERROR);
                     match *child_state {
                         Init => {}
                         Success => any_success = true,
@@ -427,7 +451,7 @@ pub fn concurrent_system(
                     }
                 }
                 if all_done {
-                    let mut state_var = states_q.get_mut(seq_ent).expect("uh oh");
+                    let mut state_var = states_q.get_mut(seq_ent).expect(ACTION_STATE_ERROR);
                     match concurrent_action.mode {
                         ConcurrentMode::Race => {
                             if any_success {
