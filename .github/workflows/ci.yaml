@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
+  DEBIAN_FRONTEND: noninteractive
 
 jobs:
   test:
@@ -28,13 +32,13 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: test-suite
+          shared-key: workspace
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       
       - name: Quick check
         run: cargo check --workspace
@@ -62,7 +66,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: clippy-lint
+          shared-key: workspace
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -70,7 +74,7 @@ jobs:
           components: clippy
       
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev clang lld
       
       - name: Run clippy
         run: cargo clippy --workspace -- -A clippy::upper-case-acronyms -A clippy::manual-flatten -A clippy::excessive-precision -A clippy::too-many-arguments
@@ -82,11 +86,6 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: format-check
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
