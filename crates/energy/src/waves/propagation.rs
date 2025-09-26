@@ -1,6 +1,15 @@
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
 use bevy::prelude::*;
 
+#[inline]
+fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
+    if vec.length_squared() > f32::EPSILON {
+        vec.normalize()
+    } else {
+        fallback
+    }
+}
+
 // Calculate modified angular frequency with dispersion
 #[inline]
 pub fn dispersive_angular_frequency(params: &WaveParameters, k: f32) -> f32 {
@@ -52,7 +61,8 @@ pub fn solve_wave(params: &WaveParameters, position: Vec2, time: f32) -> f32 {
     let k = wave_number(params.wavelength);
     let omega = dispersive_angular_frequency(params, k);
 
-    let k_vec = params.direction.normalize() * k;
+    let direction = normalize_or(params.direction, Vec2::X);
+    let k_vec = direction * k;
     let dot_product = k_vec.dot(position);
 
     // Calculate the phase argument for the wave function
@@ -106,6 +116,8 @@ pub fn update_wave_displacements(
     let t = time.elapsed_secs();
 
     for (mut transform, params, position, wave_type) in query.iter_mut() {
+        let base_translation = Vec3::new(position.0.x, position.0.y, transform.translation.z);
+
         let displacement = match wave_type {
             Some(WaveType::Radial) => {
                 // Find the nearest wave center
@@ -128,9 +140,10 @@ pub fn update_wave_displacements(
             _ => solve_wave(params, position.0, t),
         };
 
-        let displacement_vec = params.displacement_axis.normalize() * displacement;
-        transform.translation.x += displacement_vec.x;
-        transform.translation.y += displacement_vec.y;
+        let displacement_axis = normalize_or(params.displacement_axis, Vec2::Y);
+        let displacement_vec = displacement_axis * displacement;
+        transform.translation =
+            base_translation + Vec3::new(displacement_vec.x, displacement_vec.y, 0.0);
     }
 }
 
@@ -145,13 +158,15 @@ pub fn create_linear_wave(
     damping: f32,
     dispersion_factor: f32,
 ) -> WaveParameters {
+    let current = WaveParameters::default();
+
     WaveParameters {
         amplitude,
         wavelength,
         speed,
         phase,
-        direction: direction.normalize(),
-        displacement_axis: displacement_axis.normalize(),
+        direction: normalize_or(direction, current.direction),
+        displacement_axis: normalize_or(displacement_axis, current.displacement_axis),
         damping,
         dispersion_factor,
     }

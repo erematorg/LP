@@ -34,6 +34,15 @@ impl Need {
         }
     }
 
+    /// Apply depletion based on elapsed time
+    pub fn decay(&mut self, delta_secs: f32) {
+        if delta_secs <= 0.0 || self.depletion_rate <= 0.0 {
+            return;
+        }
+
+        self.satisfaction = (self.satisfaction - self.depletion_rate * delta_secs).max(0.0);
+    }
+
     /// Calculate need urgency as utility score
     pub fn urgency(&self) -> UtilityScore {
         UtilityScore::new((1.0 - self.satisfaction) * self.priority)
@@ -48,7 +57,7 @@ impl Need {
 /// System for updating needs over time
 pub fn update_needs(time: Res<Time>, mut needs: Query<&mut Need>) {
     for mut need in &mut needs {
-        need.satisfaction = (need.satisfaction - need.depletion_rate * time.delta_secs()).max(0.0);
+        need.decay(time.delta_secs());
     }
 }
 
@@ -73,9 +82,8 @@ pub fn get_most_urgent_need(
 
 impl AIModule for Need {
     fn update(&mut self) {
-        // Naturally decrease satisfaction over time
-        // (Note: Full implementation would use time delta)
-        self.satisfaction = (self.satisfaction - self.depletion_rate * 0.01).max(0.0);
+        // Clamp to valid range; depletion is handled by systems with proper delta time
+        self.satisfaction = self.satisfaction.clamp(0.0, 1.0);
     }
 
     fn utility(&self) -> UtilityScore {
@@ -83,5 +91,3 @@ impl AIModule for Need {
         self.urgency()
     }
 }
-
-//TODO: Adding a NeedTracker to monitor and manage needs over time, would be in systems/ai/src/trackers/needs_tracker.rs

@@ -89,31 +89,39 @@ impl WaveEquation2D {
         const CHUNK_SIZE: usize = 32;
 
         // Optimize memory access patterns by processing in blocks
-        for j_chunk in 1..((self.ny - 1).div_ceil(CHUNK_SIZE)) {
-            let j_start = (j_chunk - 1) * CHUNK_SIZE + 1;
-            let j_end = (j_start + CHUNK_SIZE - 1).min(self.ny - 2);
+        let inner_height = self.ny.saturating_sub(2);
+        let inner_width = self.nx.saturating_sub(2);
 
-            for i_chunk in 1..((self.nx - 1).div_ceil(CHUNK_SIZE)) {
-                let i_start = (i_chunk - 1) * CHUNK_SIZE + 1;
-                let i_end = (i_start + CHUNK_SIZE - 1).min(self.nx - 2);
+        if inner_height > 0 && inner_width > 0 {
+            let j_chunks = (inner_height + CHUNK_SIZE - 1) / CHUNK_SIZE;
+            let i_chunks = (inner_width + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
-                for j in j_start..=j_end {
-                    for i in i_start..=i_end {
-                        // Finite difference formula for 2D wave equation
-                        let laplacian_x = self.get(&self.u_current, i + 1, j)
-                            - 2.0 * self.get(&self.u_current, i, j)
-                            + self.get(&self.u_current, i - 1, j);
+            for j_chunk in 0..j_chunks {
+                let j_start = 1 + j_chunk * CHUNK_SIZE;
+                let j_end = (j_start + CHUNK_SIZE - 1).min(self.ny - 2);
 
-                        let laplacian_y = self.get(&self.u_current, i, j + 1)
-                            - 2.0 * self.get(&self.u_current, i, j)
-                            + self.get(&self.u_current, i, j - 1);
+                for i_chunk in 0..i_chunks {
+                    let i_start = 1 + i_chunk * CHUNK_SIZE;
+                    let i_end = (i_start + CHUNK_SIZE - 1).min(self.nx - 2);
 
-                        let next_value = 2.0 * self.get(&self.u_current, i, j)
-                            - self.get(&self.u_previous, i, j)
-                            + cx * laplacian_x
-                            + cy * laplacian_y;
+                    for j in j_start..=j_end {
+                        for i in i_start..=i_end {
+                            // Finite difference formula for 2D wave equation
+                            let laplacian_x = self.get(&self.u_current, i + 1, j)
+                                - 2.0 * self.get(&self.u_current, i, j)
+                                + self.get(&self.u_current, i - 1, j);
 
-                        self.set(&mut u_next, i, j, next_value);
+                            let laplacian_y = self.get(&self.u_current, i, j + 1)
+                                - 2.0 * self.get(&self.u_current, i, j)
+                                + self.get(&self.u_current, i, j - 1);
+
+                            let next_value = 2.0 * self.get(&self.u_current, i, j)
+                                - self.get(&self.u_previous, i, j)
+                                + cx * laplacian_x
+                                + cy * laplacian_y;
+
+                            self.set(&mut u_next, i, j, next_value);
+                        }
                     }
                 }
             }

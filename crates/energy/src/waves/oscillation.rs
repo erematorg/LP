@@ -1,5 +1,14 @@
 use bevy::prelude::*;
 
+#[inline]
+fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
+    if vec.length_squared() > f32::EPSILON {
+        vec.normalize()
+    } else {
+        fallback
+    }
+}
+
 /// Wave parameters for configuring wave behavior
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 pub struct WaveParameters {
@@ -68,13 +77,13 @@ impl WaveParameters {
 
     /// Fluent interface for setting direction
     pub fn with_direction(mut self, direction: Vec2) -> Self {
-        self.direction = direction.normalize();
+        self.direction = normalize_or(direction, self.direction);
         self
     }
 
     /// Fluent interface for setting displacement axis
     pub fn with_displacement_axis(mut self, displacement_axis: Vec2) -> Self {
-        self.displacement_axis = displacement_axis.normalize();
+        self.displacement_axis = normalize_or(displacement_axis, self.displacement_axis);
         self
     }
 
