@@ -39,9 +39,11 @@ Before submitting a pull request:
 
 2. **Follow Code Standards:** Ensure your code adheres to LP's coding standards.
 
-3. **Provide Unit Tests:** Include relevant unit tests for new features or changes.
+3. **Run Local Checks:** Before opening a pull request, run `cargo fmt`, `cargo clippy --workspace`, and `cargo test --workspace` so CI time stays focused on regressions instead of formatting or lint fixes.
 
-4. **Document Changes:** Update documentation to reflect any modifications made.
+4. **Provide Unit Tests:** Include relevant unit tests for new features or changes.
+
+5. **Document Changes:** Update documentation to reflect any modifications made.
 
 ## Communicating with Developers
 
