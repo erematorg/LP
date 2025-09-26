@@ -307,32 +307,36 @@ pub fn save_game_data(
 
         if let Ok(entity_ref) = world.get_entity(entity) {
             for component_id in entity_ref.archetype().components() {
-                if let Some(component_info) = world.components().get_info(component_id) {
-                    if let Some(type_registration) =
-                        type_registry.get(component_info.type_id().unwrap())
-                    {
-                        if let Some(reflect_serialize) =
-                            type_registration.data::<ReflectSerialize>()
-                        {
-                            let component_name =
-                                type_registration.type_info().type_path().to_string();
+                let Some(component_info) = world.components().get_info(component_id) else {
+                    continue;
+                };
 
-                            if component_name.contains("Saveable") {
-                                continue;
-                            }
+                let Some(type_id) = component_info.type_id() else {
+                    continue;
+                };
 
-                            if let Some(reflect_component) =
-                                type_registration.data::<ReflectComponent>()
-                            {
-                                if let Some(reflected) = reflect_component.reflect(entity_ref) {
-                                    let serializable =
-                                        reflect_serialize.get_serializable(reflected);
-                                    if let Ok(value) = serde_json::to_value(&*serializable) {
-                                        entity_data.insert(component_name, value);
-                                    }
-                                }
-                            }
-                        }
+                let Some(type_registration) = type_registry.get(type_id) else {
+                    continue;
+                };
+
+                let Some(reflect_serialize) = type_registration.data::<ReflectSerialize>() else {
+                    continue;
+                };
+
+                let component_name = type_registration.type_info().type_path().to_string();
+
+                if component_name.contains("Saveable") {
+                    continue;
+                }
+
+                let Some(reflect_component) = type_registration.data::<ReflectComponent>() else {
+                    continue;
+                };
+
+                if let Some(reflected) = reflect_component.reflect(entity_ref) {
+                    let serializable = reflect_serialize.get_serializable(reflected);
+                    if let Ok(value) = serde_json::to_value(&*serializable) {
+                        entity_data.insert(component_name, value);
                     }
                 }
             }

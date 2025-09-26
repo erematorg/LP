@@ -159,6 +159,11 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
             continue;
         }
 
+        if force.is_expired() {
+            force.force = Vec3::ZERO;
+            continue;
+        }
+
         let acceleration = force.force * mass.inverse();
 
         // Cap extremely high accelerations to prevent instability
@@ -171,6 +176,9 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
 
         velocity.linvel += acceleration * dt;
         force.elapsed += dt;
+
+        // Clear accumulated force so subsequent systems can rebuild it per-frame
+        force.force = Vec3::ZERO;
     }
 }
 

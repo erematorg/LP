@@ -283,8 +283,7 @@ fn update_creatures_and_perception(
                     }
 
                     // Use direct distance approach (Relations queries will be added in future systems)
-                    if direct_target.is_some() {
-                        let food_pos = direct_target.unwrap();
+                    if let Some(food_pos) = direct_target {
                         let direction = (food_pos - position).normalize_or_zero();
 
                         // Movement speed influenced by evolved personality traits

@@ -32,9 +32,13 @@ pub struct WeightedProduct;
 
 impl Measure for WeightedProduct {
     fn calculate(&self, scores: Vec<(&Score, f32)>) -> f32 {
+        if scores.is_empty() {
+            return 0.0;
+        }
+
         scores
             .iter()
-            .fold(0f32, |acc, (score, weight)| acc * score.0 * weight)
+            .fold(1.0f32, |acc, (score, weight)| acc * score.0 * weight)
     }
 }
 

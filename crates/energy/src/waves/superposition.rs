@@ -3,6 +3,15 @@ use super::propagation::WavePosition;
 use bevy::prelude::*;
 
 #[inline]
+fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
+    if vec.length_squared() > f32::EPSILON {
+        vec.normalize()
+    } else {
+        fallback
+    }
+}
+
+#[inline]
 pub fn solve_standing_wave(
     params: &WaveParameters,
     position: Vec2,
@@ -12,7 +21,7 @@ pub fn solve_standing_wave(
     let k = wave_number(params.wavelength);
     let omega = angular_frequency(params.speed, k);
 
-    let direction = params.direction.normalize();
+    let direction = normalize_or(params.direction, Vec2::X);
     let spatial_term = (k * direction.dot(position) + params.phase).sin();
     let temporal_term = (omega * time).cos();
 
@@ -37,10 +46,12 @@ pub fn update_standing_waves(
     let t = time.elapsed_secs();
 
     for (mut transform, params, position) in query.iter_mut() {
+        let base_translation = Vec3::new(position.0.x, position.0.y, transform.translation.z);
         let displacement = solve_standing_wave(params, position.0, t, None::<fn(f32) -> f32>);
-        let displacement_vec = params.displacement_axis.normalize() * displacement;
-        transform.translation.x += displacement_vec.x;
-        transform.translation.y += displacement_vec.y;
+        let displacement_axis = normalize_or(params.displacement_axis, Vec2::Y);
+        let displacement_vec = displacement_axis * displacement;
+        transform.translation =
+            base_translation + Vec3::new(displacement_vec.x, displacement_vec.y, 0.0);
     }
 }
 
@@ -72,13 +83,15 @@ pub fn create_standing_wave_parameters(
     damping: f32,
     dispersion_factor: f32,
 ) -> WaveParameters {
+    let defaults = WaveParameters::default();
+
     WaveParameters {
         amplitude,
         wavelength,
         speed: frequency * wavelength,
         phase,
-        direction: direction.normalize(),
-        displacement_axis: displacement_axis.normalize(),
+        direction: normalize_or(direction, defaults.direction),
+        displacement_axis: normalize_or(displacement_axis, defaults.displacement_axis),
         damping,
         dispersion_factor,
     }
