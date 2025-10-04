@@ -146,6 +146,7 @@ impl WaveEquation2D {
 
 /// Component wrapper for the wave equation
 #[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct WaveEquationComponent {
     pub solver: WaveEquation2D,
 }

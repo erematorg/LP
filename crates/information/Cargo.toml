@@ -6,7 +6,7 @@ description = "Systems handling pattern emergence, complexity formation, and the
 
 [dependencies]
 
-bevy = "0.16"
+bevy = "0.17"
 
 
 

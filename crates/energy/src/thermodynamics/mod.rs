@@ -23,7 +23,7 @@ impl Plugin for ThermodynamicsPlugin {
             .register_type::<entropy::Reversibility>()
             .register_type::<equilibrium::ThermalEquilibrium>()
             .register_type::<equilibrium::PhaseState>()
-            .add_event::<thermal::ThermalTransferEvent>()
+            .add_message::<thermal::ThermalTransferEvent>()
             .configure_sets(
                 Update,
                 (

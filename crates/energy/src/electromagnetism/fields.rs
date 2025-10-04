@@ -6,6 +6,7 @@ pub const MAGNETIC_CONSTANT_DIV_4PI: f32 = 1e-7;
 
 /// Represents an electric field component
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct ElectricField {
     /// Magnitude and direction of the electric field
     pub field: Vec2,
@@ -52,6 +53,7 @@ impl ElectricField {
 
 /// Represents a magnetic field component
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct MagneticField {
     /// Magnitude and direction of the magnetic field
     pub field: Vec2,
@@ -107,7 +109,7 @@ impl MagneticField {
 }
 
 /// Event for field interactions
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct ElectromagneticFieldInteractionEvent {
     /// Source entity generating the field
     pub source: Entity,
@@ -119,7 +121,7 @@ pub struct ElectromagneticFieldInteractionEvent {
 
 /// System for calculating field interactions
 pub fn calculate_field_interactions(
-    mut field_interaction_events: EventWriter<ElectromagneticFieldInteractionEvent>,
+    mut field_interaction_events: MessageWriter<ElectromagneticFieldInteractionEvent>,
     electric_fields: Query<(Entity, &ElectricField)>,
     magnetic_fields: Query<(Entity, &MagneticField)>,
 ) {
@@ -172,7 +174,7 @@ impl Plugin for ElectromagneticFieldPlugin {
             .register_type::<ElectricField>()
             .register_type::<MagneticField>()
             // Add electromagnetic field interaction event
-            .add_event::<ElectromagneticFieldInteractionEvent>()
+            .add_message::<ElectromagneticFieldInteractionEvent>()
             // Add system for field interactions
             .add_systems(Update, calculate_field_interactions);
     }

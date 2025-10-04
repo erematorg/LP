@@ -16,7 +16,7 @@ impl Plugin for WavesPlugin {
             .register_type::<propagation::WaveCenterMarker>()
             .register_type::<superposition::StandingWaveMarker>()
             .register_type::<wave_equation::WaveEquationComponent>()
-            .add_event::<oscillation::WaveGenerationEvent>()
+            .add_message::<oscillation::WaveGenerationEvent>()
             .add_systems(
                 Update,
                 (

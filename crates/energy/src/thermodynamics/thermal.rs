@@ -5,6 +5,7 @@ pub const STEFAN_BOLTZMANN: f32 = 5.67e-8; // W/(m²·K⁴)
 
 /// Temperature component for thermal systems
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct Temperature {
     /// Temperature in Kelvin
     pub value: f32,
@@ -36,6 +37,7 @@ impl Temperature {
 
 /// Thermal conductivity property
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct ThermalConductivity {
     /// W/(m·K)
     pub value: f32,
@@ -43,6 +45,7 @@ pub struct ThermalConductivity {
 
 /// Thermal diffusivity property
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct ThermalDiffusivity {
     /// m²/s
     pub value: f32,
@@ -63,6 +66,7 @@ impl ThermalDiffusivity {
 
 /// Emissivity property for radiation calculations
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct Emissivity {
     /// Dimensionless value between 0.0 and 1.0
     /// 0.0 = perfect reflector, 1.0 = perfect emitter (black body)
@@ -78,7 +82,7 @@ impl Emissivity {
 }
 
 /// Event for thermal energy transfer between entities
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct ThermalTransferEvent {
     /// Source entity losing thermal energy
     pub source: Entity,
@@ -90,7 +94,7 @@ pub struct ThermalTransferEvent {
 
 /// System for calculating heat conduction between entities
 pub fn calculate_thermal_transfer(
-    mut thermal_transfer_events: EventWriter<ThermalTransferEvent>,
+    mut thermal_transfer_events: MessageWriter<ThermalTransferEvent>,
     query: Query<(Entity, &Temperature, &ThermalConductivity)>,
 ) {
     // Use query.iter_combinations() to efficiently compare all entities
@@ -157,7 +161,7 @@ impl Plugin for ThermalSystemPlugin {
             .register_type::<ThermalDiffusivity>()
             .register_type::<Emissivity>()
             // Add thermal transfer event channel
-            .add_event::<ThermalTransferEvent>()
+            .add_message::<ThermalTransferEvent>()
             // Add system for thermal calculations
             .add_systems(Update, calculate_thermal_transfer);
     }

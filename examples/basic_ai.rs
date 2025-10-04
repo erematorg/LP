@@ -87,7 +87,7 @@ fn setup(mut commands: Commands) {
         // Add dynamic state label text
         commands.spawn((
             Text2d::new("Neutral"),
-            TextLayout::new_with_justify(JustifyText::Center),
+            TextLayout::new_with_justify(Justify::Center),
             Transform::from_translation(Vec3::new(x, y + 25.0, 1.0)).with_scale(Vec3::splat(0.5)), // Half the size
             CreatureLabel { creature: entity },
         ));
@@ -401,7 +401,7 @@ fn respawn_food(mut food_query: Query<(&mut Food, &mut Visibility)>, time: Res<T
         if !food.active {
             food.respawn_timer.tick(time.delta());
 
-            if food.respawn_timer.finished() {
+            if food.respawn_timer.is_finished() {
                 food.active = true;
                 *visibility = Visibility::Inherited;
             }

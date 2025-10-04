@@ -33,18 +33,22 @@ impl Default for UniformGravity {
 
 /// Component for entities affected by gravity
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct GravityAffected;
 
 /// Marker component for gravity field measurement points
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct GravityFieldMarker;
 
 /// Component for objects that generate gravitational attraction
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct GravitySource;
 
 /// Marker for bodies with significant mass
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct MassiveBody;
 
 // Barnes-Hut spatial partitioning

@@ -5,4 +5,4 @@ edition = "2024"
 description = "Core systems governing how energy manifests, transforms and flows."
 
 [dependencies]
-bevy = "0.16"
+bevy = "0.17"
