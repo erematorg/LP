@@ -1,7 +1,8 @@
 use crate::versioning::{is_save_up_to_date, upgrade_save};
 use bevy::prelude::ReflectComponent;
 use bevy::prelude::*;
-use bevy::reflect::{Reflect, ReflectSerialize};
+use bevy::reflect::Reflect;
+use bevy::reflect::serde::ReflectSerializer;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -307,7 +308,7 @@ pub fn save_game_data(
 
         if let Ok(entity_ref) = world.get_entity(entity) {
             for component_id in entity_ref.archetype().components() {
-                let Some(component_info) = world.components().get_info(component_id) else {
+                let Some(component_info) = world.components().get_info(*component_id) else {
                     continue;
                 };
 
@@ -316,10 +317,6 @@ pub fn save_game_data(
                 };
 
                 let Some(type_registration) = type_registry.get(type_id) else {
-                    continue;
-                };
-
-                let Some(reflect_serialize) = type_registration.data::<ReflectSerialize>() else {
                     continue;
                 };
 
@@ -334,8 +331,8 @@ pub fn save_game_data(
                 };
 
                 if let Some(reflected) = reflect_component.reflect(entity_ref) {
-                    let serializable = reflect_serialize.get_serializable(reflected);
-                    if let Ok(value) = serde_json::to_value(&*serializable) {
+                    let serializer = ReflectSerializer::new(reflected, &type_registry);
+                    if let Ok(value) = serde_json::to_value(&serializer) {
                         entity_data.insert(component_name, value);
                     }
                 }

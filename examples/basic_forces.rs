@@ -5,7 +5,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "N-Body Gravitational Simulation".to_string(),
-                resolution: (800.0, 600.0).into(),
+                resolution: (800, 600).into(),
                 ..default()
             }),
             ..default()

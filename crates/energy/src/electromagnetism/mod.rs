@@ -11,7 +11,7 @@ impl Plugin for ElectromagnetismPlugin {
             .register_type::<fields::MagneticField>()
             .register_type::<interactions::ElectromagneticWave>()
             .register_type::<interactions::MaterialProperties>()
-            .add_event::<fields::ElectromagneticFieldInteractionEvent>()
+            .add_message::<fields::ElectromagneticFieldInteractionEvent>()
             .add_systems(Update, fields::calculate_field_interactions);
     }
 }

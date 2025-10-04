@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 /// Component marking systems in thermal equilibrium
 #[derive(Component, Debug, Reflect)]
+#[reflect(Component)]
 pub struct ThermalEquilibrium {
     pub connected_entities: Vec<Entity>,
     /// Equilibrium group ID for transitivity tracking
@@ -12,6 +13,7 @@ pub struct ThermalEquilibrium {
 /// and the matter crate is implemented
 /// This is a placeholder for the actual phase state representation
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+#[reflect(Component)]
 pub enum PhaseState {
     Solid,
     Liquid,

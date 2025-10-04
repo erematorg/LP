@@ -36,6 +36,7 @@ pub fn solve_standing_wave(
 
 /// Marker component for standing waves
 #[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct StandingWaveMarker;
 
 /// System for updating standing waves specifically
@@ -56,7 +57,7 @@ pub fn update_standing_waves(
 }
 
 /// Event for standing wave modifications
-#[derive(Event)]
+#[derive(Message)]
 pub struct StandingWaveModificationEvent {
     pub entity: Entity,
     pub new_parameters: WaveParameters,
@@ -65,7 +66,7 @@ pub struct StandingWaveModificationEvent {
 /// System to handle wave parameter modifications
 pub fn handle_wave_modifications(
     mut commands: Commands,
-    mut wave_mod_events: EventReader<StandingWaveModificationEvent>,
+    mut wave_mod_events: MessageReader<StandingWaveModificationEvent>,
 ) {
     for event in wave_mod_events.read() {
         commands.entity(event.entity).insert(event.new_parameters);
@@ -103,7 +104,7 @@ pub struct StandingWavePlugin;
 impl Plugin for StandingWavePlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<StandingWaveMarker>()
-            .add_event::<StandingWaveModificationEvent>()
+            .add_message::<StandingWaveModificationEvent>()
             .add_systems(Update, (update_standing_waves, handle_wave_modifications));
     }
 }

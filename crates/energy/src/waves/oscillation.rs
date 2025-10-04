@@ -11,6 +11,7 @@ fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
 
 /// Wave parameters for configuring wave behavior
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct WaveParameters {
     /// Wave propagation speed (units/second)
     pub speed: f32,
@@ -122,7 +123,7 @@ pub fn damping_from_half_life(half_life: f32) -> f32 {
 }
 
 /// Event for wave generation or modification
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct WaveGenerationEvent {
     /// Parameters of the generated wave
     pub parameters: WaveParameters,
@@ -131,7 +132,7 @@ pub struct WaveGenerationEvent {
 }
 
 /// System for wave parameter validation
-pub fn validate_wave_parameters(mut wave_generation_events: EventReader<WaveGenerationEvent>) {
+pub fn validate_wave_parameters(mut wave_generation_events: MessageReader<WaveGenerationEvent>) {
     for event in wave_generation_events.read() {
         // Validate wave parameters
         assert!(

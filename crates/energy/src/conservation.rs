@@ -14,6 +14,7 @@ pub enum EnergyType {
 
 /// Component tracking energy in a system
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct EnergyQuantity {
     /// Energy amount in joules
     pub value: f32,
@@ -70,7 +71,7 @@ pub enum TransactionType {
 }
 
 /// Event for energy transfers between entities
-#[derive(Event, Debug)]
+#[derive(Message, Debug)]
 pub struct EnergyTransferEvent {
     /// Source entity losing energy
     pub source: Entity,
@@ -84,6 +85,7 @@ pub struct EnergyTransferEvent {
 
 /// Component for precise energy accounting
 #[derive(Component, Debug, Reflect)]
+#[reflect(Component)]
 pub struct EnergyAccountingLedger {
     /// History of all transactions, newest first
     pub transactions: Vec<EnergyTransaction>,
@@ -244,6 +246,6 @@ impl Plugin for EnergyConservationPlugin {
             // Add resources
             .init_resource::<EnergyConservationTracker>()
             // Add event channel
-            .add_event::<EnergyTransferEvent>();
+            .add_message::<EnergyTransferEvent>();
     }
 }

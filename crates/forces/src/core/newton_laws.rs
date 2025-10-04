@@ -37,6 +37,7 @@ impl Distance for Vec2 {}
 
 /// Component for mass properties of an entity
 #[derive(Component, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
 pub struct Mass {
     /// Mass in kilograms
     pub value: f32,
@@ -95,6 +96,7 @@ impl Mass {
 
 /// Component representing a force applied to an entity
 #[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
 pub struct AppliedForce {
     /// Force vector in Newtons
     pub force: Vec3,
@@ -143,6 +145,7 @@ impl AppliedForce {
 
 /// Component for velocity (both linear and angular)
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
 pub struct Velocity {
     /// Linear velocity in meters per second
     pub linvel: Vec3,
@@ -222,7 +225,7 @@ pub trait PairedForce {
 pub struct PairedForceInteraction;
 
 /// Event for immediate impulse application that respects Newton's Third Law
-#[derive(Event)]
+#[derive(Message)]
 pub struct ForceImpulse {
     pub entity1: Entity,
     pub impulse1: Vec3,
@@ -248,7 +251,7 @@ pub struct NewtonLawsPlugin;
 
 impl Plugin for NewtonLawsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ForceImpulse>().add_systems(
+        app.add_message::<ForceImpulse>().add_systems(
             Update,
             (apply_forces, apply_impulses, integrate_positions).chain(),
         );
@@ -283,7 +286,7 @@ pub fn compute_paired_forces<T: PairedForce + Resource>(
 
 /// System to apply impulses directly to velocities
 pub fn apply_impulses(
-    mut impulses: EventReader<ForceImpulse>,
+    mut impulses: MessageReader<ForceImpulse>,
     mut velocities: Query<(&Mass, &mut Velocity)>,
 ) {
     for impulse in impulses.read() {
