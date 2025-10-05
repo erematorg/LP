@@ -21,7 +21,7 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
@@ -55,7 +55,7 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
