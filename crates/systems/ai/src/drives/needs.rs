@@ -2,13 +2,37 @@ use crate::core::utility::UtilityScore;
 use crate::prelude::*;
 use bevy::prelude::*;
 
-/// Core need types representing basic drives
+/// Universal need types that apply to all life forms
+/// These represent fundamental biological drives that emerge from physics and chemistry
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
 pub enum NeedType {
-    Hunger, // Need for nourishment
-    Safety, // Need to avoid danger
-    Rest,   // Need for recuperation
-    Social, // Need for group interaction
+    /// Need for energy to sustain life
+    /// - Animals: food consumption
+    /// - Plants: sunlight absorption
+    /// - Fungi: nutrient decomposition
+    /// - Microbes: chemical energy sources
+    Energy,
+
+    /// Need for essential resources (water, minerals, nutrients)
+    /// Universal across all life forms
+    Resources,
+
+    /// Need to avoid threats and maintain safety
+    /// - Animals: predators, environmental hazards
+    /// - Plants: herbivores, drought, fire
+    /// - All: temperature extremes, toxins
+    Safety,
+
+    /// Need to maintain stable internal state (homeostasis)
+    /// - Temperature regulation
+    /// - pH balance
+    /// - Osmotic pressure
+    /// Universal physiological stability
+    Homeostasis,
+
+    /// Biological drive to reproduce and pass on genetic information
+    /// Universal across all life forms
+    Reproduction,
 }
 
 /// Component representing a single need
