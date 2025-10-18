@@ -10,7 +10,6 @@ pub mod measures;
 pub mod pickers;
 pub mod scorers;
 pub mod thinkers;
-pub mod utility;
 
 /// Prelude for the core AI module.
 ///
@@ -46,8 +45,6 @@ pub mod prelude {
 
     // Choices
     pub use crate::core::choices::{Choice, ChoiceBuilder};
-
-    pub use crate::core::utility::*;
 }
 
 use bevy::{

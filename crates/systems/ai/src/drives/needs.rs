@@ -1,4 +1,4 @@
-use crate::core::utility::UtilityScore;
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -52,9 +52,9 @@ impl Need {
     pub fn new(need_type: NeedType, satisfaction: f32, depletion_rate: f32, priority: f32) -> Self {
         Self {
             need_type,
-            satisfaction: UtilityScore::clamp_trait_value(satisfaction),
+            satisfaction: Score::clamp_trait_value(satisfaction),
             depletion_rate: depletion_rate.max(0.0),
-            priority: UtilityScore::clamp_trait_value(priority),
+            priority: Score::clamp_trait_value(priority),
         }
     }
 
@@ -68,8 +68,8 @@ impl Need {
     }
 
     /// Calculate need urgency as utility score
-    pub fn urgency(&self) -> UtilityScore {
-        UtilityScore::new((1.0 - self.satisfaction) * self.priority)
+    pub fn urgency(&self) -> Score {
+        Score::new((1.0 - self.satisfaction) * self.priority)
     }
 
     /// Satisfy this need by the given amount
@@ -89,9 +89,9 @@ pub fn update_needs(time: Res<Time>, mut needs: Query<&mut Need>) {
 pub fn get_most_urgent_need(
     entity: Entity,
     needs: Query<&Need>,
-) -> Option<(NeedType, UtilityScore)> {
+) -> Option<(NeedType, Score)> {
     let mut most_urgent = None;
-    let mut highest_urgency = UtilityScore::ZERO;
+    let mut highest_urgency = Score::ZERO;
 
     for need in needs.iter_many(std::iter::once(entity)) {
         let urgency = need.urgency();
@@ -110,7 +110,7 @@ impl AIModule for Need {
         self.satisfaction = self.satisfaction.clamp(0.0, 1.0);
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Return urgency as utility
         self.urgency()
     }

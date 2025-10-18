@@ -1,3 +1,4 @@
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -17,7 +18,7 @@ pub enum MemoryEventType {
 #[derive(Debug, Clone, Component)]
 pub struct MemoryEvent {
     pub timestamp: MemoryTimestamp,
-    pub importance: UtilityScore, // Use UtilityScore instead of raw f32
+    pub importance: Score, // Importance as Score (0.0-1.0)
     // pub location: Option<Vec2>, // Commented out until terrain is implemented
     pub related_entities: Vec<Entity>,
     pub event_type: MemoryEventType,
@@ -28,7 +29,7 @@ impl MemoryEvent {
         Self {
             event_type,
             timestamp,
-            importance: UtilityScore::new(importance), // Convert to UtilityScore
+            importance: Score::new(importance), // Convert to Score
             // location: None,
             related_entities: Vec::new(),
         }
@@ -46,7 +47,7 @@ impl AIModule for MemoryEvent {
         // Could implement decay of importance over time if needed
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Return importance as utility
         self.importance
     }

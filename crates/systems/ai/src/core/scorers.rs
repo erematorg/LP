@@ -13,12 +13,30 @@ use crate::core::{
 };
 
 /// Score value between `0.0..=1.0` associated with a Scorer.
-#[derive(Clone, Component, Debug, Default, Reflect)]
+///
+/// This type represents normalized utility scores used throughout the AI system.
+/// It provides math operations for combining and transforming scores.
+#[derive(Clone, Copy, Component, Debug, Default, Reflect, PartialEq, PartialOrd)]
 pub struct Score(pub(crate) f32);
 
 impl Score {
+    /// Common score constants
+    pub const ZERO: Self = Self(0.0);
+    pub const HALF: Self = Self(0.5);
+    pub const MAX: Self = Self(1.0);
+
+    /// Create a new score, clamping to valid range `0.0..=1.0`
+    pub fn new(value: f32) -> Self {
+        Self(value.clamp(0.0, 1.0))
+    }
+
     /// Returns the `Score`'s current value.
     pub fn get(&self) -> f32 {
+        self.0
+    }
+
+    /// Get the raw score value (alias for `get()`)
+    pub fn value(&self) -> f32 {
         self.0
     }
 
@@ -35,6 +53,81 @@ impl Score {
     /// and use `set` instead.
     pub fn set_unchecked(&mut self, value: f32) {
         self.0 = value;
+    }
+
+    /// Helper function for clamping trait values to valid range
+    pub fn clamp_trait_value(value: f32) -> f32 {
+        value.clamp(0.0, 1.0)
+    }
+
+    /// Normalize a collection of scores to sum to 1.0
+    pub fn normalize_scores(scores: &mut [Score]) {
+        let total: f32 = scores.iter().map(|score| score.value()).sum();
+        if total > 0.0 {
+            for score in scores.iter_mut() {
+                *score = Score::new(score.value() / total);
+            }
+        } else {
+            // If all scores are 0, distribute evenly
+            let equal_value = if scores.is_empty() {
+                0.0
+            } else {
+                1.0 / scores.len() as f32
+            };
+            for score in scores.iter_mut() {
+                *score = Score::new(equal_value);
+            }
+        }
+    }
+
+    /// Multiply the score by a factor (adjusts importance)
+    pub fn multiply_by_factor(&self, factor: f32) -> Self {
+        Self::new(self.0 * factor)
+    }
+
+    /// Combine two scores with AND logic (both must be true)
+    /// Returns lower values as both scores must be high
+    pub fn and_with(&self, other: &Self) -> Self {
+        Self::new(self.0 * other.0)
+    }
+
+    /// Blend two scores with custom importance weights
+    /// weight_a and weight_b should ideally sum to 1.0
+    pub fn blend_weighted(&self, other: &Self, weight_a: f32, weight_b: f32) -> Self {
+        Self::new(self.0 * weight_a + other.0 * weight_b)
+    }
+
+    /// Combine scores with OR logic (either can be true)
+    /// P(A or B) = P(A) + P(B) - P(A and B)
+    pub fn or_with(&self, other: &Self) -> Self {
+        Self::new(self.0 + other.0 - (self.0 * other.0))
+    }
+
+    /// Get the opposite score (1 - score)
+    /// Useful for negating or inverting priorities
+    pub fn opposite(&self) -> Self {
+        Self::new(1.0 - self.0)
+    }
+
+    /// Perform weighted random selection between multiple options
+    pub fn weighted_select<T: Clone, R: rand::Rng>(
+        options: &[(T, Score)],
+        rng: &mut R,
+    ) -> Option<T> {
+        let total_weight: f32 = options.iter().map(|(_, score)| score.value()).sum();
+        if total_weight <= 0.0 || options.is_empty() {
+            return None;
+        }
+        let random_point = rng.random_range(0.0..total_weight);
+        let mut cumulative_weight = 0.0;
+        for (option, score) in options {
+            cumulative_weight += score.value();
+            if random_point <= cumulative_weight {
+                return Some(option.clone());
+            }
+        }
+        // Fallback to last option (shouldn't happen with proper weights)
+        options.last().map(|(opt, _)| opt.clone())
     }
 }
 
