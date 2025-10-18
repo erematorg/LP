@@ -86,10 +86,7 @@ pub fn update_needs(time: Res<Time>, mut needs: Query<&mut Need>) {
 }
 
 /// System for selecting most urgent need
-pub fn get_most_urgent_need(
-    entity: Entity,
-    needs: Query<&Need>,
-) -> Option<(NeedType, Score)> {
+pub fn get_most_urgent_need(entity: Entity, needs: Query<&Need>) -> Option<(NeedType, Score)> {
     let mut most_urgent = None;
     let mut highest_urgency = Score::ZERO;
 

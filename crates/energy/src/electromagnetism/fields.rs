@@ -126,40 +126,40 @@ pub fn calculate_field_interactions(
     magnetic_fields: Query<(Entity, &MagneticField)>,
 ) {
     // Electric field interactions
-    for (source_entity, source_field) in electric_fields.iter() {
-        for (target_entity, target_field) in electric_fields.iter() {
-            if source_entity == target_entity {
-                continue;
-            }
+    let mut electric_pairs = electric_fields.iter_combinations();
+    while let Some([(entity_a, field_a), (entity_b, field_b)]) = electric_pairs.fetch_next() {
+        let interaction_strength = field_a.strength() * field_b.strength();
 
-            let interaction_strength = source_field.strength() * target_field.strength();
-
-            if interaction_strength > f32::EPSILON {
-                field_interaction_events.write(ElectromagneticFieldInteractionEvent {
-                    source: source_entity,
-                    target: target_entity,
-                    interaction_strength,
-                });
-            }
+        if interaction_strength > f32::EPSILON {
+            field_interaction_events.write(ElectromagneticFieldInteractionEvent {
+                source: entity_a,
+                target: entity_b,
+                interaction_strength,
+            });
+            field_interaction_events.write(ElectromagneticFieldInteractionEvent {
+                source: entity_b,
+                target: entity_a,
+                interaction_strength,
+            });
         }
     }
 
     // Magnetic field interactions (similar logic)
-    for (source_entity, source_field) in magnetic_fields.iter() {
-        for (target_entity, target_field) in magnetic_fields.iter() {
-            if source_entity == target_entity {
-                continue;
-            }
+    let mut magnetic_pairs = magnetic_fields.iter_combinations();
+    while let Some([(entity_a, field_a), (entity_b, field_b)]) = magnetic_pairs.fetch_next() {
+        let interaction_strength = field_a.strength() * field_b.strength();
 
-            let interaction_strength = source_field.strength() * target_field.strength();
-
-            if interaction_strength > f32::EPSILON {
-                field_interaction_events.write(ElectromagneticFieldInteractionEvent {
-                    source: source_entity,
-                    target: target_entity,
-                    interaction_strength,
-                });
-            }
+        if interaction_strength > f32::EPSILON {
+            field_interaction_events.write(ElectromagneticFieldInteractionEvent {
+                source: entity_a,
+                target: entity_b,
+                interaction_strength,
+            });
+            field_interaction_events.write(ElectromagneticFieldInteractionEvent {
+                source: entity_b,
+                target: entity_a,
+                interaction_strength,
+            });
         }
     }
 }
