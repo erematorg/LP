@@ -24,6 +24,11 @@ pub struct ElectromagneticWave {
 
 impl ElectromagneticWave {
     pub fn new(frequency: f32, direction: Vec2, electric_amplitude: f32, phase: f32) -> Self {
+        assert!(
+            frequency > 0.0,
+            "Electromagnetic wave frequency must be strictly positive"
+        );
+
         // Calculate wavelength and wave number
         let wavelength = C / frequency;
         let wave_number = 2.0 * std::f32::consts::PI / wavelength;
