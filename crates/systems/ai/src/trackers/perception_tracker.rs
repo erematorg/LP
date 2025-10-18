@@ -1,3 +1,4 @@
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -49,15 +50,15 @@ impl Perception {
 
 impl AIModule for Perception {
     fn update(&mut self) {
-        // This would be called from controller - actual update happens in update() method
+        // This would be called from controller - actual update() method
         // with position and entities data
 
         // Decay threat level over time when not explicitly updated
         self.highest_threat_level *= 0.95;
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Return threat level as utility - higher threat means more important
-        UtilityScore::new(self.highest_threat_level)
+        Score::new(self.highest_threat_level)
     }
 }

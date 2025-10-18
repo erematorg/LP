@@ -1,4 +1,4 @@
-use crate::core::utility::UtilityScore;
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ pub struct RelationshipStrength(f32);
 
 impl RelationshipStrength {
     pub fn new(value: f32) -> Self {
-        Self(UtilityScore::clamp_trait_value(value))
+        Self(Score::clamp_trait_value(value))
     }
 
     pub fn value(&self) -> f32 {
@@ -20,13 +20,13 @@ impl RelationshipStrength {
     }
 
     /// Convert relationship to utility score for decision-making
-    pub fn to_utility(&self) -> UtilityScore {
-        UtilityScore::new(self.0)
+    pub fn to_utility(&self) -> Score {
+        Score::new(self.0)
     }
 
     /// Modify relationship by amount (can be positive or negative)
     pub fn adjust(&mut self, amount: f32) {
-        self.0 = UtilityScore::clamp_trait_value(self.0 + amount);
+        self.0 = Score::clamp_trait_value(self.0 + amount);
     }
 }
 
@@ -166,7 +166,7 @@ impl SocialNetwork {
 }
 
 /// Get social behavior utility score
-pub fn social_behavior_utility(relationships: &SocialNetwork) -> UtilityScore {
+pub fn social_behavior_utility(relationships: &SocialNetwork) -> Score {
     let mut total_utility = 0.0;
     let mut count = 0;
 
@@ -178,9 +178,9 @@ pub fn social_behavior_utility(relationships: &SocialNetwork) -> UtilityScore {
     }
 
     if count > 0 {
-        UtilityScore::new(total_utility / count as f32)
+        Score::new(total_utility / count as f32)
     } else {
-        UtilityScore::ZERO
+        Score::ZERO
     }
 }
 
@@ -203,7 +203,7 @@ impl AIModule for SocialNetwork {
         // or update based on recent interactions
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Calculate overall social interaction utility
         social_behavior_utility(self)
     }

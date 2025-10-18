@@ -1,3 +1,4 @@
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -56,8 +57,8 @@ impl AIModule for EntityTracker {
         }
     }
 
-    fn utility(&self) -> UtilityScore {
-        UtilityScore::new(self.priority)
+    fn utility(&self) -> Score {
+        Score::new(self.priority)
     }
 }
 

@@ -34,7 +34,7 @@ pub mod prelude {
     };
 }
 
-use crate::core::utility::UtilityScore;
+use crate::core::scorers::Score;
 use bevy::prelude::*;
 
 /// Base trait for all AI modules
@@ -43,7 +43,7 @@ pub trait AIModule: Send + Sync {
     fn update(&mut self);
 
     /// Calculate the utility value of this module
-    fn utility(&self) -> UtilityScore;
+    fn utility(&self) -> Score;
 }
 
 /// Trait for executing actions based on behavior decisions

@@ -1,4 +1,4 @@
-use crate::core::utility::UtilityScore;
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 // Removed direct energy dependency - use trait-based interface instead
@@ -38,9 +38,9 @@ impl Personality {
         competitive_strength: f32,
     ) -> Self {
         Self {
-            resource_assertiveness: UtilityScore::clamp_trait_value(resource_assertiveness),
-            stress_tolerance: UtilityScore::clamp_trait_value(stress_tolerance),
-            competitive_strength: UtilityScore::clamp_trait_value(competitive_strength),
+            resource_assertiveness: Score::clamp_trait_value(resource_assertiveness),
+            stress_tolerance: Score::clamp_trait_value(stress_tolerance),
+            competitive_strength: Score::clamp_trait_value(competitive_strength),
         }
     }
 
@@ -57,18 +57,18 @@ impl Personality {
     }
 
     /// Get base resource competition behavior utility score
-    pub fn base_resource_competition_utility(&self) -> UtilityScore {
-        UtilityScore::new(self.resource_competition_likelihood())
+    pub fn base_resource_competition_utility(&self) -> Score {
+        Score::new(self.resource_competition_likelihood())
     }
 
     /// Get base stress retreat behavior utility score
-    pub fn base_stress_retreat_utility(&self) -> UtilityScore {
-        UtilityScore::new(self.stress_retreat_likelihood())
+    pub fn base_stress_retreat_utility(&self) -> Score {
+        Score::new(self.stress_retreat_likelihood())
     }
 
     /// Get base competitive behavior utility score
-    pub fn base_competitive_utility(&self) -> UtilityScore {
-        UtilityScore::new(self.competitive_strength)
+    pub fn base_competitive_utility(&self) -> Score {
+        Score::new(self.competitive_strength)
     }
 
     /// Get social behavior utility score
@@ -84,9 +84,9 @@ impl AIModule for Personality {
         // but could evolve slowly based on experiences
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Return a base utility score for personality-driven behaviors
-        UtilityScore::HALF
+        Score::HALF
     }
 }
 
@@ -123,11 +123,11 @@ impl Altruistic {
     }
 
     /// Get altruistic behavior utility score
-    pub fn altruistic_utility(&self, hunger_level: f32) -> UtilityScore {
+    pub fn altruistic_utility(&self, hunger_level: f32) -> Score {
         if self.should_be_altruistic(hunger_level) {
-            UtilityScore::new(self.strength)
+            Score::new(self.strength)
         } else {
-            UtilityScore::ZERO
+            Score::ZERO
         }
     }
 }
@@ -135,22 +135,22 @@ impl Altruistic {
 /// Component storing context-aware utility scores (updated by systems)
 #[derive(Component, Debug, Clone, Reflect)]
 pub struct ContextAwareUtilities {
-    pub resource_competition: UtilityScore,
-    pub stress_retreat: UtilityScore,
-    pub competitive_behavior: UtilityScore,
-    pub cooperation: UtilityScore,
+    pub resource_competition: Score,
+    pub stress_retreat: Score,
+    pub competitive_behavior: Score,
+    pub cooperation: Score,
     /// Collective intelligence modifier from nearby entities (swarm effects)
-    pub collective_influence: UtilityScore,
+    pub collective_influence: Score,
 }
 
 impl Default for ContextAwareUtilities {
     fn default() -> Self {
         Self {
-            resource_competition: UtilityScore::HALF,
-            stress_retreat: UtilityScore::HALF,
-            competitive_behavior: UtilityScore::HALF,
-            cooperation: UtilityScore::HALF,
-            collective_influence: UtilityScore::ZERO,
+            resource_competition: Score::HALF,
+            stress_retreat: Score::HALF,
+            competitive_behavior: Score::HALF,
+            cooperation: Score::HALF,
+            collective_influence: Score::ZERO,
         }
     }
 }
@@ -180,7 +180,7 @@ pub fn update_context_aware_utilities(
         utilities.stress_retreat =
             calculate_contextual_stress_retreat(personality, energy_level, environmental_stress);
 
-        utilities.cooperation = UtilityScore::new(personality.social_utility());
+        utilities.cooperation = Score::new(personality.social_utility());
 
         // collective_influence is calculated by separate proximity-based systems
         // when entities are near each other - starts at 0.0 for isolated entities
@@ -218,7 +218,7 @@ pub fn update_collective_influence(
         }
 
         // Update collective influence (clamped to reasonable range)
-        utilities.collective_influence = UtilityScore::new(total_collective_influence.min(1.0));
+        utilities.collective_influence = Score::new(total_collective_influence.min(1.0));
     }
 }
 
@@ -226,7 +226,7 @@ fn calculate_contextual_resource_competition(
     personality: &Personality,
     energy_level: f32,
     recent_success: f32,
-) -> UtilityScore {
+) -> Score {
     let energy_multiplier = 1.0 + (1.0 - energy_level) * 0.5;
     let confidence_modifier = 1.0 + recent_success.clamp(-0.3, 0.3);
 
@@ -238,14 +238,14 @@ fn calculate_contextual_resource_competition(
     let result =
         base * energy_multiplier * confidence_modifier * stress_influence * competitive_influence;
 
-    UtilityScore::new(result)
+    Score::new(result)
 }
 
 fn calculate_contextual_competitive_strength(
     personality: &Personality,
     energy_level: f32,
     recent_success: f32,
-) -> UtilityScore {
+) -> Score {
     let energy_threshold = if energy_level > 0.3 {
         energy_level
     } else {
@@ -253,17 +253,17 @@ fn calculate_contextual_competitive_strength(
     };
     let success_boost = 1.0 + recent_success.clamp(0.0, 0.4);
 
-    UtilityScore::new(personality.competitive_strength * energy_threshold * success_boost)
+    Score::new(personality.competitive_strength * energy_threshold * success_boost)
 }
 
 fn calculate_contextual_stress_retreat(
     personality: &Personality,
     energy_level: f32,
     environmental_stress: f32,
-) -> UtilityScore {
+) -> Score {
     let energy_modifier = 1.0 + (1.0 - energy_level) * 0.4;
     let stress_modifier = 1.0 + environmental_stress * 0.6;
 
     let base = personality.stress_retreat_likelihood();
-    UtilityScore::new(base * energy_modifier * stress_modifier)
+    Score::new(base * energy_modifier * stress_modifier)
 }

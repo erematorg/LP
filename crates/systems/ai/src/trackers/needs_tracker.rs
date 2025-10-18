@@ -1,3 +1,4 @@
+use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -5,7 +6,7 @@ use bevy::prelude::*;
 #[derive(Component, Default)]
 pub struct NeedsTracker {
     needs: Vec<Need>,
-    most_urgent_need: Option<(NeedType, UtilityScore)>,
+    most_urgent_need: Option<(NeedType, Score)>,
 }
 
 impl NeedsTracker {
@@ -27,7 +28,7 @@ impl NeedsTracker {
             .find(|need| need.need_type == need_type)
     }
 
-    pub fn get_most_urgent_need(&self) -> Option<(NeedType, UtilityScore)> {
+    pub fn get_most_urgent_need(&self) -> Option<(NeedType, Score)> {
         self.most_urgent_need
     }
 }
@@ -41,7 +42,7 @@ impl AIModule for NeedsTracker {
 
         // Find most urgent need
         let mut most_urgent = None;
-        let mut highest_urgency = UtilityScore::ZERO;
+        let mut highest_urgency = Score::ZERO;
 
         for need in &self.needs {
             let urgency = need.urgency();
@@ -54,10 +55,10 @@ impl AIModule for NeedsTracker {
         self.most_urgent_need = most_urgent.map(|need_type| (need_type, highest_urgency));
     }
 
-    fn utility(&self) -> UtilityScore {
+    fn utility(&self) -> Score {
         // Return the urgency of the most urgent need, or zero if no needs
         self.most_urgent_need
             .map(|(_, urgency)| urgency)
-            .unwrap_or(UtilityScore::ZERO)
+            .unwrap_or(Score::ZERO)
     }
 }
