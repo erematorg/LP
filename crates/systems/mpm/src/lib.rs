@@ -5,22 +5,22 @@ pub mod particle;
 pub mod solver;
 pub mod transfer;
 
-/// Plugin for Point-Based Material Point Method physics solver
+/// Plugin for the Material Point Method physics solver
 #[derive(Default)]
-pub struct PBMPMPlugin;
+pub struct MPMPlugin;
 
-impl Plugin for PBMPMPlugin {
+impl Plugin for MPMPlugin {
     fn build(&self, _app: &mut App) {
-        // TODO: Will integrate PBMPM systems when implementation is ready
+        // TODO: Will integrate MPM systems when implementation is ready
         // Plugin structure prepared for upcoming development
     }
 }
 
-/// The PBMPM prelude.
+/// The MPM prelude.
 ///
 /// This includes the most common types in this crate, re-exported for your convenience.
 pub mod prelude {
-    pub use super::PBMPMPlugin;
+    pub use super::MPMPlugin;
 
     // TODO: Export main types when implementation is complete
     // pub use crate::grid::*;

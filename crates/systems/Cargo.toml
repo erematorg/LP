@@ -7,6 +7,6 @@ description = "Core simulation infrastructure components that manage and support
 [dependencies]
 bevy = "0.17"
 save_system = { path = "./save_system" }
-pbmpm = { path = "./pbmpm" }
+mpm = { path = "./mpm" }
 acoustics = { path = "./acoustics" }
 ai = { path = "./ai" }

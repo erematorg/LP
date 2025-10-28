@@ -1,6 +1,6 @@
 pub use acoustics;
 pub use ai;
-pub use pbmpm;
+pub use mpm;
 pub use save_system;
 
 use bevy::prelude::*;
@@ -14,7 +14,7 @@ impl Plugin for SystemsPlugin {
         app.add_plugins((
             acoustics::AcousticsPlugin,
             ai::LPAIPlugin::default(),
-            pbmpm::PBMPMPlugin,
+            mpm::MPMPlugin,
             save_system::SaveSystemPlugin::default(),
         ));
     }
@@ -27,6 +27,6 @@ pub mod prelude {
     // Re-export all sub-crate preludes
     pub use acoustics::prelude::*;
     pub use ai::prelude::*;
-    pub use pbmpm::prelude::*;
+    pub use mpm::prelude::*;
     pub use save_system::prelude::*;
 }
