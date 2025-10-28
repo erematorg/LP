@@ -20,12 +20,13 @@ impl Default for GameData {
 
 fn main() {
     let path = "save.json";
-    let mut data = load::<GameData>(path).unwrap_or_default();
+    let settings = SaveSettings::default();
+    let mut data = load::<GameData>(&settings, path).unwrap_or_default();
 
     data.score += 1;
     println!("Score: {}", data.score);
 
-    if save(&data, path).is_err() {
+    if save(&data, &settings, path).is_err() {
         eprintln!("Save failed");
     }
 
@@ -56,16 +57,17 @@ fn main() {
         entities: std::collections::HashMap::new(),
     };
 
-    match save(&game_save, path) {
-        Ok(_) => {
+    match save(&game_save, &settings, path) {
+        Ok(location) => {
             println!("Energy: {}", game_save.game_state.total_energy);
             println!("Entities: {}", game_save.game_state.entity_count);
             println!("Events: {}", game_save.events.len());
+            println!("Saved to {}", location.display());
         }
         Err(e) => eprintln!("Save failed: {}", e),
     }
 
-    if let Ok(loaded) = load::<GameSaveData>(path) {
+    if let Ok(loaded) = load::<GameSaveData>(&settings, path) {
         println!("Game time: {}", loaded.game_time);
         for event in &loaded.events {
             println!("{}: {}", event.event_type, event.data);

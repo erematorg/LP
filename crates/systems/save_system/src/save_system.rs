@@ -7,80 +7,205 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
+use std::time::Duration;
 
-/// Get the default save directory for the platform
+#[cfg(not(target_arch = "wasm32"))]
+use platform_dirs::AppDirs;
+
+#[derive(Clone, Debug)]
+enum SaveDirectory {
+    Auto(PathBuf),
+    Custom(PathBuf),
+}
+
+#[derive(Resource, Clone, Debug)]
+pub struct SaveSettings {
+    workspace: String,
+    directory: SaveDirectory,
+    default_file: String,
+    autosave_interval: Duration,
+    snapshot_limit: usize,
+}
+
+impl Default for SaveSettings {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SaveSettings {
+    pub fn new() -> Self {
+        let workspace = Self::detect_workspace();
+        let env_override = std::env::var("LP_SAVE_DIRECTORY").ok().map(PathBuf::from);
+        let directory = env_override
+            .map(SaveDirectory::Custom)
+            .unwrap_or_else(|| SaveDirectory::Auto(default_save_root(&workspace)));
+
+        Self {
+            workspace,
+            directory,
+            default_file: "game_save.json".to_string(),
+            autosave_interval: Duration::from_secs(60),
+            snapshot_limit: 10,
+        }
+    }
+
+    pub fn with_custom_directory(mut self, directory: impl Into<PathBuf>) -> Self {
+        self.directory = SaveDirectory::Custom(directory.into());
+        self
+    }
+
+    pub fn with_default_file(mut self, file: impl Into<String>) -> Self {
+        self.default_file = file.into();
+        self
+    }
+
+    pub fn with_autosave_interval(mut self, duration: Duration) -> Self {
+        self.autosave_interval = duration;
+        self
+    }
+
+    pub fn with_snapshot_limit(mut self, limit: usize) -> Self {
+        self.snapshot_limit = limit.max(1);
+        self
+    }
+
+    pub fn workspace(&self) -> &str {
+        &self.workspace
+    }
+
+    pub fn default_file(&self) -> &str {
+        &self.default_file
+    }
+
+    pub fn autosave_interval(&self) -> Duration {
+        self.autosave_interval
+    }
+
+    pub fn snapshot_limit(&self) -> usize {
+        self.snapshot_limit
+    }
+
+    pub fn resolve_directory(&self) -> PathBuf {
+        match &self.directory {
+            SaveDirectory::Auto(path) | SaveDirectory::Custom(path) => path.clone(),
+        }
+    }
+
+    pub fn ensure_directory_exists(&self) -> Result<PathBuf, String> {
+        let directory = self.resolve_directory();
+        if let Err(err) = fs::create_dir_all(&directory) {
+            return Err(format!(
+                "Failed to create save directory {}: {}",
+                directory.display(),
+                err
+            ));
+        }
+        Ok(directory)
+    }
+
+    pub fn resolve_file(&self, key: &str) -> Result<PathBuf, String> {
+        if key.is_empty() {
+            return self.resolve_file(self.default_file());
+        }
+
+        let path_key = Path::new(key);
+
+        if path_key.is_absolute() {
+            return Ok(path_key.to_path_buf());
+        }
+
+        if path_key
+            .components()
+            .any(|component| matches!(component, Component::ParentDir))
+        {
+            return Err(format!(
+                "Save path '{}' must not contain parent directory segments ('..')",
+                key
+            ));
+        }
+
+        let mut directory = self.ensure_directory_exists()?;
+        directory.push(path_key);
+        Ok(directory)
+    }
+
+    fn detect_workspace() -> String {
+        if let Ok(custom) = std::env::var("LP_SAVE_WORKSPACE") {
+            return custom;
+        }
+
+        if let Ok(workspace_dir) = std::env::var("CARGO_WORKSPACE_DIR") {
+            if let Some(name) = Path::new(&workspace_dir)
+                .file_name()
+                .and_then(|os| os.to_str())
+            {
+                return name.to_string();
+            }
+        }
+
+        "LP".to_string()
+    }
+}
+
+fn default_save_root(workspace: &str) -> PathBuf {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        AppDirs::new(Some(workspace), true)
+            .map(|dirs| dirs.data_dir.join("saves"))
+            .unwrap_or_else(|| std::env::temp_dir().join(workspace).join("saves"))
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        PathBuf::from(workspace)
+    }
+}
+
+/// Convenience helper for legacy code paths that still expect a default directory.
 pub fn get_save_directory() -> PathBuf {
-    #[cfg(target_os = "windows")]
-    {
-        std::env::var("APPDATA")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join("LP")
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        std::env::var("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join("Library")
-            .join("Application Support")
-            .join("LP")
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        std::env::var("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .or_else(|_| {
-                std::env::var("HOME").map(|home| PathBuf::from(home).join(".local").join("share"))
-            })
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join("LP")
-    }
-
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    {
-        PathBuf::from(".")
-    }
+    let settings = SaveSettings::default();
+    settings
+        .ensure_directory_exists()
+        .unwrap_or_else(|_| settings.resolve_directory())
 }
 
-/// Get the full path for a save file
+/// Convenience helper for legacy code paths that still expect a resolved path.
 pub fn get_save_path(filename: &str) -> PathBuf {
-    let save_dir = get_save_directory();
-
-    // Ensure save directory exists
-    if let Err(e) = fs::create_dir_all(&save_dir) {
-        eprintln!(
-            "Warning: Could not create save directory {:?}: {}",
-            save_dir, e
-        );
-        return PathBuf::from(filename); // Fallback to current directory
-    }
-
-    save_dir.join(filename)
+    SaveSettings::default()
+        .resolve_file(filename)
+        .unwrap_or_else(|_| PathBuf::from(filename))
 }
 
-pub fn save<T: Serialize>(data: &T, path: &str) -> Result<(), String> {
-    let full_path = get_save_path(path);
+pub fn save<T: Serialize>(data: &T, settings: &SaveSettings, key: &str) -> Result<PathBuf, String> {
+    let full_path = settings.resolve_file(key)?;
+    if let Some(parent) = full_path.parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            return Err(format!(
+                "Failed to prepare save directory {}: {}",
+                parent.display(),
+                err
+            ));
+        }
+    }
     let json =
         serde_json::to_string_pretty(data).map_err(|e| format!("Serialization failed: {}", e))?;
-    fs::write(&full_path, json).map_err(|e| format!("File write failed: {}", e))?;
-    Ok(())
+    fs::write(&full_path, json)
+        .map_err(|e| format!("File write failed ({}): {}", full_path.display(), e))?;
+    Ok(full_path)
 }
 
-pub fn load<T: for<'de> Deserialize<'de> + Default + Serialize>(path: &str) -> Result<T, String> {
-    let full_path = get_save_path(path);
+pub fn load<T>(settings: &SaveSettings, key: &str) -> Result<T, String>
+where
+    T: for<'de> Deserialize<'de> + Default + Serialize,
+{
+    let full_path = settings.resolve_file(key)?;
     let json = match fs::read_to_string(&full_path) {
         Ok(content) => content,
         Err(_) => {
             let default_data = T::default();
-
-            if let Err(e) = save(&default_data, path) {
-                return Err(format!("Failed to create default save: {}", e));
-            }
-
+            save(&default_data, settings, key)?;
             return Ok(default_data);
         }
     };
@@ -91,10 +216,53 @@ pub fn load<T: for<'de> Deserialize<'de> + Default + Serialize>(path: &str) -> R
     if !is_save_up_to_date(&data) {
         eprintln!("[Warning] Save file is outdated! Attempting to upgrade...");
         data = upgrade_save(data);
-        save(&data, path)?; // Save upgraded version
+        save(&data, settings, key)?;
     }
 
     serde_json::from_value(data).map_err(|e| format!("Final deserialization failed: {}", e))
+}
+
+pub fn list_save_files(settings: &SaveSettings) -> Result<Vec<PathBuf>, String> {
+    let directory = settings.ensure_directory_exists()?;
+    let entries = fs::read_dir(&directory).map_err(|err| {
+        format!(
+            "Failed to read save directory {}: {}",
+            directory.display(),
+            err
+        )
+    })?;
+
+    let mut files = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() {
+            files.push(path);
+        }
+    }
+
+    files.sort();
+    Ok(files)
+}
+
+pub fn delete_save_file(settings: &SaveSettings, key: &str) -> Result<(), String> {
+    let full_path = settings.resolve_file(key)?;
+    if full_path.exists() {
+        fs::remove_file(&full_path).map_err(|err| {
+            format!(
+                "Failed to remove save file {}: {}",
+                full_path.display(),
+                err
+            )
+        })?;
+    }
+    Ok(())
+}
+
+pub fn load_or_default<T>(settings: &SaveSettings, key: &str) -> Result<T, String>
+where
+    T: for<'de> Deserialize<'de> + Default + Serialize,
+{
+    load(settings, key)
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -173,7 +341,7 @@ pub struct GameTracker {
 
 impl Default for GameTracker {
     fn default() -> Self {
-        Self::new(60.0) // Auto-save every 60 seconds by default
+        Self::new(Duration::from_secs(60))
     }
 }
 
@@ -187,14 +355,31 @@ pub struct GameSnapshot {
 
 impl GameTracker {
     /// Create a new GameTracker with auto-save enabled
-    pub fn new(auto_save_interval_secs: f32) -> Self {
+    pub fn new(auto_save_interval: Duration) -> Self {
         Self {
             state: GameState::default(),
             events: Vec::new(),
-            auto_save_timer: Timer::from_seconds(auto_save_interval_secs, TimerMode::Repeating),
+            auto_save_timer: Timer::from_seconds(
+                auto_save_interval.as_secs_f32(),
+                TimerMode::Repeating,
+            ),
             snapshots: Vec::new(),
             max_snapshots: 10,
         }
+    }
+
+    pub fn from_settings(settings: &SaveSettings) -> Self {
+        let mut tracker = Self::new(settings.autosave_interval());
+        tracker.max_snapshots = settings.snapshot_limit();
+        tracker
+    }
+
+    pub fn apply_settings(&mut self, settings: &SaveSettings) {
+        self.max_snapshots = settings.snapshot_limit();
+        self.auto_save_timer.set_duration(Duration::from_secs_f32(
+            settings.autosave_interval().as_secs_f32(),
+        ));
+        self.auto_save_timer.reset();
     }
 
     /// Create a snapshot of the current game state
@@ -237,7 +422,13 @@ impl GameTracker {
     }
 
     /// Convenience method for auto-saving
-    pub fn auto_save(&self, world: &mut World, game_time: f64) -> Result<(), String> {
+    pub fn auto_save(&self, world: &mut World, game_time: f64) -> Result<PathBuf, String> {
+        let settings = world
+            .get_resource::<SaveSettings>()
+            .cloned()
+            .unwrap_or_default();
+
+        let default_file = settings.default_file().to_string();
         save_game_data(
             world,
             self,
@@ -246,13 +437,15 @@ impl GameTracker {
                 .unwrap_or_default()
                 .as_secs_f64(),
             game_time,
+            &settings,
+            &default_file,
         )
     }
 
     /// Update the auto-save timer and return true if it's time to save
     pub fn should_auto_save(&mut self, delta_time: f32) -> bool {
         self.auto_save_timer
-            .tick(std::time::Duration::from_secs_f32(delta_time));
+            .tick(Duration::from_secs_f32(delta_time));
         self.auto_save_timer.just_finished()
     }
 
@@ -293,7 +486,9 @@ pub fn save_game_data(
     tracker: &GameTracker,
     time: f64,
     game_time: f64,
-) -> Result<(), String> {
+    settings: &SaveSettings,
+    key: &str,
+) -> Result<PathBuf, String> {
     let mut entities = HashMap::new();
 
     let mut query = world.query_filtered::<Entity, With<Saveable>>();
@@ -357,11 +552,11 @@ pub fn save_game_data(
         entities,
     };
 
-    save(&save_data, "game_save.json")
+    save(&save_data, settings, key)
 }
 
-pub fn load_game_data() -> Result<GameSaveData, String> {
-    load::<GameSaveData>("game_save.json")
+pub fn load_game_data(settings: &SaveSettings, key: &str) -> Result<GameSaveData, String> {
+    load::<GameSaveData>(settings, key)
 }
 
 /// Extension trait for World to add bevy_save-style convenience methods
@@ -371,7 +566,18 @@ pub trait WorldSaveExt {
 }
 
 impl WorldSaveExt for World {
-    fn save_game(&mut self, _path: &str) -> Result<(), String> {
+    fn save_game(&mut self, path: &str) -> Result<(), String> {
+        let settings = self
+            .get_resource::<SaveSettings>()
+            .cloned()
+            .unwrap_or_default();
+
+        let key = if path.is_empty() {
+            settings.default_file().to_string()
+        } else {
+            path.to_string()
+        };
+
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -383,16 +589,28 @@ impl WorldSaveExt for World {
             .unwrap_or(0.0);
 
         // Clone tracker to avoid borrow conflicts
-        if let Some(tracker) = self.get_resource::<GameTracker>().cloned() {
-            save_game_data(self, &tracker, timestamp, game_time)?;
-            Ok(())
-        } else {
-            Err("GameTracker resource not found".to_string())
-        }
+        let tracker = self
+            .get_resource::<GameTracker>()
+            .cloned()
+            .ok_or_else(|| "GameTracker resource not found".to_string())?;
+
+        save_game_data(self, &tracker, timestamp, game_time, &settings, &key)?;
+        Ok(())
     }
 
     fn load_game(&mut self, path: &str) -> Result<(), String> {
-        let save_data = load::<GameSaveData>(path)?;
+        let settings = self
+            .get_resource::<SaveSettings>()
+            .cloned()
+            .unwrap_or_default();
+
+        let key = if path.is_empty() {
+            settings.default_file().to_string()
+        } else {
+            path.to_string()
+        };
+
+        let save_data = load_game_data(&settings, &key)?;
 
         // Update GameTracker if it exists
         if let Some(mut tracker) = self.get_resource_mut::<GameTracker>() {

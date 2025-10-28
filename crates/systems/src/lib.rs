@@ -15,7 +15,7 @@ impl Plugin for SystemsPlugin {
             acoustics::AcousticsPlugin,
             ai::LPAIPlugin::default(),
             pbmpm::PBMPMPlugin,
-            save_system::SaveSystemPlugin,
+            save_system::SaveSystemPlugin::default(),
         ));
     }
 }
