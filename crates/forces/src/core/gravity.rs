@@ -2,18 +2,35 @@ use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
 // Simulation constants
-pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
+pub const DEFAULT_GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Resource for gravity simulation parameters
 #[derive(Resource, Clone, Debug)]
 pub struct GravityParams {
     /// Softening parameter to prevent singularities
     pub softening: f32,
+    /// Gravitational constant controlling attraction strength
+    pub gravitational_constant: f32,
 }
 
 impl Default for GravityParams {
     fn default() -> Self {
-        Self { softening: 5.0 }
+        Self {
+            softening: 5.0,
+            gravitational_constant: DEFAULT_GRAVITATIONAL_CONSTANT,
+        }
+    }
+}
+
+impl GravityParams {
+    pub fn with_softening(mut self, softening: f32) -> Self {
+        self.softening = softening;
+        self
+    }
+
+    pub fn with_gravitational_constant(mut self, gravitational_constant: f32) -> Self {
+        self.gravitational_constant = gravitational_constant;
+        self
     }
 }
 
@@ -268,6 +285,7 @@ pub fn calculate_gravitational_attraction(
     >,
 ) {
     let softening_squared = gravity_params.softening * gravity_params.softening;
+    let gravitational_constant = gravity_params.gravitational_constant;
 
     let sources: Vec<(Entity, Vec3, f32)> = query
         .iter()
@@ -286,7 +304,7 @@ pub fn calculate_gravitational_attraction(
                 let direction = source_pos - affected_pos;
                 let distance_squared = direction.length_squared();
                 let softened_distance_squared = distance_squared + softening_squared;
-                let force_magnitude = GRAVITATIONAL_CONSTANT * source_mass * affected_mass.value
+                let force_magnitude = gravitational_constant * source_mass * affected_mass.value
                     / softened_distance_squared;
                 force.force += direction.normalize() * force_magnitude;
             }
@@ -315,6 +333,8 @@ pub fn calculate_barnes_hut_attraction(
         .collect();
 
     let quadtree = spatial::Quadtree::from_bodies(&bodies);
+    let softening = gravity_params.softening;
+    let gravitational_constant = gravity_params.gravitational_constant;
 
     affected_query
         .par_iter_mut()
@@ -329,7 +349,8 @@ pub fn calculate_barnes_hut_attraction(
                 position,
                 &quadtree.root,
                 theta,
-                gravity_params.softening,
+                softening,
+                gravitational_constant,
             );
 
             force.force += force_vector;
@@ -341,6 +362,7 @@ pub fn calculate_barnes_hut_force(
     node: &spatial::QuadtreeNode,
     theta: f32,
     softening: f32,
+    gravitational_constant: f32,
 ) -> Vec3 {
     let softening_squared = softening * softening;
 
@@ -348,8 +370,8 @@ pub fn calculate_barnes_hut_force(
         let direction = node.mass_properties.center_of_mass - affected_position;
         let distance_squared = direction.length_squared();
         let softened_distance_squared = distance_squared + softening_squared;
-        let force_magnitude =
-            GRAVITATIONAL_CONSTANT * node.mass_properties.total_mass / softened_distance_squared;
+        let force_magnitude = gravitational_constant * node.mass_properties.total_mass
+            / softened_distance_squared;
         return direction.normalize() * force_magnitude;
     }
 
@@ -364,12 +386,10 @@ pub fn calculate_barnes_hut_force(
                 continue;
             }
 
-            total_force += {
-                let distance_squared = direction.length_squared();
-                let softened_distance_squared = distance_squared + softening_squared;
-                let force_magnitude = GRAVITATIONAL_CONSTANT * mass / softened_distance_squared;
-                direction.normalize() * force_magnitude
-            };
+            let softened_distance_squared = distance_squared + softening_squared;
+            let force_magnitude =
+                gravitational_constant * mass / softened_distance_squared;
+            total_force += direction.normalize() * force_magnitude;
         }
 
         return total_force;
@@ -377,14 +397,20 @@ pub fn calculate_barnes_hut_force(
 
     let mut total_force = Vec3::ZERO;
     for child_node in node.children.iter().flatten() {
-        total_force += calculate_barnes_hut_force(affected_position, child_node, theta, softening);
+        total_force += calculate_barnes_hut_force(
+            affected_position,
+            child_node,
+            theta,
+            softening,
+            gravitational_constant,
+        );
     }
 
     total_force
 }
 
 pub fn calculate_orbital_velocity(central_mass: f32, orbit_radius: f32) -> f32 {
-    (GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
+    (DEFAULT_GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
 }
 
 pub fn calculate_elliptical_orbit_velocity(
@@ -393,13 +419,13 @@ pub fn calculate_elliptical_orbit_velocity(
     eccentricity: f32,
     is_periapsis: bool,
 ) -> f32 {
-    let mu = GRAVITATIONAL_CONSTANT * central_mass;
+    let mu = DEFAULT_GRAVITATIONAL_CONSTANT * central_mass;
     let semimajor_axis = distance / (1.0 - eccentricity * if is_periapsis { 1.0 } else { -1.0 });
     (mu * (2.0 / distance - 1.0 / semimajor_axis)).sqrt()
 }
 
 pub fn calculate_escape_velocity(central_mass: f32, distance: f32) -> f32 {
-    (2.0 * GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
+    (2.0 * DEFAULT_GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
 }
 
 #[derive(Default)]
