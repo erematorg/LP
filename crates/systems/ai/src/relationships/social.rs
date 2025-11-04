@@ -70,29 +70,35 @@ impl SocialNetwork {
         strength: f32,
         current_tick: u64,
     ) {
-        let mut relationship = EntityRelationship {
-            strength: RelationshipStrength::new(strength),
-            relationship_type,
-            last_interaction_tick: current_tick,
-        };
+        let clamped_strength = Score::clamp_trait_value(strength);
+        let relationships = self.relationships.entry(target).or_default();
 
-        // If relationship already exists, update based on existing interaction history
-        if let Some(existing_relationship) = self
-            .relationships
-            .entry(target)
-            .or_default()
-            .get_mut(&relationship_type)
-        {
-            // Modify strength based on interaction frequency
-            relationship.strength.adjust(
-                (current_tick - existing_relationship.last_interaction_tick) as f32 / 1000.0,
-            );
+        match relationships.entry(relationship_type) {
+            std::collections::hash_map::Entry::Occupied(mut existing_entry) => {
+                let relationship = existing_entry.get_mut();
+                let previous_strength = relationship.strength.value();
+                let time_since_last =
+                    current_tick.saturating_sub(relationship.last_interaction_tick) as f32;
+
+                // Lightly decay stale relationships before applying the new observation.
+                if time_since_last > 0.0 {
+                    let decay = (time_since_last / 1000.0).min(0.25);
+                    relationship.strength.adjust(-decay);
+                }
+
+                // Blend prior strength with the latest observation to preserve history.
+                let blended_strength = previous_strength * 0.7 + clamped_strength * 0.3;
+                relationship.strength = RelationshipStrength::new(blended_strength);
+                relationship.last_interaction_tick = current_tick;
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(EntityRelationship {
+                    strength: RelationshipStrength::new(clamped_strength),
+                    relationship_type,
+                    last_interaction_tick: current_tick,
+                });
+            }
         }
-
-        self.relationships
-            .entry(target)
-            .or_default()
-            .insert(relationship_type, relationship);
     }
 
     /// Query relationships with flexible filtering

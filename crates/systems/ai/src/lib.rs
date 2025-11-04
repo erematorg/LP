@@ -30,7 +30,8 @@ pub mod prelude {
 
     // Context-aware personality system
     pub use crate::personality::traits::{
-        ContextAwareUtilities, update_collective_influence, update_context_aware_utilities,
+        ContextAwareUtilities, PersonalityContextInputs, update_collective_influence,
+        update_context_aware_utilities,
     };
 }
 

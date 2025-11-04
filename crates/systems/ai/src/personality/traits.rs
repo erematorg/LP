@@ -155,30 +155,57 @@ impl Default for ContextAwareUtilities {
     }
 }
 
+/// Optional context inputs that gameplay can supply to influence personality-driven utilities.
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct PersonalityContextInputs {
+    /// Current energy or stamina level (0.0-1.0)
+    pub energy_level: f32,
+    /// Recent success metric (-1.0..=1.0) influencing confidence
+    pub recent_success: f32,
+    /// Environmental stress measure (0.0-1.0)
+    pub environmental_stress: f32,
+}
+
+impl Default for PersonalityContextInputs {
+    fn default() -> Self {
+        Self {
+            energy_level: 0.5,
+            recent_success: 0.0,
+            environmental_stress: 0.0,
+        }
+    }
+}
+
 /// System that updates personality utilities based on generic resource and environmental state
 pub fn update_context_aware_utilities(
     mut query: Query<(
         &Personality,
         &mut ContextAwareUtilities,
-        // TODO: Replace with trait-based resource system when available
-        // For now, use simple f32 values that can be populated by game-level integration
+        Option<&PersonalityContextInputs>,
     )>,
 ) {
-    for (personality, mut utilities) in &mut query {
-        // Default values - will be replaced by proper resource tracking
-        let energy_level = 0.5; // Default moderate energy
-        let recent_success = 0.0; // Default neutral success
-        let environmental_stress = 0.0; // Default no stress
+    for (personality, mut utilities, context_inputs) in &mut query {
+        let default_context = PersonalityContextInputs::default();
+        let context = context_inputs.unwrap_or(&default_context);
 
         // Update utilities with default context (to be enhanced later)
-        utilities.resource_competition =
-            calculate_contextual_resource_competition(personality, energy_level, recent_success);
+        utilities.resource_competition = calculate_contextual_resource_competition(
+            personality,
+            context.energy_level,
+            context.recent_success,
+        );
 
-        utilities.competitive_behavior =
-            calculate_contextual_competitive_strength(personality, energy_level, recent_success);
+        utilities.competitive_behavior = calculate_contextual_competitive_strength(
+            personality,
+            context.energy_level,
+            context.recent_success,
+        );
 
-        utilities.stress_retreat =
-            calculate_contextual_stress_retreat(personality, energy_level, environmental_stress);
+        utilities.stress_retreat = calculate_contextual_stress_retreat(
+            personality,
+            context.energy_level,
+            context.environmental_stress,
+        );
 
         utilities.cooperation = Score::new(personality.social_utility());
 

@@ -30,3 +30,18 @@ fn main() {
         .run();
 }
 ```
+
+### Configuration
+
+`SystemsPlugin` can be customised before registration:
+
+```rust
+use systems::save_system::prelude::SaveSettings;
+
+let systems = SystemsPlugin::default()
+    .with_ai(true)
+    .with_acoustics(false)
+    .with_save_settings(SaveSettings::default().with_default_file("saves/slot_a.json"));
+
+app.add_plugins(systems);
+```
