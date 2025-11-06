@@ -24,7 +24,7 @@ pub mod prelude {
     // Scorers
     pub use crate::core::scorers::{
         AllOrNothing, EvaluatingScorer, FixedScore, MeasuredScorer, ProductOfScorers, Score,
-        ScorerBuilder, SumOfScorers, WinningScorer,
+        ScorerBuilder, SumOfScorers, UtilitySmoothing, WinningScorer,
     };
 
     // Thinkers (includes Action, Actor, etc.)
@@ -102,6 +102,7 @@ impl Plugin for LPAIPlugin {
             self.schedule.intern(),
             (AISet::Scorers, AISet::Thinkers, AISet::Actions).chain(),
         )
+        .register_type::<scorers::UtilitySmoothing>()
         .configure_sets(self.cleanup_schedule.intern(), AISet::Cleanup)
         // Add scorer systems
         .add_systems(
@@ -114,6 +115,7 @@ impl Plugin for LPAIPlugin {
                 scorers::product_of_scorers_system,
                 scorers::winning_scorer_system,
                 scorers::evaluating_scorer_system,
+                scorers::utility_smoothing_system,
             )
                 .in_set(AISet::Scorers),
         )

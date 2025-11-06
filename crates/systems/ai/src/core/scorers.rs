@@ -913,3 +913,79 @@ impl ScorerBuilder for MeasuredScorerBuilder {
             });
     }
 }
+
+/// Component that smooths a scorer's output and applies a continuation bonus to reduce thrashing.
+#[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
+pub struct UtilitySmoothing {
+    /// How quickly the smoothed value should respond to new inputs (0.0-1.0 per second).
+    pub response_rate: f32,
+    /// Additional weight applied based on recent history to favour continuing actions (0.0-1.0).
+    pub continuation_bonus: f32,
+    /// How fast the continuation effect decays per second (0.0-1.0).
+    pub continuation_decay: f32,
+    #[reflect(ignore)]
+    smoothed_value: f32,
+    #[reflect(ignore)]
+    momentum: f32,
+    #[reflect(ignore)]
+    initialised: bool,
+}
+
+impl UtilitySmoothing {
+    pub fn new(response_rate: f32, continuation_bonus: f32, continuation_decay: f32) -> Self {
+        Self {
+            response_rate: response_rate.clamp(0.0, 1.0),
+            continuation_bonus: continuation_bonus.clamp(0.0, 1.0),
+            continuation_decay: continuation_decay.clamp(0.0, 1.0),
+            smoothed_value: 0.0,
+            momentum: 0.0,
+            initialised: false,
+        }
+    }
+
+    fn response_alpha(&self, delta_secs: f32) -> f32 {
+        if self.response_rate <= 0.0 {
+            0.0
+        } else {
+            1.0 - (1.0 - self.response_rate).powf(delta_secs.max(0.0).min(1.0))
+        }
+    }
+
+    fn continuation_alpha(&self, delta_secs: f32) -> f32 {
+        if self.continuation_decay <= 0.0 {
+            0.0
+        } else {
+            1.0 - (1.0 - self.continuation_decay).powf(delta_secs.max(0.0).min(1.0))
+        }
+    }
+}
+
+/// System that applies smoothing to any scorer tagged with [`UtilitySmoothing`].
+pub fn utility_smoothing_system(
+    time: Res<Time>,
+    mut query: Query<(&mut Score, &mut UtilitySmoothing)>,
+) {
+    let delta = time.delta_secs();
+    for (mut score, mut smoothing) in &mut query {
+        let raw = score.value();
+
+        if !smoothing.initialised {
+            smoothing.smoothed_value = raw;
+            smoothing.momentum = raw;
+            smoothing.initialised = true;
+            continue;
+        }
+
+        let response_alpha = smoothing.response_alpha(delta);
+        smoothing.smoothed_value += response_alpha * (raw - smoothing.smoothed_value);
+
+        let continuation_alpha = smoothing.continuation_alpha(delta);
+        smoothing.momentum += continuation_alpha * (raw - smoothing.momentum);
+
+        let adjusted = (smoothing.smoothed_value
+            + smoothing.momentum * smoothing.continuation_bonus)
+            .clamp(0.0, 1.0);
+        score.set(adjusted);
+    }
+}

@@ -1,6 +1,7 @@
 pub mod base_tracker;
 pub mod needs_tracker;
 pub mod perception_tracker;
+pub mod threat_tracker;
 
 //TODO soon: pub mod relationship_tracker;
 
@@ -11,9 +12,9 @@ use bevy::prelude::*;
 pub struct TrackerPlugin;
 
 impl Plugin for TrackerPlugin {
-    fn build(&self, _app: &mut App) {
-        // Simple plugin - just makes trackers available
-        // Systems will be added later when we have proper integration
+    fn build(&self, app: &mut App) {
+        app.register_type::<threat_tracker::ThreatTracker>()
+            .add_systems(Update, threat_tracker::threat_tracker_system);
     }
 }
 
@@ -25,4 +26,5 @@ pub mod prelude {
     pub use crate::trackers::base_tracker::{EntityTracker, TrackedEntity, TrackingRelation};
     pub use crate::trackers::needs_tracker::NeedsTracker;
     pub use crate::trackers::perception_tracker::Perception;
+    pub use crate::trackers::threat_tracker::{threat_tracker_system, ThreatTracker};
 }
