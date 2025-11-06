@@ -11,6 +11,10 @@ pub struct GravityParams {
     pub softening: f32,
     /// Gravitational constant controlling attraction strength
     pub gravitational_constant: f32,
+    /// Maximum depth for Barnes-Hut octree spatial partitioning
+    pub barnes_hut_max_depth: usize,
+    /// Maximum bodies per node before subdivision in Barnes-Hut algorithm
+    pub barnes_hut_max_bodies_per_node: usize,
 }
 
 impl Default for GravityParams {
@@ -18,6 +22,8 @@ impl Default for GravityParams {
         Self {
             softening: 5.0,
             gravitational_constant: DEFAULT_GRAVITATIONAL_CONSTANT,
+            barnes_hut_max_depth: 8,
+            barnes_hut_max_bodies_per_node: 8,
         }
     }
 }
@@ -30,6 +36,12 @@ impl GravityParams {
 
     pub fn with_gravitational_constant(mut self, gravitational_constant: f32) -> Self {
         self.gravitational_constant = gravitational_constant;
+        self
+    }
+
+    pub fn with_barnes_hut_params(mut self, max_depth: usize, max_bodies_per_node: usize) -> Self {
+        self.barnes_hut_max_depth = max_depth.max(1);
+        self.barnes_hut_max_bodies_per_node = max_bodies_per_node.max(1);
         self
     }
 }
@@ -71,10 +83,6 @@ pub struct MassiveBody;
 // Barnes-Hut spatial partitioning
 mod spatial {
     use bevy::prelude::*;
-
-    // Algorithm parameters
-    const MAX_DEPTH: usize = 8;
-    const MAX_BODIES_PER_NODE: usize = 8;
 
     #[derive(Clone, Debug)]
     pub struct AABB {
@@ -148,16 +156,20 @@ mod spatial {
         pub mass_properties: MassProperties,
         pub bodies: Vec<(Entity, Vec3, f32)>,
         pub children: [Option<Box<QuadtreeNode>>; 4],
+        pub max_depth: usize,
+        pub max_bodies_per_node: usize,
     }
 
     impl QuadtreeNode {
-        pub fn new(aabb: AABB, depth: usize) -> Self {
+        pub fn new(aabb: AABB, depth: usize, max_depth: usize, max_bodies_per_node: usize) -> Self {
             Self {
                 aabb,
                 depth,
                 mass_properties: MassProperties::new(),
                 bodies: Vec::new(),
                 children: [None, None, None, None],
+                max_depth,
+                max_bodies_per_node,
             }
         }
 
@@ -176,8 +188,8 @@ mod spatial {
         pub fn insert(&mut self, entity: Entity, position: Vec3, mass: f32) {
             self.mass_properties.add_body(position, mass);
 
-            if self.depth >= MAX_DEPTH
-                || (self.bodies.len() < MAX_BODIES_PER_NODE && self.children[0].is_none())
+            if self.depth >= self.max_depth
+                || (self.bodies.len() < self.max_bodies_per_node && self.children[0].is_none())
             {
                 self.bodies.push((entity, position, mass));
                 return;
@@ -188,6 +200,8 @@ mod spatial {
                     self.children[i] = Some(Box::new(QuadtreeNode::new(
                         self.aabb.get_quadrant_aabb(i),
                         self.depth + 1,
+                        self.max_depth,
+                        self.max_bodies_per_node,
                     )));
                 }
 
@@ -213,15 +227,23 @@ mod spatial {
     }
 
     impl Quadtree {
-        pub fn new(bounds: AABB) -> Self {
+        pub fn new(bounds: AABB, max_depth: usize, max_bodies_per_node: usize) -> Self {
             Self {
-                root: QuadtreeNode::new(bounds, 0),
+                root: QuadtreeNode::new(bounds, 0, max_depth, max_bodies_per_node),
             }
         }
 
-        pub fn from_bodies(bodies: &[(Entity, Vec3, f32)]) -> Self {
+        pub fn from_bodies(
+            bodies: &[(Entity, Vec3, f32)],
+            max_depth: usize,
+            max_bodies_per_node: usize,
+        ) -> Self {
             if bodies.is_empty() {
-                return Self::new(AABB::new(Vec2::ZERO, Vec2::new(1000.0, 1000.0)));
+                return Self::new(
+                    AABB::new(Vec2::ZERO, Vec2::new(1000.0, 1000.0)),
+                    max_depth,
+                    max_bodies_per_node,
+                );
             }
 
             let mut min_x = f32::MAX;
@@ -246,7 +268,11 @@ mod spatial {
             let half_size = Vec2::new((max_x - min_x) * 0.5, (max_y - min_y) * 0.5);
             let max_half_size = half_size.x.max(half_size.y);
 
-            let mut tree = Self::new(AABB::new(center, Vec2::splat(max_half_size)));
+            let mut tree = Self::new(
+                AABB::new(center, Vec2::splat(max_half_size)),
+                max_depth,
+                max_bodies_per_node,
+            );
 
             for &(entity, position, mass) in bodies {
                 tree.insert(entity, position, mass);
@@ -332,7 +358,11 @@ pub fn calculate_barnes_hut_attraction(
         .map(|(e, t, m)| (e, t.translation, m.value))
         .collect();
 
-    let quadtree = spatial::Quadtree::from_bodies(&bodies);
+    let quadtree = spatial::Quadtree::from_bodies(
+        &bodies,
+        gravity_params.barnes_hut_max_depth,
+        gravity_params.barnes_hut_max_bodies_per_node,
+    );
     let softening = gravity_params.softening;
     let gravitational_constant = gravity_params.gravitational_constant;
 

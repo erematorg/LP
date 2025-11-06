@@ -13,7 +13,9 @@ pub struct TrackerPlugin;
 
 impl Plugin for TrackerPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<threat_tracker::ThreatTracker>()
+        app.init_resource::<threat_tracker::ThreatTrackerConfig>()
+            .register_type::<threat_tracker::ThreatTrackerConfig>()
+            .register_type::<threat_tracker::ThreatTracker>()
             .add_systems(Update, threat_tracker::threat_tracker_system);
     }
 }
@@ -26,5 +28,7 @@ pub mod prelude {
     pub use crate::trackers::base_tracker::{EntityTracker, TrackedEntity, TrackingRelation};
     pub use crate::trackers::needs_tracker::NeedsTracker;
     pub use crate::trackers::perception_tracker::Perception;
-    pub use crate::trackers::threat_tracker::{threat_tracker_system, ThreatTracker};
+    pub use crate::trackers::threat_tracker::{
+        threat_tracker_system, ThreatTracker, ThreatTrackerConfig,
+    };
 }

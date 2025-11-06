@@ -3,6 +3,60 @@ use crate::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
+/// Configuration resource for social relationship parameters
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct SocialConfig {
+    /// Time scale for relationship decay (lower = faster decay)
+    pub decay_time_scale: f32,
+    /// Maximum decay per interaction
+    pub max_decay_per_interaction: f32,
+    /// Weight for historical relationship strength when blending
+    pub history_weight: f32,
+    /// Weight for new observation when blending
+    pub new_observation_weight: f32,
+}
+
+impl Default for SocialConfig {
+    fn default() -> Self {
+        Self {
+            decay_time_scale: 1000.0,
+            max_decay_per_interaction: 0.25,
+            history_weight: 0.7,
+            new_observation_weight: 0.3,
+        }
+    }
+}
+
+impl SocialConfig {
+    pub fn new(
+        decay_time_scale: f32,
+        max_decay: f32,
+        history_weight: f32,
+        new_weight: f32,
+    ) -> Self {
+        // Normalize weights to sum to 1.0
+        let total_weight = history_weight + new_weight;
+        let normalized_history = if total_weight > 0.0 {
+            history_weight / total_weight
+        } else {
+            0.7
+        };
+        let normalized_new = if total_weight > 0.0 {
+            new_weight / total_weight
+        } else {
+            0.3
+        };
+
+        Self {
+            decay_time_scale: decay_time_scale.max(1.0),
+            max_decay_per_interaction: max_decay.clamp(0.0, 1.0),
+            history_weight: normalized_history,
+            new_observation_weight: normalized_new,
+        }
+    }
+}
+
 /// Entity identifier type (compatible with Bevy ECS)
 pub type EntityId = Entity;
 
@@ -69,9 +123,13 @@ impl SocialNetwork {
         relationship_type: RelationshipType,
         strength: f32,
         current_tick: u64,
+        config: &SocialConfig,
     ) {
         let clamped_strength = Score::clamp_trait_value(strength);
-        let relationships = self.relationships.entry(target).or_default();
+        let relationships = self
+            .relationships
+            .entry(target)
+            .or_insert_with(|| HashMap::with_capacity(5)); // 5 relationship types max
 
         match relationships.entry(relationship_type) {
             std::collections::hash_map::Entry::Occupied(mut existing_entry) => {
@@ -82,12 +140,14 @@ impl SocialNetwork {
 
                 // Lightly decay stale relationships before applying the new observation.
                 if time_since_last > 0.0 {
-                    let decay = (time_since_last / 1000.0).min(0.25);
+                    let decay =
+                        (time_since_last / config.decay_time_scale).min(config.max_decay_per_interaction);
                     relationship.strength.adjust(-decay);
                 }
 
                 // Blend prior strength with the latest observation to preserve history.
-                let blended_strength = previous_strength * 0.7 + clamped_strength * 0.3;
+                let blended_strength = previous_strength * config.history_weight
+                    + clamped_strength * config.new_observation_weight;
                 relationship.strength = RelationshipStrength::new(blended_strength);
                 relationship.last_interaction_tick = current_tick;
             }
@@ -131,6 +191,7 @@ impl SocialNetwork {
         relationship_type: RelationshipType,
         personality: &Personality,
         current_tick: u64,
+        config: &SocialConfig,
     ) {
         // Base strength from existing relationship or default
         let base_strength = self
@@ -167,7 +228,13 @@ impl SocialNetwork {
         };
 
         // Add or update the relationship with the modified strength
-        self.add_or_update_relationship(target, relationship_type, modified_strength, current_tick);
+        self.add_or_update_relationship(
+            target,
+            relationship_type,
+            modified_strength,
+            current_tick,
+            config,
+        );
     }
 }
 

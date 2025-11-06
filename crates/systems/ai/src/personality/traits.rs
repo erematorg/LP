@@ -3,8 +3,29 @@ use crate::prelude::*;
 use bevy::prelude::*;
 // Removed direct energy dependency - use trait-based interface instead
 
-// Constants for social influence calculations
-const MAX_INFLUENCE_DISTANCE: f32 = 100.0; // Universal influence range
+/// Configuration resource for personality-related parameters
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct PersonalityConfig {
+    /// Maximum distance for social influence calculations (universal influence range)
+    pub max_influence_distance: f32,
+}
+
+impl Default for PersonalityConfig {
+    fn default() -> Self {
+        Self {
+            max_influence_distance: 100.0,
+        }
+    }
+}
+
+impl PersonalityConfig {
+    pub fn new(max_influence_distance: f32) -> Self {
+        Self {
+            max_influence_distance: max_influence_distance.max(0.0),
+        }
+    }
+}
 
 /// Universal life adaptation traits for all organisms (plants through animals)
 #[derive(Component, Debug, Clone, Reflect)]
@@ -217,10 +238,13 @@ pub fn update_context_aware_utilities(
 /// System that calculates collective influence from nearby social relations
 /// Universal swarm intelligence - works for plant root networks, animal herds, bacterial colonies
 pub fn update_collective_influence(
+    config: Res<PersonalityConfig>,
     mut utilities_query: Query<(Entity, &Transform, &mut ContextAwareUtilities)>,
     relations_query: Query<&SocialRelation>,
     positions_query: Query<&Transform, Without<ContextAwareUtilities>>,
 ) {
+    let max_influence_distance = config.max_influence_distance;
+
     for (entity, transform, mut utilities) in &mut utilities_query {
         let mut total_collective_influence = 0.0;
         let position = transform.translation.truncate();
@@ -236,9 +260,9 @@ pub fn update_collective_influence(
                 let target_pos = target_transform.translation.truncate();
                 let distance = position.distance(target_pos);
 
-                if distance <= MAX_INFLUENCE_DISTANCE {
+                if distance <= max_influence_distance {
                     let proximity_influence =
-                        relation.proximity_utility_modifier(MAX_INFLUENCE_DISTANCE);
+                        relation.proximity_utility_modifier(max_influence_distance);
                     total_collective_influence += proximity_influence;
                 }
             }

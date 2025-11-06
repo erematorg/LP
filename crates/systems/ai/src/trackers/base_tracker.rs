@@ -65,7 +65,7 @@ impl AIModule for EntityTracker {
 impl EntityTracker {
     pub fn new(max_tracked_entities: usize) -> Self {
         Self {
-            tracked_entities: HashMap::new(),
+            tracked_entities: HashMap::with_capacity(max_tracked_entities),
             max_tracked_entities,
             priority: 0.0,
         }

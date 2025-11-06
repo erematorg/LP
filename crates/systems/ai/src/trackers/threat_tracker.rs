@@ -5,6 +5,34 @@ use std::collections::HashMap;
 
 use super::perception_tracker::Perception;
 
+/// Configuration resource for threat tracker default parameters
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct ThreatTrackerConfig {
+    /// Default severity decay applied per second
+    pub default_decay_per_second: f32,
+    /// Default time (in seconds) before completely forgetting unseen threats
+    pub default_forget_after: f32,
+}
+
+impl Default for ThreatTrackerConfig {
+    fn default() -> Self {
+        Self {
+            default_decay_per_second: 0.4,
+            default_forget_after: 6.0,
+        }
+    }
+}
+
+impl ThreatTrackerConfig {
+    pub fn new(decay_per_second: f32, forget_after: f32) -> Self {
+        Self {
+            default_decay_per_second: decay_per_second.max(0.0),
+            default_forget_after: forget_after.max(0.0),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 struct ThreatEntry {
     severity: f32,
@@ -38,13 +66,21 @@ impl Default for ThreatTracker {
 impl ThreatTracker {
     pub fn new(decay_per_second: f32, forget_after: f32) -> Self {
         Self {
-            threats: HashMap::new(),
+            threats: HashMap::with_capacity(8), // Typical organisms track few simultaneous threats
             panic_level: 0.0,
             accumulated_threat: 0.0,
             decay_per_second: decay_per_second.max(0.0),
             forget_after: forget_after.max(0.0),
             last_update_time: None,
         }
+    }
+
+    /// Create a new ThreatTracker from configuration resource
+    pub fn from_config(config: &ThreatTrackerConfig) -> Self {
+        Self::new(
+            config.default_decay_per_second,
+            config.default_forget_after,
+        )
     }
 
     fn decay_entries(&mut self, now: f32) {
@@ -85,18 +121,19 @@ impl ThreatTracker {
         }
 
         let mut total = 0.0;
-        let mut highest: f32 = 0.0;
         for entry in self.threats.values() {
             total += entry.severity;
-            highest = highest.max(entry.severity);
         }
 
         self.accumulated_threat = total.clamp(0.0, 4.0);
-        // Convert accumulated threat to a 0.0-1.0 panic using smooth saturation.
-        // TODO: Clamping to `highest` keeps panic elevated as long as any threat remains,
-        // even as the exponential would lower it. This prevents panic from dropping too quickly
-        // but may feel "sticky" will consider if panic should be allowed to drop below highest_threat.
-        self.panic_level = (1.0 - (-self.accumulated_threat).exp()).clamp(highest, 1.0);
+        // Convert accumulated threat to a 0.0-1.0 panic using smooth exponential saturation.
+        // This mimics real organism stress response: rises quickly with threat, decays naturally.
+        // The exponential curve (1 - e^(-x)) provides biologically realistic behavior:
+        // - Rapid response to new threats
+        // - Natural saturation at high threat levels
+        // - Smooth recovery as threats decay
+        // No artificial floor - panic tracks accumulated threat naturally like real stress hormones.
+        self.panic_level = (1.0 - (-self.accumulated_threat).exp()).clamp(0.0, 1.0);
     }
 
     /// Update this tracker using the current perception information.
