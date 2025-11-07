@@ -1,164 +1,106 @@
+//! Threat evaluation - reads entity tracker, outputs threat assessment
+//!
+//! Data storage separate from evaluation.
+//! This reads EntityTracker and calculates threat levels.
+
+use super::entity_tracker::{EntityMetadata, EntityTracker};
 use crate::core::scorers::Score;
-use crate::prelude::AIModule;
+use crate::prelude::*;
 use bevy::prelude::*;
-use std::collections::HashMap;
 
-use super::perception_tracker::Perception;
-
-/// Configuration resource for threat tracker default parameters
+/// Configuration for threat evaluation
 #[derive(Resource, Debug, Clone, Reflect)]
 #[reflect(Resource)]
-pub struct ThreatTrackerConfig {
-    /// Default severity decay applied per second
-    pub default_decay_per_second: f32,
-    /// Default time (in seconds) before completely forgetting unseen threats
-    pub default_forget_after: f32,
-}
-
-impl Default for ThreatTrackerConfig {
-    fn default() -> Self {
-        Self {
-            default_decay_per_second: 0.4,
-            default_forget_after: 6.0,
-        }
-    }
-}
-
-impl ThreatTrackerConfig {
-    pub fn new(decay_per_second: f32, forget_after: f32) -> Self {
-        Self {
-            default_decay_per_second: decay_per_second.max(0.0),
-            default_forget_after: forget_after.max(0.0),
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-struct ThreatEntry {
-    severity: f32,
-    last_seen_time: f32,
-}
-
-/// Tracks recent threats seen by an entity and provides a panic utility.
-#[derive(Component, Debug, Clone, Reflect)]
-#[reflect(Component)]
-pub struct ThreatTracker {
-    #[reflect(ignore)]
-    threats: HashMap<Entity, ThreatEntry>,
-    /// Cached overall panic level (0.0-1.0).
-    pub panic_level: f32,
-    /// Sum of individual threat severities (0.0-1.0).
-    pub accumulated_threat: f32,
-    /// Severity decay applied per second.
+pub struct ThreatConfig {
+    /// How quickly threat severity decays per second
     pub decay_per_second: f32,
-    /// Time (in seconds) before completely forgetting unseen threats.
+
+    /// Time before completely forgetting a threat
     pub forget_after: f32,
-    #[reflect(ignore)]
-    last_update_time: Option<f32>,
+
+    /// Distance at which threats are max severity (closer = worse)
+    pub max_severity_distance: f32,
 }
 
-impl Default for ThreatTracker {
+impl Default for ThreatConfig {
     fn default() -> Self {
-        Self::new(0.4, 6.0)
+        Self {
+            decay_per_second: 0.4,
+            forget_after: 6.0,
+            max_severity_distance: 50.0,
+        }
     }
+}
+
+/// Evaluates threats from entity tracker (no data storage)
+#[derive(Component, Debug, Default)]
+pub struct ThreatTracker {
+    /// Cached panic level (recalculated each frame)
+    panic_level: f32,
+
+    /// Highest individual threat severity
+    highest_threat: f32,
 }
 
 impl ThreatTracker {
-    pub fn new(decay_per_second: f32, forget_after: f32) -> Self {
-        Self {
-            threats: HashMap::with_capacity(8), // Typical organisms track few simultaneous threats
-            panic_level: 0.0,
-            accumulated_threat: 0.0,
-            decay_per_second: decay_per_second.max(0.0),
-            forget_after: forget_after.max(0.0),
-            last_update_time: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    /// Create a new ThreatTracker from configuration resource
-    pub fn from_config(config: &ThreatTrackerConfig) -> Self {
-        Self::new(
-            config.default_decay_per_second,
-            config.default_forget_after,
-        )
+    /// Get current panic level (0.0-1.0)
+    pub fn panic_level(&self) -> f32 {
+        self.panic_level
     }
 
-    fn decay_entries(&mut self, now: f32) {
-        if let Some(last) = self.last_update_time {
-            let delta = (now - last).max(0.0);
-            if delta > 0.0 && !self.threats.is_empty() {
-                let decay_amount = self.decay_per_second * delta;
-                self.threats.retain(|_, entry| {
-                    let time_since_seen = now - entry.last_seen_time;
-                    if time_since_seen > self.forget_after {
-                        return false;
-                    }
+    /// Get highest individual threat
+    pub fn highest_threat(&self) -> f32 {
+        self.highest_threat
+    }
 
-                    let new_severity = (entry.severity - decay_amount).max(0.0);
-                    entry.severity = new_severity;
-                    new_severity > 0.01
-                });
+    /// Update threat evaluation from entity tracker
+    pub fn update(
+        &mut self,
+        entity_tracker: &EntityTracker,
+        current_time: f32,
+        config: &ThreatConfig,
+    ) {
+        let mut total_threat = 0.0;
+        let mut max_threat: f32 = 0.0;
+
+        // Evaluate all threats from entity tracker
+        for tracked in entity_tracker.filter_by_metadata(|m| {
+            matches!(m, EntityMetadata::Threat { .. })
+        }) {
+            if let EntityMetadata::Threat { severity } = tracked.metadata {
+                // Apply decay based on time since seen
+                let time_since = tracked.time_since_seen(current_time);
+                let decay = (-config.decay_per_second * time_since).exp();
+                let current_severity = severity * decay;
+
+                // Distance modifier (closer = more threatening)
+                let distance_factor = if tracked.last_distance > 0.0 {
+                    1.0 - (tracked.last_distance / config.max_severity_distance).clamp(0.0, 1.0)
+                } else {
+                    1.0
+                };
+
+                let adjusted_severity = current_severity * distance_factor;
+
+                total_threat += adjusted_severity;
+                max_threat = max_threat.max(adjusted_severity);
             }
         }
 
-        self.last_update_time = Some(now);
-    }
-
-    fn register_threat(&mut self, entity: Entity, severity: f32, now: f32) {
-        let entry = self.threats.entry(entity).or_insert(ThreatEntry {
-            severity: 0.0,
-            last_seen_time: now,
-        });
-        entry.severity = entry.severity.max(severity.clamp(0.0, 1.0));
-        entry.last_seen_time = now;
-    }
-
-    fn recalculate(&mut self) {
-        if self.threats.is_empty() {
-            self.panic_level = 0.0;
-            self.accumulated_threat = 0.0;
-            return;
-        }
-
-        let mut total = 0.0;
-        for entry in self.threats.values() {
-            total += entry.severity;
-        }
-
-        self.accumulated_threat = total.clamp(0.0, 4.0);
-        // Convert accumulated threat to a 0.0-1.0 panic using smooth exponential saturation.
-        // This mimics real organism stress response: rises quickly with threat, decays naturally.
-        // The exponential curve (1 - e^(-x)) provides biologically realistic behavior:
-        // - Rapid response to new threats
-        // - Natural saturation at high threat levels
-        // - Smooth recovery as threats decay
-        // No artificial floor - panic tracks accumulated threat naturally like real stress hormones.
-        self.panic_level = (1.0 - (-self.accumulated_threat).exp()).clamp(0.0, 1.0);
-    }
-
-    /// Update this tracker using the current perception information.
-    pub fn update_from_perception(&mut self, perception: &Perception, now: f32) {
-        self.decay_entries(now);
-
-        if perception.detection_radius <= 0.0 {
-            self.recalculate();
-            return;
-        }
-
-        for (entity, _pos, distance) in &perception.visible_entities {
-            let severity = 1.0 - (distance / perception.detection_radius).clamp(0.0, 1.0);
-            if severity > 0.0 {
-                self.register_threat(*entity, severity, now);
-            }
-        }
-
-        self.recalculate();
+        // Exponential panic saturation (from original ThreatTracker)
+        let accumulated = total_threat.clamp(0.0, 4.0);
+        self.panic_level = (1.0 - (-accumulated).exp()).clamp(0.0, 1.0);
+        self.highest_threat = max_threat;
     }
 }
 
 impl AIModule for ThreatTracker {
     fn update(&mut self) {
-        // Temporal decay is handled by [`update_from_perception`]; nothing to do per tick.
+        // Update happens in system with access to EntityTracker
     }
 
     fn utility(&self) -> Score {
@@ -166,13 +108,15 @@ impl AIModule for ThreatTracker {
     }
 }
 
-/// Integrates [`ThreatTracker`] with [`Perception`] every frame.
+/// System that updates all threat trackers
 pub fn threat_tracker_system(
     time: Res<Time>,
-    mut query: Query<(&Perception, &mut ThreatTracker)>,
+    config: Res<ThreatConfig>,
+    mut query: Query<(&mut ThreatTracker, &EntityTracker)>,
 ) {
-    let now = time.elapsed_secs();
-    for (perception, mut tracker) in &mut query {
-        tracker.update_from_perception(perception, now);
+    let current_time = time.elapsed_secs();
+
+    for (mut threat_tracker, entity_tracker) in &mut query {
+        threat_tracker.update(entity_tracker, current_time, &config);
     }
 }
