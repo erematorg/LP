@@ -1,4 +1,3 @@
-use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -57,8 +56,7 @@ impl AIModule for Perception {
         self.highest_threat_level *= 0.95;
     }
 
-    fn utility(&self) -> Score {
-        // Return threat level as utility - higher threat means more important
-        Score::new(self.highest_threat_level)
+    fn utility(&self) -> f32 {
+        self.highest_threat_level.clamp(0.0, 1.0)
     }
 }

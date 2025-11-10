@@ -4,7 +4,6 @@
 //! This reads EntityTracker and calculates threat levels.
 
 use super::entity_tracker::{EntityMetadata, EntityTracker};
-use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -68,9 +67,9 @@ impl ThreatTracker {
         let mut max_threat: f32 = 0.0;
 
         // Evaluate all threats from entity tracker
-        for tracked in entity_tracker.filter_by_metadata(|m| {
-            matches!(m, EntityMetadata::Threat { .. })
-        }) {
+        for tracked in
+            entity_tracker.filter_by_metadata(|m| matches!(m, EntityMetadata::Threat { .. }))
+        {
             if let EntityMetadata::Threat { severity } = tracked.metadata {
                 // Apply decay based on time since seen
                 let time_since = tracked.time_since_seen(current_time);
@@ -103,8 +102,8 @@ impl AIModule for ThreatTracker {
         // Update happens in system with access to EntityTracker
     }
 
-    fn utility(&self) -> Score {
-        Score::new(self.panic_level)
+    fn utility(&self) -> f32 {
+        self.panic_level
     }
 }
 

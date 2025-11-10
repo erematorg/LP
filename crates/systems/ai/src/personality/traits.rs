@@ -1,4 +1,4 @@
-use crate::core::scorers::Score;
+use crate::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 // Removed direct energy dependency - use trait-based interface instead
@@ -105,9 +105,8 @@ impl AIModule for Personality {
         // but could evolve slowly based on experiences
     }
 
-    fn utility(&self) -> Score {
-        // Return a base utility score for personality-driven behaviors
-        Score::HALF
+    fn utility(&self) -> f32 {
+        Score::HALF.value()
     }
 }
 

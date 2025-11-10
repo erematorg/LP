@@ -1,4 +1,4 @@
-use crate::core::scorers::Score;
+use crate::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -140,8 +140,8 @@ impl SocialNetwork {
 
                 // Lightly decay stale relationships before applying the new observation.
                 if time_since_last > 0.0 {
-                    let decay =
-                        (time_since_last / config.decay_time_scale).min(config.max_decay_per_interaction);
+                    let decay = (time_since_last / config.decay_time_scale)
+                        .min(config.max_decay_per_interaction);
                     relationship.strength.adjust(-decay);
                 }
 
@@ -276,9 +276,8 @@ impl AIModule for SocialNetwork {
         // or update based on recent interactions
     }
 
-    fn utility(&self) -> Score {
-        // Calculate overall social interaction utility
-        social_behavior_utility(self)
+    fn utility(&self) -> f32 {
+        social_behavior_utility(self).value()
     }
 }
 

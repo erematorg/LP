@@ -23,7 +23,6 @@ impl Plugin for PersonalityPlugin {
 pub mod prelude {
     pub use crate::personality::PersonalityPlugin;
     pub use crate::personality::traits::{
-        Altruistic, ContextAwareUtilities, Personality, PersonalityConfig,
-        PersonalityContextInputs,
+        Altruistic, ContextAwareUtilities, Personality, PersonalityConfig, PersonalityContextInputs,
     };
 }

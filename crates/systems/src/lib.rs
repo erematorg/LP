@@ -75,7 +75,9 @@ impl Plugin for SystemsPlugin {
         }
 
         if self.include_save {
-            app.add_plugins(save_system::SaveSystemPlugin::new(self.save_settings.clone()));
+            app.add_plugins(save_system::SaveSystemPlugin::new(
+                self.save_settings.clone(),
+            ));
         }
     }
 }

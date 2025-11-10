@@ -1,4 +1,4 @@
-use crate::core::scorers::Score;
+use crate::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -47,9 +47,8 @@ impl AIModule for MemoryEvent {
         // Could implement decay of importance over time if needed
     }
 
-    fn utility(&self) -> Score {
-        // Return importance as utility
-        self.importance
+    fn utility(&self) -> f32 {
+        self.importance.value()
     }
 }
 

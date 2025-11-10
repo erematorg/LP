@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+﻿use bevy::prelude::*;
 use systems::ai::prelude::*;
 
 fn main() {
@@ -31,6 +31,19 @@ struct CreatureAction {
     action_attempts: u32,
     total_food_consumed: u32,
     last_action_result: ActionState,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ActionState {
+    Idle,
+    Success,
+    Failure,
+}
+
+impl Default for ActionState {
+    fn default() -> Self {
+        ActionState::Idle
+    }
 }
 
 #[derive(Component)]

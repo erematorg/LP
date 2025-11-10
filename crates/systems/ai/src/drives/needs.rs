@@ -1,4 +1,4 @@
-use crate::core::scorers::Score;
+use crate::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -107,8 +107,7 @@ impl AIModule for Need {
         self.satisfaction = self.satisfaction.clamp(0.0, 1.0);
     }
 
-    fn utility(&self) -> Score {
-        // Return urgency as utility
-        self.urgency()
+    fn utility(&self) -> f32 {
+        self.urgency().value()
     }
 }

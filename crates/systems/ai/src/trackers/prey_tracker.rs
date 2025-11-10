@@ -4,7 +4,6 @@
 //! This reads EntityTracker and calculates food attractiveness.
 
 use super::entity_tracker::{EntityMetadata, EntityTracker};
-use crate::core::scorers::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -68,9 +67,9 @@ impl PreyTracker {
         let mut best_score = 0.0;
 
         // Evaluate all prey from entity tracker
-        for tracked in entity_tracker.filter_by_metadata(|m| {
-            matches!(m, EntityMetadata::Prey { .. })
-        }) {
+        for tracked in
+            entity_tracker.filter_by_metadata(|m| matches!(m, EntityMetadata::Prey { .. }))
+        {
             if let EntityMetadata::Prey { attractiveness } = tracked.metadata {
                 // Apply memory decay
                 let time_since = tracked.time_since_seen(current_time);
@@ -79,8 +78,7 @@ impl PreyTracker {
 
                 // Distance factor (closer = more attractive)
                 let distance_factor = if tracked.last_distance > 0.0 {
-                    1.0 - (tracked.last_distance / config.max_attractive_distance)
-                        .clamp(0.0, 1.0)
+                    1.0 - (tracked.last_distance / config.max_attractive_distance).clamp(0.0, 1.0)
                 } else {
                     1.0
                 };
@@ -104,8 +102,8 @@ impl AIModule for PreyTracker {
         // Update happens in system with access to EntityTracker
     }
 
-    fn utility(&self) -> Score {
-        Score::new(self.best_attractiveness)
+    fn utility(&self) -> f32 {
+        self.best_attractiveness.clamp(0.0, 1.0)
     }
 }
 

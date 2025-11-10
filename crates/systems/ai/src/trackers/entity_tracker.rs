@@ -45,8 +45,13 @@ pub struct TrackedEntity {
 }
 
 impl TrackedEntity {
-    pub fn new(entity: Entity, position: Vec2, time: f32, metadata: EntityMetadata) -> Self {
-        let distance = 0.0; // Will be updated
+    pub fn new(
+        entity: Entity,
+        position: Vec2,
+        distance: f32,
+        time: f32,
+        metadata: EntityMetadata,
+    ) -> Self {
         Self {
             entity,
             position,
@@ -86,6 +91,7 @@ impl EntityTracker {
         &mut self,
         entity: Entity,
         position: Vec2,
+        distance: f32,
         current_time: f32,
         metadata: EntityMetadata,
     ) {
@@ -94,12 +100,13 @@ impl EntityTracker {
             tracked.position = position;
             tracked.last_seen_time = current_time;
             tracked.in_visual_contact = true;
+            tracked.last_distance = distance;
             tracked.metadata = metadata;
         } else {
             // Add new
             self.tracked.insert(
                 entity,
-                TrackedEntity::new(entity, position, current_time, metadata),
+                TrackedEntity::new(entity, position, distance, current_time, metadata),
             );
         }
     }
@@ -133,9 +140,8 @@ impl EntityTracker {
 
     /// Remove entities not seen for too long
     pub fn forget_old_entities(&mut self, current_time: f32, forget_after: f32) {
-        self.tracked.retain(|_, tracked| {
-            tracked.time_since_seen(current_time) < forget_after
-        });
+        self.tracked
+            .retain(|_, tracked| tracked.time_since_seen(current_time) < forget_after);
     }
 
     /// Enforce capacity limit (remove least recently seen)
@@ -144,15 +150,17 @@ impl EntityTracker {
             return;
         }
 
-        let mut entries: Vec<_> = self.tracked.iter().map(|(k, v)| (*k, v.last_seen_time)).collect();
-        entries.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        let mut entries: Vec<_> = self
+            .tracked
+            .iter()
+            .map(|(k, v)| (*k, v.last_seen_time))
+            .collect();
+        entries.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // Remove oldest
         let to_remove = self.tracked.len() - self.max_tracked;
-        let entities_to_remove: Vec<Entity> = entries.iter().take(to_remove).map(|(e, _)| *e).collect();
+        let entities_to_remove: Vec<Entity> =
+            entries.iter().take(to_remove).map(|(e, _)| *e).collect();
 
         for entity in entities_to_remove {
             self.tracked.remove(&entity);

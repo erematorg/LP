@@ -1,4 +1,4 @@
-use crate::core::scorers::Score;
+use crate::Score;
 use crate::prelude::*;
 use bevy::prelude::*;
 
@@ -55,10 +55,9 @@ impl AIModule for NeedsTracker {
         self.most_urgent_need = most_urgent.map(|need_type| (need_type, highest_urgency));
     }
 
-    fn utility(&self) -> Score {
-        // Return the urgency of the most urgent need, or zero if no needs
+    fn utility(&self) -> f32 {
         self.most_urgent_need
-            .map(|(_, urgency)| urgency)
-            .unwrap_or(Score::ZERO)
+            .map(|(_, urgency)| urgency.value())
+            .unwrap_or(Score::ZERO.value())
     }
 }
