@@ -400,8 +400,8 @@ pub fn calculate_barnes_hut_force(
         let direction = node.mass_properties.center_of_mass - affected_position;
         let distance_squared = direction.length_squared();
         let softened_distance_squared = distance_squared + softening_squared;
-        let force_magnitude = gravitational_constant * node.mass_properties.total_mass
-            / softened_distance_squared;
+        let force_magnitude =
+            gravitational_constant * node.mass_properties.total_mass / softened_distance_squared;
         return direction.normalize() * force_magnitude;
     }
 
@@ -417,8 +417,7 @@ pub fn calculate_barnes_hut_force(
             }
 
             let softened_distance_squared = distance_squared + softening_squared;
-            let force_magnitude =
-                gravitational_constant * mass / softened_distance_squared;
+            let force_magnitude = gravitational_constant * mass / softened_distance_squared;
             total_force += direction.normalize() * force_magnitude;
         }
 
