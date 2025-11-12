@@ -1,5 +1,17 @@
 pub mod oscillation;
 pub mod propagation;
+
+use bevy::prelude::Vec2;
+
+/// Helper function to normalize a vector or return a fallback if the vector is too small
+#[inline]
+pub(crate) fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
+    if vec.length_squared() > f32::EPSILON {
+        vec.normalize()
+    } else {
+        fallback
+    }
+}
 pub mod superposition;
 pub mod wave_equation;
 

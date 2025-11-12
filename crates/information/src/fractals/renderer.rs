@@ -4,7 +4,6 @@ use bevy::prelude::*;
 // Components
 /// Component for an L-System branch
 #[derive(Component)]
-#[allow(dead_code)]
 struct Branch {
     /// Type of this branch segment
     symbol_type: SymbolType,
