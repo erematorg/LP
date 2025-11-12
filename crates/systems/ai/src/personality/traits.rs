@@ -1,6 +1,8 @@
+use bevy::prelude::*;
+
 use crate::Score;
 use crate::prelude::*;
-use bevy::prelude::*;
+
 // Removed direct energy dependency - use trait-based interface instead
 
 /// Configuration resource for personality-related parameters
@@ -100,11 +102,6 @@ impl Personality {
 }
 
 impl AIModule for Personality {
-    fn update(&mut self) {
-        // Personality traits are generally stable
-        // but could evolve slowly based on experiences
-    }
-
     fn utility(&self) -> f32 {
         Score::HALF.value()
     }

@@ -1,6 +1,7 @@
+use bevy::prelude::*;
+
 use crate::Score;
 use crate::prelude::*;
-use bevy::prelude::*;
 
 /// Universal need types that apply to all life forms
 /// These represent fundamental biological drives that emerge from physics and chemistry

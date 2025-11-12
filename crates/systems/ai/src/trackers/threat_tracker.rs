@@ -42,10 +42,6 @@ pub struct ThreatTracker {
 }
 
 impl ThreatTracker {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Get current panic level (0.0-1.0)
     pub fn panic_level(&self) -> f32 {
         self.panic_level
@@ -98,10 +94,6 @@ impl ThreatTracker {
 }
 
 impl AIModule for ThreatTracker {
-    fn update(&mut self) {
-        // Update happens in system with access to EntityTracker
-    }
-
     fn utility(&self) -> f32 {
         self.panic_level
     }

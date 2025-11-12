@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
+use bevy::prelude::*;
+
 use crate::Score;
 use crate::prelude::*;
-use bevy::prelude::*;
-use std::collections::HashMap;
 
 /// Configuration resource for social relationship parameters
 #[derive(Resource, Debug, Clone, Reflect)]
@@ -271,11 +273,6 @@ pub fn get_relationship_strength(
 }
 
 impl AIModule for SocialNetwork {
-    fn update(&mut self) {
-        // In a real implementation, this would decay old relationships
-        // or update based on recent interactions
-    }
-
     fn utility(&self) -> f32 {
         social_behavior_utility(self).value()
     }

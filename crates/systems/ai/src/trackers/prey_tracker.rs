@@ -42,10 +42,6 @@ pub struct PreyTracker {
 }
 
 impl PreyTracker {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Get most attractive prey
     pub fn best_prey(&self) -> Option<Entity> {
         self.best_prey
@@ -98,10 +94,6 @@ impl PreyTracker {
 }
 
 impl AIModule for PreyTracker {
-    fn update(&mut self) {
-        // Update happens in system with access to EntityTracker
-    }
-
     fn utility(&self) -> f32 {
         self.best_attractiveness.clamp(0.0, 1.0)
     }

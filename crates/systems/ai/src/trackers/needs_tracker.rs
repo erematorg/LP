@@ -1,6 +1,7 @@
+use bevy::prelude::*;
+
 use crate::Score;
 use crate::prelude::*;
-use bevy::prelude::*;
 
 /// Tracks and manages needs for an entity
 #[derive(Component, Default)]
@@ -10,10 +11,6 @@ pub struct NeedsTracker {
 }
 
 impl NeedsTracker {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn add_need(&mut self, need: Need) {
         self.needs.push(need);
     }

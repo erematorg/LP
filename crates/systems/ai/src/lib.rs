@@ -47,7 +47,8 @@ pub mod prelude {
 /// Base trait for all AI modules.
 pub trait AIModule: Send + Sync {
     /// Update the module's internal state.
-    fn update(&mut self);
+    /// Default implementation does nothing - override if needed.
+    fn update(&mut self) {}
 
     /// Calculate the utility value of this module (0.0 - 1.0 range).
     fn utility(&self) -> f32;

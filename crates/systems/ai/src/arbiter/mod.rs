@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+
+use bevy::prelude::*;
+
 use crate::AIModule;
 use crate::trackers::needs_tracker::NeedsTracker;
 use crate::trackers::prey_tracker::PreyTracker;
 use crate::trackers::threat_tracker::ThreatTracker;
-use bevy::prelude::*;
-use std::collections::HashMap;
 
 /// Schedule sets that ensure the arbiter runs in a predictable order each frame.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
