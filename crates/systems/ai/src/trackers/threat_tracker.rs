@@ -62,28 +62,19 @@ impl ThreatTracker {
         let mut total_threat = 0.0;
         let mut max_threat: f32 = 0.0;
 
-        // Evaluate all threats from entity tracker
-        for tracked in
-            entity_tracker.filter_by_metadata(|m| matches!(m, EntityMetadata::Threat { .. }))
-        {
-            if let EntityMetadata::Threat { severity } = tracked.metadata {
-                // Apply decay based on time since seen
-                let time_since = tracked.time_since_seen(current_time);
-                let decay = (-config.decay_per_second * time_since).exp();
-                let current_severity = severity * decay;
-
-                // Distance modifier (closer = more threatening)
-                let distance_factor = if tracked.last_distance > 0.0 {
-                    1.0 - (tracked.last_distance / config.max_severity_distance).clamp(0.0, 1.0)
-                } else {
-                    1.0
-                };
-
-                let adjusted_severity = current_severity * distance_factor;
-
-                total_threat += adjusted_severity;
-                max_threat = max_threat.max(adjusted_severity);
-            }
+        // Evaluate all threats using shared decay/distance logic
+        for (_, severity) in super::evaluate_tracked_entities_with_decay(
+            entity_tracker,
+            current_time,
+            config.decay_per_second,
+            config.max_severity_distance,
+            |m| match m {
+                EntityMetadata::Threat { severity } => Some(*severity),
+                _ => None,
+            },
+        ) {
+            total_threat += severity;
+            max_threat = max_threat.max(severity);
         }
 
         // Exponential panic saturation (from original ThreatTracker)

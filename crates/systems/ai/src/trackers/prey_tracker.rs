@@ -62,29 +62,20 @@ impl PreyTracker {
         let mut best_entity = None;
         let mut best_score = 0.0;
 
-        // Evaluate all prey from entity tracker
-        for tracked in
-            entity_tracker.filter_by_metadata(|m| matches!(m, EntityMetadata::Prey { .. }))
-        {
-            if let EntityMetadata::Prey { attractiveness } = tracked.metadata {
-                // Apply memory decay
-                let time_since = tracked.time_since_seen(current_time);
-                let decay = (-config.memory_decay_per_second * time_since).exp();
-                let current_attractiveness = attractiveness * decay;
-
-                // Distance factor (closer = more attractive)
-                let distance_factor = if tracked.last_distance > 0.0 {
-                    1.0 - (tracked.last_distance / config.max_attractive_distance).clamp(0.0, 1.0)
-                } else {
-                    1.0
-                };
-
-                let total_score = current_attractiveness * distance_factor;
-
-                if total_score > best_score {
-                    best_score = total_score;
-                    best_entity = Some(tracked.entity);
-                }
+        // Evaluate all prey using shared decay/distance logic
+        for (entity, score) in super::evaluate_tracked_entities_with_decay(
+            entity_tracker,
+            current_time,
+            config.memory_decay_per_second,
+            config.max_attractive_distance,
+            |m| match m {
+                EntityMetadata::Prey { attractiveness } => Some(*attractiveness),
+                _ => None,
+            },
+        ) {
+            if score > best_score {
+                best_score = score;
+                best_entity = Some(entity);
             }
         }
 
