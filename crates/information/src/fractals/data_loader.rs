@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::fs;
 
 #[derive(Deserialize, Debug)]
 pub struct Parameters {
@@ -25,10 +24,7 @@ pub struct Template {
 
 /// Load a template from the fractals.json file
 pub fn load_template(template_name: &str) -> Result<Template, String> {
-    let file_content = fs::read_to_string("crates/information/src/fractals/fractals.json")
-        .map_err(|_| "Error: Could not read fractals.json".to_string())?;
-
-    let json: serde_json::Value = serde_json::from_str(&file_content)
+    let json: serde_json::Value = serde_json::from_str(include_str!("fractals.json"))
         .map_err(|_| "Error: Invalid JSON format in fractals.json".to_string())?;
 
     json["templates"]

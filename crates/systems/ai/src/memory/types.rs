@@ -1,6 +1,7 @@
-use crate::core::scorers::Score;
-use crate::prelude::*;
 use bevy::prelude::*;
+
+use crate::Score;
+use crate::prelude::*;
 
 /// Memory timestamp (game ticks)
 pub type MemoryTimestamp = u64;
@@ -42,14 +43,8 @@ impl MemoryEvent {
 }
 
 impl AIModule for MemoryEvent {
-    fn update(&mut self) {
-        // Memories don't need regular updates
-        // Could implement decay of importance over time if needed
-    }
-
-    fn utility(&self) -> Score {
-        // Return importance as utility
-        self.importance
+    fn utility(&self) -> f32 {
+        self.importance.value()
     }
 }
 

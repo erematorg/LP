@@ -1,5 +1,6 @@
-use super::generator;
 use std::collections::HashMap;
+
+use super::generator;
 
 /// Handles rule management for L-Systems.
 pub struct RuleManager<'a> {

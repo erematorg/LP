@@ -1,6 +1,7 @@
-use crate::core::scorers::Score;
-use crate::prelude::*;
 use bevy::prelude::*;
+
+use crate::Score;
+use crate::prelude::*;
 
 /// Tracks and manages needs for an entity
 #[derive(Component, Default)]
@@ -10,10 +11,6 @@ pub struct NeedsTracker {
 }
 
 impl NeedsTracker {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn add_need(&mut self, need: Need) {
         self.needs.push(need);
     }
@@ -55,10 +52,9 @@ impl AIModule for NeedsTracker {
         self.most_urgent_need = most_urgent.map(|need_type| (need_type, highest_urgency));
     }
 
-    fn utility(&self) -> Score {
-        // Return the urgency of the most urgent need, or zero if no needs
+    fn utility(&self) -> f32 {
         self.most_urgent_need
-            .map(|(_, urgency)| urgency)
-            .unwrap_or(Score::ZERO)
+            .map(|(_, urgency)| urgency.value())
+            .unwrap_or(Score::ZERO.value())
     }
 }

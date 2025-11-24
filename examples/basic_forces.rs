@@ -11,7 +11,7 @@ fn main() {
             ..default()
         }))
         .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.1)))
-        .insert_resource(GravityParams { softening: 10.0 }) // Better softening value for stability
+        .insert_resource(GravityParams::default().with_softening(10.0)) // Better softening value for stability
         .add_systems(Startup, setup)
         .add_systems(
             Update,

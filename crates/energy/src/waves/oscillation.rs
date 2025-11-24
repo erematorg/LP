@@ -1,13 +1,6 @@
 use bevy::prelude::*;
 
-#[inline]
-fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
-    if vec.length_squared() > f32::EPSILON {
-        vec.normalize()
-    } else {
-        fallback
-    }
-}
+use super::normalize_or;
 
 /// Wave parameters for configuring wave behavior
 #[derive(Component, Debug, Clone, Copy, Reflect)]
@@ -47,11 +40,6 @@ impl Default for WaveParameters {
 }
 
 impl WaveParameters {
-    /// Builder-style method for creating custom wave parameters
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Fluent interface for setting speed
     pub fn with_speed(mut self, speed: f32) -> Self {
         self.speed = speed;

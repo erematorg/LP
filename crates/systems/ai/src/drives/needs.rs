@@ -1,6 +1,7 @@
-use crate::core::scorers::Score;
-use crate::prelude::*;
 use bevy::prelude::*;
+
+use crate::Score;
+use crate::prelude::*;
 
 /// Universal need types that apply to all life forms
 /// These represent fundamental biological drives that emerge from physics and chemistry
@@ -107,8 +108,7 @@ impl AIModule for Need {
         self.satisfaction = self.satisfaction.clamp(0.0, 1.0);
     }
 
-    fn utility(&self) -> Score {
-        // Return urgency as utility
-        self.urgency()
+    fn utility(&self) -> f32 {
+        self.urgency().value()
     }
 }

@@ -8,7 +8,9 @@ pub struct SocialPlugin;
 
 impl Plugin for SocialPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<social::SocialNetwork>()
+        app.init_resource::<social::SocialConfig>()
+            .register_type::<social::SocialConfig>()
+            .register_type::<social::SocialNetwork>()
             .register_type::<social::RelationshipStrength>()
             .register_type::<social::RelationshipType>()
             .register_type::<social::EntityRelationship>()
@@ -22,7 +24,7 @@ impl Plugin for SocialPlugin {
 pub mod prelude {
     pub use crate::relationships::SocialPlugin;
     pub use crate::relationships::social::{
-        EntityRelationship, RelationshipStrength, RelationshipType, SocialNetwork, SocialRelation,
-        get_relationship_strength,
+        EntityRelationship, RelationshipStrength, RelationshipType, SocialConfig, SocialNetwork,
+        SocialRelation, get_relationship_strength,
     };
 }

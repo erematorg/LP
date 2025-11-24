@@ -1,5 +1,6 @@
-use super::fields::{ElectricField, MagneticField};
 use bevy::prelude::*;
+
+use super::fields::{ElectricField, MagneticField};
 
 // Speed of light (in m/s) constant physical value
 //TODO: Making this cleaner later on to make units of measure dynamic rather than admiting 1 meter = 1 meter, same for seconds and much more

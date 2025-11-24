@@ -2,18 +2,47 @@ use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
 // Simulation constants
-pub const GRAVITATIONAL_CONSTANT: f32 = 0.1;
+pub const DEFAULT_GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Resource for gravity simulation parameters
 #[derive(Resource, Clone, Debug)]
 pub struct GravityParams {
     /// Softening parameter to prevent singularities
     pub softening: f32,
+    /// Gravitational constant controlling attraction strength
+    pub gravitational_constant: f32,
+    /// Maximum depth for Barnes-Hut octree spatial partitioning
+    pub barnes_hut_max_depth: usize,
+    /// Maximum bodies per node before subdivision in Barnes-Hut algorithm
+    pub barnes_hut_max_bodies_per_node: usize,
 }
 
 impl Default for GravityParams {
     fn default() -> Self {
-        Self { softening: 5.0 }
+        Self {
+            softening: 5.0,
+            gravitational_constant: DEFAULT_GRAVITATIONAL_CONSTANT,
+            barnes_hut_max_depth: 8,
+            barnes_hut_max_bodies_per_node: 8,
+        }
+    }
+}
+
+impl GravityParams {
+    pub fn with_softening(mut self, softening: f32) -> Self {
+        self.softening = softening;
+        self
+    }
+
+    pub fn with_gravitational_constant(mut self, gravitational_constant: f32) -> Self {
+        self.gravitational_constant = gravitational_constant;
+        self
+    }
+
+    pub fn with_barnes_hut_params(mut self, max_depth: usize, max_bodies_per_node: usize) -> Self {
+        self.barnes_hut_max_depth = max_depth.max(1);
+        self.barnes_hut_max_bodies_per_node = max_bodies_per_node.max(1);
+        self
     }
 }
 
@@ -54,10 +83,6 @@ pub struct MassiveBody;
 // Barnes-Hut spatial partitioning
 mod spatial {
     use bevy::prelude::*;
-
-    // Algorithm parameters
-    const MAX_DEPTH: usize = 8;
-    const MAX_BODIES_PER_NODE: usize = 8;
 
     #[derive(Clone, Debug)]
     pub struct AABB {
@@ -131,16 +156,20 @@ mod spatial {
         pub mass_properties: MassProperties,
         pub bodies: Vec<(Entity, Vec3, f32)>,
         pub children: [Option<Box<QuadtreeNode>>; 4],
+        pub max_depth: usize,
+        pub max_bodies_per_node: usize,
     }
 
     impl QuadtreeNode {
-        pub fn new(aabb: AABB, depth: usize) -> Self {
+        pub fn new(aabb: AABB, depth: usize, max_depth: usize, max_bodies_per_node: usize) -> Self {
             Self {
                 aabb,
                 depth,
                 mass_properties: MassProperties::new(),
                 bodies: Vec::new(),
                 children: [None, None, None, None],
+                max_depth,
+                max_bodies_per_node,
             }
         }
 
@@ -159,8 +188,8 @@ mod spatial {
         pub fn insert(&mut self, entity: Entity, position: Vec3, mass: f32) {
             self.mass_properties.add_body(position, mass);
 
-            if self.depth >= MAX_DEPTH
-                || (self.bodies.len() < MAX_BODIES_PER_NODE && self.children[0].is_none())
+            if self.depth >= self.max_depth
+                || (self.bodies.len() < self.max_bodies_per_node && self.children[0].is_none())
             {
                 self.bodies.push((entity, position, mass));
                 return;
@@ -171,6 +200,8 @@ mod spatial {
                     self.children[i] = Some(Box::new(QuadtreeNode::new(
                         self.aabb.get_quadrant_aabb(i),
                         self.depth + 1,
+                        self.max_depth,
+                        self.max_bodies_per_node,
                     )));
                 }
 
@@ -196,15 +227,23 @@ mod spatial {
     }
 
     impl Quadtree {
-        pub fn new(bounds: AABB) -> Self {
+        pub fn new(bounds: AABB, max_depth: usize, max_bodies_per_node: usize) -> Self {
             Self {
-                root: QuadtreeNode::new(bounds, 0),
+                root: QuadtreeNode::new(bounds, 0, max_depth, max_bodies_per_node),
             }
         }
 
-        pub fn from_bodies(bodies: &[(Entity, Vec3, f32)]) -> Self {
+        pub fn from_bodies(
+            bodies: &[(Entity, Vec3, f32)],
+            max_depth: usize,
+            max_bodies_per_node: usize,
+        ) -> Self {
             if bodies.is_empty() {
-                return Self::new(AABB::new(Vec2::ZERO, Vec2::new(1000.0, 1000.0)));
+                return Self::new(
+                    AABB::new(Vec2::ZERO, Vec2::new(1000.0, 1000.0)),
+                    max_depth,
+                    max_bodies_per_node,
+                );
             }
 
             let mut min_x = f32::MAX;
@@ -229,7 +268,11 @@ mod spatial {
             let half_size = Vec2::new((max_x - min_x) * 0.5, (max_y - min_y) * 0.5);
             let max_half_size = half_size.x.max(half_size.y);
 
-            let mut tree = Self::new(AABB::new(center, Vec2::splat(max_half_size)));
+            let mut tree = Self::new(
+                AABB::new(center, Vec2::splat(max_half_size)),
+                max_depth,
+                max_bodies_per_node,
+            );
 
             for &(entity, position, mass) in bodies {
                 tree.insert(entity, position, mass);
@@ -268,6 +311,7 @@ pub fn calculate_gravitational_attraction(
     >,
 ) {
     let softening_squared = gravity_params.softening * gravity_params.softening;
+    let gravitational_constant = gravity_params.gravitational_constant;
 
     let sources: Vec<(Entity, Vec3, f32)> = query
         .iter()
@@ -286,7 +330,7 @@ pub fn calculate_gravitational_attraction(
                 let direction = source_pos - affected_pos;
                 let distance_squared = direction.length_squared();
                 let softened_distance_squared = distance_squared + softening_squared;
-                let force_magnitude = GRAVITATIONAL_CONSTANT * source_mass * affected_mass.value
+                let force_magnitude = gravitational_constant * source_mass * affected_mass.value
                     / softened_distance_squared;
                 force.force += direction.normalize() * force_magnitude;
             }
@@ -314,7 +358,13 @@ pub fn calculate_barnes_hut_attraction(
         .map(|(e, t, m)| (e, t.translation, m.value))
         .collect();
 
-    let quadtree = spatial::Quadtree::from_bodies(&bodies);
+    let quadtree = spatial::Quadtree::from_bodies(
+        &bodies,
+        gravity_params.barnes_hut_max_depth,
+        gravity_params.barnes_hut_max_bodies_per_node,
+    );
+    let softening = gravity_params.softening;
+    let gravitational_constant = gravity_params.gravitational_constant;
 
     affected_query
         .par_iter_mut()
@@ -329,7 +379,8 @@ pub fn calculate_barnes_hut_attraction(
                 position,
                 &quadtree.root,
                 theta,
-                gravity_params.softening,
+                softening,
+                gravitational_constant,
             );
 
             force.force += force_vector;
@@ -341,6 +392,7 @@ pub fn calculate_barnes_hut_force(
     node: &spatial::QuadtreeNode,
     theta: f32,
     softening: f32,
+    gravitational_constant: f32,
 ) -> Vec3 {
     let softening_squared = softening * softening;
 
@@ -349,7 +401,7 @@ pub fn calculate_barnes_hut_force(
         let distance_squared = direction.length_squared();
         let softened_distance_squared = distance_squared + softening_squared;
         let force_magnitude =
-            GRAVITATIONAL_CONSTANT * node.mass_properties.total_mass / softened_distance_squared;
+            gravitational_constant * node.mass_properties.total_mass / softened_distance_squared;
         return direction.normalize() * force_magnitude;
     }
 
@@ -364,12 +416,9 @@ pub fn calculate_barnes_hut_force(
                 continue;
             }
 
-            total_force += {
-                let distance_squared = direction.length_squared();
-                let softened_distance_squared = distance_squared + softening_squared;
-                let force_magnitude = GRAVITATIONAL_CONSTANT * mass / softened_distance_squared;
-                direction.normalize() * force_magnitude
-            };
+            let softened_distance_squared = distance_squared + softening_squared;
+            let force_magnitude = gravitational_constant * mass / softened_distance_squared;
+            total_force += direction.normalize() * force_magnitude;
         }
 
         return total_force;
@@ -377,14 +426,20 @@ pub fn calculate_barnes_hut_force(
 
     let mut total_force = Vec3::ZERO;
     for child_node in node.children.iter().flatten() {
-        total_force += calculate_barnes_hut_force(affected_position, child_node, theta, softening);
+        total_force += calculate_barnes_hut_force(
+            affected_position,
+            child_node,
+            theta,
+            softening,
+            gravitational_constant,
+        );
     }
 
     total_force
 }
 
 pub fn calculate_orbital_velocity(central_mass: f32, orbit_radius: f32) -> f32 {
-    (GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
+    (DEFAULT_GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
 }
 
 pub fn calculate_elliptical_orbit_velocity(
@@ -393,13 +448,13 @@ pub fn calculate_elliptical_orbit_velocity(
     eccentricity: f32,
     is_periapsis: bool,
 ) -> f32 {
-    let mu = GRAVITATIONAL_CONSTANT * central_mass;
+    let mu = DEFAULT_GRAVITATIONAL_CONSTANT * central_mass;
     let semimajor_axis = distance / (1.0 - eccentricity * if is_periapsis { 1.0 } else { -1.0 });
     (mu * (2.0 / distance - 1.0 / semimajor_axis)).sqrt()
 }
 
 pub fn calculate_escape_velocity(central_mass: f32, distance: f32) -> f32 {
-    (2.0 * GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
+    (2.0 * DEFAULT_GRAVITATIONAL_CONSTANT * central_mass / distance).sqrt()
 }
 
 #[derive(Default)]

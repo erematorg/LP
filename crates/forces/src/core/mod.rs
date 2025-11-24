@@ -7,7 +7,7 @@ pub mod newton_laws;
 pub mod prelude {
     // Re-export from gravity module
     pub use crate::core::gravity::{
-        GRAVITATIONAL_CONSTANT, GravityAffected, GravityParams, GravitySource, MassiveBody,
+        DEFAULT_GRAVITATIONAL_CONSTANT, GravityAffected, GravityParams, GravitySource, MassiveBody,
         UniformGravity, calculate_elliptical_orbit_velocity, calculate_escape_velocity,
         calculate_gravitational_attraction, calculate_orbital_velocity,
     };

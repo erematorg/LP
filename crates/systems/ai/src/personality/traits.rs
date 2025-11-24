@@ -1,10 +1,33 @@
-use crate::core::scorers::Score;
-use crate::prelude::*;
 use bevy::prelude::*;
+
+use crate::Score;
+use crate::prelude::*;
+
 // Removed direct energy dependency - use trait-based interface instead
 
-// Constants for social influence calculations
-const MAX_INFLUENCE_DISTANCE: f32 = 100.0; // Universal influence range
+/// Configuration resource for personality-related parameters
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct PersonalityConfig {
+    /// Maximum distance for social influence calculations (universal influence range)
+    pub max_influence_distance: f32,
+}
+
+impl Default for PersonalityConfig {
+    fn default() -> Self {
+        Self {
+            max_influence_distance: 100.0,
+        }
+    }
+}
+
+impl PersonalityConfig {
+    pub fn new(max_influence_distance: f32) -> Self {
+        Self {
+            max_influence_distance: max_influence_distance.max(0.0),
+        }
+    }
+}
 
 /// Universal life adaptation traits for all organisms (plants through animals)
 #[derive(Component, Debug, Clone, Reflect)]
@@ -79,14 +102,8 @@ impl Personality {
 }
 
 impl AIModule for Personality {
-    fn update(&mut self) {
-        // Personality traits are generally stable
-        // but could evolve slowly based on experiences
-    }
-
-    fn utility(&self) -> Score {
-        // Return a base utility score for personality-driven behaviors
-        Score::HALF
+    fn utility(&self) -> f32 {
+        Score::HALF.value()
     }
 }
 
@@ -155,30 +172,57 @@ impl Default for ContextAwareUtilities {
     }
 }
 
+/// Optional context inputs that gameplay can supply to influence personality-driven utilities.
+#[derive(Component, Debug, Clone, Reflect)]
+pub struct PersonalityContextInputs {
+    /// Current energy or stamina level (0.0-1.0)
+    pub energy_level: f32,
+    /// Recent success metric (-1.0..=1.0) influencing confidence
+    pub recent_success: f32,
+    /// Environmental stress measure (0.0-1.0)
+    pub environmental_stress: f32,
+}
+
+impl Default for PersonalityContextInputs {
+    fn default() -> Self {
+        Self {
+            energy_level: 0.5,
+            recent_success: 0.0,
+            environmental_stress: 0.0,
+        }
+    }
+}
+
 /// System that updates personality utilities based on generic resource and environmental state
 pub fn update_context_aware_utilities(
     mut query: Query<(
         &Personality,
         &mut ContextAwareUtilities,
-        // TODO: Replace with trait-based resource system when available
-        // For now, use simple f32 values that can be populated by game-level integration
+        Option<&PersonalityContextInputs>,
     )>,
 ) {
-    for (personality, mut utilities) in &mut query {
-        // Default values - will be replaced by proper resource tracking
-        let energy_level = 0.5; // Default moderate energy
-        let recent_success = 0.0; // Default neutral success
-        let environmental_stress = 0.0; // Default no stress
+    for (personality, mut utilities, context_inputs) in &mut query {
+        let default_context = PersonalityContextInputs::default();
+        let context = context_inputs.unwrap_or(&default_context);
 
         // Update utilities with default context (to be enhanced later)
-        utilities.resource_competition =
-            calculate_contextual_resource_competition(personality, energy_level, recent_success);
+        utilities.resource_competition = calculate_contextual_resource_competition(
+            personality,
+            context.energy_level,
+            context.recent_success,
+        );
 
-        utilities.competitive_behavior =
-            calculate_contextual_competitive_strength(personality, energy_level, recent_success);
+        utilities.competitive_behavior = calculate_contextual_competitive_strength(
+            personality,
+            context.energy_level,
+            context.recent_success,
+        );
 
-        utilities.stress_retreat =
-            calculate_contextual_stress_retreat(personality, energy_level, environmental_stress);
+        utilities.stress_retreat = calculate_contextual_stress_retreat(
+            personality,
+            context.energy_level,
+            context.environmental_stress,
+        );
 
         utilities.cooperation = Score::new(personality.social_utility());
 
@@ -190,10 +234,13 @@ pub fn update_context_aware_utilities(
 /// System that calculates collective influence from nearby social relations
 /// Universal swarm intelligence - works for plant root networks, animal herds, bacterial colonies
 pub fn update_collective_influence(
+    config: Res<PersonalityConfig>,
     mut utilities_query: Query<(Entity, &Transform, &mut ContextAwareUtilities)>,
     relations_query: Query<&SocialRelation>,
     positions_query: Query<&Transform, Without<ContextAwareUtilities>>,
 ) {
+    let max_influence_distance = config.max_influence_distance;
+
     for (entity, transform, mut utilities) in &mut utilities_query {
         let mut total_collective_influence = 0.0;
         let position = transform.translation.truncate();
@@ -209,9 +256,9 @@ pub fn update_collective_influence(
                 let target_pos = target_transform.translation.truncate();
                 let distance = position.distance(target_pos);
 
-                if distance <= MAX_INFLUENCE_DISTANCE {
+                if distance <= max_influence_distance {
                     let proximity_influence =
-                        relation.proximity_utility_modifier(MAX_INFLUENCE_DISTANCE);
+                        relation.proximity_utility_modifier(max_influence_distance);
                     total_collective_influence += proximity_influence;
                 }
             }

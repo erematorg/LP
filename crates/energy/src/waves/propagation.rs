@@ -1,14 +1,7 @@
-use super::oscillation::{WaveParameters, angular_frequency, wave_number};
 use bevy::prelude::*;
 
-#[inline]
-fn normalize_or(vec: Vec2, fallback: Vec2) -> Vec2 {
-    if vec.length_squared() > f32::EPSILON {
-        vec.normalize()
-    } else {
-        fallback
-    }
-}
+use super::normalize_or;
+use super::oscillation::{WaveParameters, angular_frequency, wave_number};
 
 // Calculate modified angular frequency with dispersion
 #[inline]
