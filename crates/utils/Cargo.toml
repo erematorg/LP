@@ -1,0 +1,8 @@
+[package]
+name = "utils"
+version = "0.1.0"
+edition = "2024"
+description = "Shared utility structures and algorithms for the LP ecosystem."
+
+[dependencies]
+bevy = "0.17"

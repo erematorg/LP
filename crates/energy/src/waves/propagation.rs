@@ -1,4 +1,8 @@
 use bevy::prelude::*;
+use utils::SpatialGrid;
+
+#[derive(Resource, Deref, DerefMut)]
+pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
@@ -99,15 +103,26 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, 
     params.amplitude * spatial_falloff * damping_factor * phase.sin()
 }
 
+pub(crate) fn update_wave_grid(
+    mut grid: ResMut<WaveGrid>,
+    query: Query<(Entity, &Transform), With<WaveCenterMarker>>,
+) {
+    grid.clear();
+    for (entity, transform) in query.iter() {
+        grid.insert(entity, transform.translation.truncate());
+    }
+}
+
 pub fn update_wave_displacements(
     time: Res<Time>,
+    grid: Res<WaveGrid>,
     mut query: Query<(
         &mut Transform,
         &WaveParameters,
         &WavePosition,
         Option<&WaveType>,
     )>,
-    wave_centers: Query<(&Transform, &WaveCenterMarker)>,
+    wave_centers: Query<&Transform, With<WaveCenterMarker>>,
 ) {
     let t = time.elapsed_secs();
 
@@ -116,22 +131,21 @@ pub fn update_wave_displacements(
 
         let displacement = match wave_type {
             Some(WaveType::Radial) => {
-                // Find the nearest wave center
-                let center = wave_centers
+                let nearby_centers = grid.get_entities_in_radius(position.0, params.wavelength * 10.0);
+
+                let center = nearby_centers
                     .iter()
-                    .map(|(t, _)| t.translation.truncate())
+                    .filter_map(|&entity| wave_centers.get(entity).ok())
+                    .map(|t| t.translation.truncate())
                     .min_by(|a, b| {
                         let dist_a = a.distance(position.0);
                         let dist_b = b.distance(position.0);
-                        dist_a
-                            .partial_cmp(&dist_b)
-                            .unwrap_or(std::cmp::Ordering::Equal)
+                        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
                     })
                     .unwrap_or(Vec2::ZERO);
 
                 solve_radial_wave(params, center, position.0, t)
             }
-            // Standing waves should be handled by the superposition system
             Some(WaveType::Standing) => 0.0,
             _ => solve_wave(params, position.0, t),
         };
