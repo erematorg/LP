@@ -1,9 +1,20 @@
 use bevy::prelude::*;
+use utils::{GridCell, SpatialGrid};
+
+#[derive(Resource, Deref, DerefMut)]
+struct ThermalGrid(SpatialGrid);
 
 // Physical constants
 pub const STEFAN_BOLTZMANN: f32 = 5.67e-8; // W/(m²·K⁴)
 
 /// Temperature component for thermal systems
+///
+/// Third Law of Thermodynamics: Absolute zero (0 K) cannot be reached in finite steps.
+/// TODO: Current implementation clamps T >= 0 K but lacks proper quantum/medium physics
+///       for modeling approach to absolute zero. Full Third Law behavior requires:
+///       - Quantum mechanical effects (Bose-Einstein condensates, superfluidity)
+///       - Medium/material properties at ultra-low temperatures
+///       - Awaiting MPM (Material Point Method) implementation for proper material physics
 #[derive(Component, Debug, Clone, Copy, Reflect, Default)]
 #[reflect(Component)]
 pub struct Temperature {
@@ -81,6 +92,43 @@ impl Emissivity {
     }
 }
 
+/// Heat capacity - thermal inertia of an object
+/// Determines how much energy is needed to change temperature
+#[derive(Component, Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Component)]
+pub struct HeatCapacity {
+    /// J/K (Joules per Kelvin)
+    /// For a material: C = m × c where m=mass (kg), c=specific heat (J/(kg·K))
+    pub value: f32,
+}
+
+impl HeatCapacity {
+    /// Create from mass and specific heat capacity
+    /// Example: 1 kg of water with c=4184 J/(kg·K) → 4184 J/K
+    pub fn from_material(mass: f32, specific_heat: f32) -> Self {
+        Self {
+            value: mass * specific_heat,
+        }
+    }
+
+    /// Common materials (per kg)
+    pub fn water(mass: f32) -> Self {
+        Self::from_material(mass, 4184.0) // J/(kg·K)
+    }
+
+    pub fn air(mass: f32) -> Self {
+        Self::from_material(mass, 1005.0) // J/(kg·K)
+    }
+
+    pub fn iron(mass: f32) -> Self {
+        Self::from_material(mass, 449.0) // J/(kg·K)
+    }
+
+    pub fn aluminum(mass: f32) -> Self {
+        Self::from_material(mass, 897.0) // J/(kg·K)
+    }
+}
+
 /// Event for thermal energy transfer between entities
 #[derive(Message, Debug)]
 pub struct ThermalTransferEvent {
@@ -92,29 +140,99 @@ pub struct ThermalTransferEvent {
     pub heat_flow: f32,
 }
 
-/// System for calculating heat conduction between entities
-pub fn calculate_thermal_transfer(
-    mut thermal_transfer_events: MessageWriter<ThermalTransferEvent>,
-    query: Query<(Entity, &Temperature, &ThermalConductivity)>,
+use std::collections::HashMap;
+
+fn update_thermal_grid(
+    mut grid: ResMut<ThermalGrid>,
+    mut query: Query<(Entity, &Transform, &mut GridCell), (With<Temperature>, Changed<Transform>)>,
 ) {
-    // Use query.iter_combinations() to efficiently compare all entities
-    let mut combinations = query.iter_combinations();
-    while let Some([(entity1, temp1, conduct1), (entity2, temp2, conduct2)]) =
-        combinations.fetch_next()
-    {
-        let temp_diff: f32 = temp1.value - temp2.value;
-        let area: f32 = 1.0; // Placeholder
-        let distance: f32 = 1.0; // Placeholder
+    for (entity, transform, mut cell) in query.iter_mut() {
+        let position = transform.translation.truncate();
+        let new_cell = grid.world_to_grid(position);
+        if new_cell != cell.cell {
+            grid.move_entity(entity, cell.cell, new_cell);
+            cell.cell = new_cell;
+        }
+    }
+}
 
-        let heat_flow: f32 =
-            (conduct1.value + conduct2.value) / 2.0 * area * temp_diff / distance.max(f32::EPSILON);
+fn attach_grid_cells_to_temperatures(
+    mut commands: Commands,
+    mut grid: ResMut<ThermalGrid>,
+    query: Query<(Entity, &Transform), (With<Temperature>, Without<GridCell>)>,
+) {
+    for (entity, transform) in query.iter() {
+        let position = transform.translation.truncate();
+        let cell = grid.world_to_grid(position);
+        grid.insert_in_cell(entity, cell);
+        commands.entity(entity).insert(GridCell { cell });
+    }
+}
 
-        if heat_flow.abs() > f32::EPSILON {
-            thermal_transfer_events.write(ThermalTransferEvent {
-                source: if heat_flow > 0.0 { entity1 } else { entity2 },
-                target: if heat_flow > 0.0 { entity2 } else { entity1 },
-                heat_flow: heat_flow.abs(),
-            });
+pub fn calculate_thermal_transfer(
+    mut commands: Commands,
+    grid: Res<ThermalGrid>,
+    time: Res<Time>,
+    mut thermal_transfer_events: MessageWriter<ThermalTransferEvent>,
+    query: Query<(Entity, &Transform, &Temperature, &ThermalConductivity, Option<&HeatCapacity>)>,
+) {
+    let mut temp_changes: HashMap<Entity, f32> = HashMap::new();
+    let mut processed_pairs = std::collections::HashSet::new();
+
+    for (entity, transform, temp, conductivity, heat_capacity) in query.iter() {
+        let position = transform.translation.truncate();
+        let neighbors = grid.get_neighbors(position);
+
+        for &neighbor_entity in neighbors.iter() {
+            if neighbor_entity == entity { continue; }
+            if neighbor_entity.index() < entity.index() { continue; }
+
+            let pair = (entity.index().min(neighbor_entity.index()), entity.index().max(neighbor_entity.index()));
+            if !processed_pairs.insert(pair) { continue; }
+
+            if let Ok((_, neighbor_transform, neighbor_temp, neighbor_conductivity, neighbor_heat_capacity)) = query.get(neighbor_entity) {
+                let neighbor_pos = neighbor_transform.translation.truncate();
+                let distance = position.distance(neighbor_pos);
+
+                if distance < f32::EPSILON { continue; }
+
+                let temp_diff = temp.value - neighbor_temp.value;
+                let avg_conductivity = (conductivity.value + neighbor_conductivity.value) / 2.0;
+
+                // Fourier's Law: q = k·A·ΔT/d
+                // We assume normalized contact area A = 1 m² for simplicity
+                // (actual area would depend on cell geometry in full 3D)
+                let heat_flow = avg_conductivity * temp_diff / distance;
+
+                if heat_flow.abs() > f32::EPSILON {
+                    // Energy transferred: Q = heat_flow × time (Joules)
+                    let heat_energy = heat_flow * time.delta_secs();
+
+                    // First Law of Thermodynamics: ΔT = Q / C
+                    // where C is heat capacity (J/K)
+                    // If no HeatCapacity component: fallback to C = 1 J/K (abstract/reference object)
+                    let capacity_a = heat_capacity.map(|c| c.value).unwrap_or(1.0);
+                    let capacity_b = neighbor_heat_capacity.map(|c| c.value).unwrap_or(1.0);
+
+                    let temp_change_a = heat_energy / capacity_a;
+                    let temp_change_b = heat_energy / capacity_b;
+
+                    *temp_changes.entry(entity).or_insert(0.0) -= temp_change_a;
+                    *temp_changes.entry(neighbor_entity).or_insert(0.0) += temp_change_b;
+
+                    thermal_transfer_events.write(ThermalTransferEvent {
+                        source: entity,
+                        target: neighbor_entity,
+                        heat_flow: heat_flow.abs(),
+                    });
+                }
+            }
+        }
+    }
+
+    for (entity, delta) in temp_changes {
+        if let Ok((_, _, temp, _, _)) = query.get(entity) {
+            commands.entity(entity).insert(Temperature { value: temp.value + delta });
         }
     }
 }
@@ -155,14 +273,18 @@ pub struct ThermalSystemPlugin;
 impl Plugin for ThermalSystemPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Register types for reflection
+            .insert_resource(ThermalGrid(SpatialGrid::new(50.0)))
             .register_type::<Temperature>()
             .register_type::<ThermalConductivity>()
             .register_type::<ThermalDiffusivity>()
             .register_type::<Emissivity>()
-            // Add thermal transfer event channel
+            .register_type::<HeatCapacity>()
+            .register_type::<GridCell>()
             .add_message::<ThermalTransferEvent>()
-            // Add system for thermal calculations
-            .add_systems(Update, calculate_thermal_transfer);
+            .add_systems(Update, (
+                attach_grid_cells_to_temperatures,
+                update_thermal_grid,
+                calculate_thermal_transfer,
+            ).chain());
     }
 }

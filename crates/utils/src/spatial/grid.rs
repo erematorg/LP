@@ -8,6 +8,13 @@ pub struct SpatialGrid {
     pub cell_size: f32,
 }
 
+/// Cached grid cell for incremental updates.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect, Default)]
+#[reflect(Component)]
+pub struct GridCell {
+    pub cell: (i32, i32),
+}
+
 impl Default for SpatialGrid {
     fn default() -> Self {
         Self {
@@ -34,7 +41,38 @@ impl SpatialGrid {
 
     pub fn insert(&mut self, entity: Entity, position: Vec2) {
         let coords = self.world_to_grid(position);
-        self.cells.entry(coords).or_default().push(entity);
+        let cell = self.cells.entry(coords).or_default();
+        if !cell.contains(&entity) {
+            cell.push(entity);
+        }
+    }
+
+    pub fn insert_in_cell(&mut self, entity: Entity, cell: (i32, i32)) {
+        let entries = self.cells.entry(cell).or_default();
+        if !entries.contains(&entity) {
+            entries.push(entity);
+        }
+    }
+
+    pub fn remove_from_cell(&mut self, entity: Entity, cell: (i32, i32)) {
+        if let Some(entries) = self.cells.get_mut(&cell) {
+            if let Some(idx) = entries.iter().position(|&e| e == entity) {
+                entries.swap_remove(idx);
+            }
+
+            if entries.is_empty() {
+                self.cells.remove(&cell);
+            }
+        }
+    }
+
+    pub fn move_entity(&mut self, entity: Entity, from: (i32, i32), to: (i32, i32)) {
+        if from == to {
+            return;
+        }
+
+        self.remove_from_cell(entity, from);
+        self.insert_in_cell(entity, to);
     }
 
     pub fn clear(&mut self) {
@@ -76,7 +114,10 @@ impl SpatialGrid {
                 }
             }
         }
-        
+
+        // Deduplicate in case entities span multiple cells
+        entities.sort_unstable_by_key(|e| e.index());
+        entities.dedup();
         entities
     }
 }
@@ -91,6 +132,32 @@ mod tests {
         assert_eq!(grid.world_to_grid(Vec2::new(5.0, 5.0)), (0, 0));
         assert_eq!(grid.world_to_grid(Vec2::new(15.0, 25.0)), (1, 2));
         assert_eq!(grid.world_to_grid(Vec2::new(-5.0, -5.0)), (-1, -1));
+    }
+
+    #[test]
+    fn test_insert_deduplicates() {
+        let mut world = World::new();
+        let mut grid = SpatialGrid::new(10.0);
+
+        let entity = world.spawn_empty().id();
+        grid.insert(entity, Vec2::ZERO);
+        grid.insert(entity, Vec2::ZERO);
+
+        let cell_entities = grid.get_cell_entities(Vec2::ZERO);
+        assert_eq!(cell_entities.len(), 1);
+    }
+
+    #[test]
+    fn test_move_entity() {
+        let mut world = World::new();
+        let mut grid = SpatialGrid::new(10.0);
+
+        let entity = world.spawn_empty().id();
+        grid.insert(entity, Vec2::ZERO);
+        grid.move_entity(entity, (0, 0), (1, 0));
+
+        assert!(grid.get_cell_entities(Vec2::ZERO).is_empty());
+        assert_eq!(grid.get_cell_entities(Vec2::new(10.0, 0.0)).len(), 1);
     }
 
     #[test]

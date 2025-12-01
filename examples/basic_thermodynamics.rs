@@ -1,8 +1,7 @@
 use bevy::prelude::*;
+use energy::thermodynamics::thermal::ThermalSystemPlugin;
 use energy::thermodynamics::prelude::*;
 
-//TODO: VERY BASIC, only thermal for now.
-//Quite poor compared to our old godot thermodynamics demo I'd say around 75% less polished yet clear separation of cocnerns and good scalability for later.
 const GRID_SIZE: usize = 10;
 const CELL_SIZE: f32 = 50.0;
 const GRID_OFFSET_X: f32 = -225.0;
@@ -11,10 +10,11 @@ const GRID_OFFSET_Y: f32 = 225.0;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(ThermalSystemPlugin)
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1)))
         .init_resource::<InputState>()
         .add_systems(Startup, setup)
-        .add_systems(Update, (handle_input, update_heat_transfer, update_visuals))
+        .add_systems(Update, (handle_input, update_visuals))
         .run();
 }
 
@@ -60,6 +60,7 @@ fn setup(mut commands: Commands) {
                 Transform::from_translation(position),
                 Temperature::from_celsius(20.0),
                 ThermalConductivity { value: 100.0 },
+                HeatCapacity::aluminum(0.01), // 10g of aluminum per cell
                 GridCell { x, y },
             ));
         }
@@ -120,44 +121,6 @@ fn handle_input(
                 }
             }
         }
-    }
-}
-
-fn update_heat_transfer(
-    mut grid_cells: Query<(&GridCell, &mut Temperature, &ThermalConductivity)>,
-    time: Res<Time>,
-) {
-    // Store current temperatures
-    let mut current_temps = vec![vec![0.0; GRID_SIZE]; GRID_SIZE];
-    for (cell, temp, _) in grid_cells.iter() {
-        current_temps[cell.y][cell.x] = temp.value;
-    }
-
-    // Calculate new temperatures based on heat conduction
-    for (cell, mut temp, conductivity) in grid_cells.iter_mut() {
-        let x = cell.x;
-        let y = cell.y;
-        let mut heat_flow = 0.0;
-
-        // Check neighbors (up, down, left, right)
-        let neighbors = [
-            (x, y.saturating_sub(1)),
-            (x, (y + 1).min(GRID_SIZE - 1)),
-            (x.saturating_sub(1), y),
-            ((x + 1).min(GRID_SIZE - 1), y),
-        ];
-
-        for (nx, ny) in neighbors {
-            if nx == x && ny == y {
-                continue;
-            }
-
-            let temp_diff = current_temps[ny][nx] - temp.value;
-            heat_flow += heat_conduction(temp_diff, CELL_SIZE, CELL_SIZE, conductivity.value);
-        }
-
-        // Update temperature based on heat flow
-        temp.value += heat_flow * time.delta_secs() / 1000.0; // Using mass=1, specific_heat=1000
     }
 }
 

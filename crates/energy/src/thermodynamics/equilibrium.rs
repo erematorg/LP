@@ -28,17 +28,17 @@ pub struct ThermalProperties {
 }
 
 /// Check if two systems are in thermal equilibrium
+/// Zeroth Law: Equilibrium means equal temperature (within tolerance)
 pub fn is_in_equilibrium(
     temp_a: f32,
     temp_b: f32,
-    props_a: &ThermalProperties,
-    props_b: &ThermalProperties,
+    _props_a: &ThermalProperties,
+    _props_b: &ThermalProperties,
     tolerance: f32,
 ) -> bool {
-    // Weighted equilibrium considers both temperature and thermal properties
-    let weighted_diff =
-        (temp_a - temp_b).abs() / (1.0 + (props_a.thermal_mass * props_b.thermal_mass).sqrt());
-    weighted_diff <= tolerance
+    // Zeroth Law: Thermal equilibrium is defined purely by temperature equality
+    // Thermal mass affects TIME to reach equilibrium, not the definition of equilibrium itself
+    (temp_a - temp_b).abs() <= tolerance
 }
 
 pub fn equilibrium_time_estimate(

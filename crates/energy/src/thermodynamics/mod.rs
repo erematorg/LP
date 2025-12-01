@@ -16,26 +16,11 @@ pub struct ThermodynamicsPlugin;
 
 impl Plugin for ThermodynamicsPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<thermal::Temperature>()
-            .register_type::<thermal::ThermalConductivity>()
-            .register_type::<thermal::ThermalDiffusivity>()
+        app.add_plugins(thermal::ThermalSystemPlugin)
             .register_type::<entropy::Entropy>()
             .register_type::<entropy::Reversibility>()
             .register_type::<equilibrium::ThermalEquilibrium>()
-            .register_type::<equilibrium::PhaseState>()
-            .add_message::<thermal::ThermalTransferEvent>()
-            .configure_sets(
-                Update,
-                (
-                    ThermodynamicsSet::ThermalTransfer,
-                    ThermodynamicsSet::Equilibrium,
-                )
-                    .chain(),
-            )
-            .add_systems(
-                Update,
-                thermal::calculate_thermal_transfer.in_set(ThermodynamicsSet::ThermalTransfer),
-            );
+            .register_type::<equilibrium::PhaseState>();
     }
 }
 
@@ -50,6 +35,7 @@ pub mod prelude {
         validate_equilibrium_group_consistency,
     };
     pub use super::thermal::{
-        Temperature, ThermalConductivity, ThermalDiffusivity, thermal_utils::heat_conduction,
+        Temperature, ThermalConductivity, ThermalDiffusivity, HeatCapacity,
+        thermal_utils::heat_conduction,
     };
 }

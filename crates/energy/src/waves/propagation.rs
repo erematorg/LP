@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use utils::SpatialGrid;
+use utils::{GridCell, SpatialGrid};
 
 #[derive(Resource, Deref, DerefMut)]
 pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
@@ -103,13 +103,30 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, 
     params.amplitude * spatial_falloff * damping_factor * phase.sin()
 }
 
+pub(crate) fn attach_grid_cells_to_wave_centers(
+    mut commands: Commands,
+    mut grid: ResMut<WaveGrid>,
+    query: Query<(Entity, &Transform), (With<WaveCenterMarker>, Without<GridCell>)>,
+) {
+    for (entity, transform) in query.iter() {
+        let position = transform.translation.truncate();
+        let cell = grid.world_to_grid(position);
+        grid.insert_in_cell(entity, cell);
+        commands.entity(entity).insert(GridCell { cell });
+    }
+}
+
 pub(crate) fn update_wave_grid(
     mut grid: ResMut<WaveGrid>,
-    query: Query<(Entity, &Transform), With<WaveCenterMarker>>,
+    mut query: Query<(Entity, &Transform, &mut GridCell), (With<WaveCenterMarker>, Changed<Transform>)>,
 ) {
-    grid.clear();
-    for (entity, transform) in query.iter() {
-        grid.insert(entity, transform.translation.truncate());
+    for (entity, transform, mut cell) in query.iter_mut() {
+        let position = transform.translation.truncate();
+        let new_cell = grid.world_to_grid(position);
+        if new_cell != cell.cell {
+            grid.move_entity(entity, cell.cell, new_cell);
+            cell.cell = new_cell;
+        }
     }
 }
 

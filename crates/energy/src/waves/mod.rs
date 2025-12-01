@@ -28,10 +28,12 @@ impl Plugin for WavesPlugin {
             .register_type::<propagation::WaveCenterMarker>()
             .register_type::<superposition::StandingWaveMarker>()
             .register_type::<wave_equation::WaveEquationComponent>()
+            .register_type::<utils::GridCell>()
             .add_message::<oscillation::WaveGenerationEvent>()
             .add_systems(
                 Update,
                 (
+                    propagation::attach_grid_cells_to_wave_centers,
                     propagation::update_wave_grid,
                     propagation::update_wave_displacements,
                     superposition::update_standing_waves,
