@@ -1,6 +1,6 @@
 # LP AI Architecture
 
-This crate provides the agent decision loop used across Life's Progress. Every organism—plant, fungus, animal, machine—shares the same ECS-driven pipeline:
+This crate provides the agent decision loop used across Life's Progress. Every organism (plant, fungus, animal, machine) shares the same ECS-driven pipeline:
 
 ```
 Perception → Trackers & Drives → State Layers (memory/emotion/social) → Utility Arbiter → Behavior Executors

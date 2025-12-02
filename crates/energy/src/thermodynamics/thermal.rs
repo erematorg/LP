@@ -183,7 +183,7 @@ pub fn calculate_thermal_transfer(
         let position = transform.translation.truncate();
         let neighbors = grid.get_neighbors(position);
 
-        for &neighbor_entity in neighbors.iter() {
+        for neighbor_entity in neighbors {
             if neighbor_entity == entity { continue; }
             if neighbor_entity.index() < entity.index() { continue; }
 
@@ -279,7 +279,6 @@ impl Plugin for ThermalSystemPlugin {
             .register_type::<ThermalDiffusivity>()
             .register_type::<Emissivity>()
             .register_type::<HeatCapacity>()
-            .register_type::<GridCell>()
             .add_message::<ThermalTransferEvent>()
             .add_systems(Update, (
                 attach_grid_cells_to_temperatures,

@@ -18,7 +18,7 @@ impl Plugin for MPMPlugin {
 
 /// The MPM prelude.
 ///
-/// This includes the most common types in this crate, re-exported for your convenience.
+/// Common types from this crate re-exported for convenience.
 pub mod prelude {
     pub use super::MPMPlugin;
 

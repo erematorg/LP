@@ -2,7 +2,23 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 /// Sparse spatial hash grid for efficient neighbor queries in an infinite 2D world.
-#[derive(Resource, Debug, Clone)]
+///
+/// Current: Point entities, incremental updates, zero-allocation iterators.
+///
+/// ## Potential Optimizations (profile first)
+/// - FxHashMap: 2.7x faster for integer keys
+/// - SmallVec<[Entity; 8]>: Avoid heap for <8 entities/cell
+/// - Morton codes: 6x speedup on range queries
+/// - AABB support: Multi-cell insertion for collision detection
+///
+/// ## Hierarchical Extension (multi-scale support)
+/// For nano→micro→macro physics, use multiple grid levels with doubling cell sizes.
+/// Each entity belongs to one level based on size to prevent large objects spanning thousands of cells.
+/// See: compass_artifact_wf-e4d7e1d1-0f75-489c-8bfd-501c7e4c8891_text_markdown.md
+///
+/// ## Performance Thresholds
+/// <100: Brute force faster | 100-10k: Optimal | >10k: Hierarchical/BVH | Vec→HashMap: ~15 items
+#[derive(Resource, Debug)]
 pub struct SpatialGrid {
     cells: HashMap<(i32, i32), Vec<Entity>>,
     pub cell_size: f32,
@@ -86,39 +102,36 @@ impl SpatialGrid {
     }
 
     /// Get entities in 3x3 cell area (same cell + 8 neighbors)
-    pub fn get_neighbors(&self, position: Vec2) -> Vec<Entity> {
+    /// Returns an iterator for zero-allocation queries
+    pub fn get_neighbors(&self, position: Vec2) -> impl Iterator<Item = Entity> + '_ {
         let (cx, cy) = self.world_to_grid(position);
-        let mut neighbors = Vec::new();
 
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                if let Some(cell_entities) = self.cells.get(&(cx + dx, cy + dy)) {
-                    neighbors.extend_from_slice(cell_entities);
-                }
-            }
-        }
-
-        neighbors
+        (-1..=1).flat_map(move |dx| {
+            (-1..=1).flat_map(move |dy| {
+                self.cells
+                    .get(&(cx + dx, cy + dy))
+                    .into_iter()
+                    .flat_map(|entities| entities.iter().copied())
+            })
+        })
     }
 
     /// Get entities within radius
-    pub fn get_entities_in_radius(&self, position: Vec2, radius: f32) -> Vec<Entity> {
+    /// Returns an iterator for zero-allocation queries
+    /// Note: Currently assumes point entities (one cell per entity). If AABB support is added,
+    /// duplicates may need to be handled at the call site.
+    pub fn get_entities_in_radius(&self, position: Vec2, radius: f32) -> impl Iterator<Item = Entity> + '_ {
         let min_grid = self.world_to_grid(position - Vec2::splat(radius));
         let max_grid = self.world_to_grid(position + Vec2::splat(radius));
-        let mut entities = Vec::new();
 
-        for x in min_grid.0..=max_grid.0 {
-            for y in min_grid.1..=max_grid.1 {
-                if let Some(cell_entities) = self.cells.get(&(x, y)) {
-                    entities.extend_from_slice(cell_entities);
-                }
-            }
-        }
-
-        // Deduplicate in case entities span multiple cells
-        entities.sort_unstable_by_key(|e| e.index());
-        entities.dedup();
-        entities
+        (min_grid.0..=max_grid.0).flat_map(move |x| {
+            (min_grid.1..=max_grid.1).flat_map(move |y| {
+                self.cells
+                    .get(&(x, y))
+                    .into_iter()
+                    .flat_map(|entities| entities.iter().copied())
+            })
+        })
     }
 }
 
@@ -174,7 +187,7 @@ mod tests {
             }
         }
 
-        let neighbors = grid.get_neighbors(Vec2::new(0.0, 0.0));
+        let neighbors: Vec<_> = grid.get_neighbors(Vec2::new(0.0, 0.0)).collect();
         assert_eq!(neighbors.len(), 9);
     }
 
@@ -189,7 +202,7 @@ mod tests {
         grid.insert(near, Vec2::new(0.0, 0.0));
         grid.insert(far, Vec2::new(100.0, 100.0));
 
-        let in_radius = grid.get_entities_in_radius(Vec2::new(0.0, 0.0), 30.0);
+        let in_radius: Vec<_> = grid.get_entities_in_radius(Vec2::new(0.0, 0.0), 30.0).collect();
         assert!(in_radius.contains(&near));
         assert!(!in_radius.contains(&far));
     }

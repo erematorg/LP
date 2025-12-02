@@ -151,8 +151,7 @@ pub fn update_wave_displacements(
                 let nearby_centers = grid.get_entities_in_radius(position.0, params.wavelength * 10.0);
 
                 let center = nearby_centers
-                    .iter()
-                    .filter_map(|&entity| wave_centers.get(entity).ok())
+                    .filter_map(|entity| wave_centers.get(entity).ok())
                     .map(|t| t.translation.truncate())
                     .min_by(|a, b| {
                         let dist_a = a.distance(position.0);
