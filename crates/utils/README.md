@@ -19,10 +19,12 @@ app.add_plugins(utils::UtilsPlugin);
 
 **SpatialGrid:** Incremental updates for ECS queries (thermal, waves, AI)
 - Handles 100-10k entities efficiently
+- Prefer stable cell sizes to avoid churn; reuse a single grid per query domain to reduce allocations.
 
 **EntityPool (Hard Pool):** Strips components on release
 - Use for moderate spawn rates (<100/frame)
 - Examples: thermal entities, wave centers, creature shells
+- Prewarm pools to avoid runtime allocations; excess releases beyond capacity are despawned.
 
 ### Future Patterns
 
@@ -41,5 +43,5 @@ struct ParticleSystem {
 
 ## Architecture
 
-- **Mind (ECS):** Behavior, AI → SpatialGrid + EntityPool
-- **Body (SoA):** Physics, chemistry → custom structures
+- **Mind (ECS):** Behavior, AI -> SpatialGrid + EntityPool
+- **Body (SoA):** Physics, chemistry -> custom structures

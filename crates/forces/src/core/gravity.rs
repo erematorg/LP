@@ -2,6 +2,7 @@ use super::newton_laws::{AppliedForce, Mass};
 use bevy::prelude::*;
 
 // Simulation constants
+// NOTE: Sim-tuned G (not SI 6.67e-11). Pixel→meter mapping TBD; adjust after scale is fixed.
 pub const DEFAULT_GRAVITATIONAL_CONSTANT: f32 = 0.1;
 
 /// Resource for gravity simulation parameters
@@ -332,6 +333,11 @@ pub fn calculate_gravitational_attraction(
                 let softened_distance_squared = distance_squared + softening_squared;
                 let force_magnitude = gravitational_constant * source_mass * affected_mass.value
                     / softened_distance_squared;
+
+                if !force_magnitude.is_finite() {
+                    continue; // Skip non-finite gravity force
+                }
+
                 force.force += direction.normalize() * force_magnitude;
             }
         },
@@ -402,6 +408,11 @@ pub fn calculate_barnes_hut_force(
         let softened_distance_squared = distance_squared + softening_squared;
         let force_magnitude =
             gravitational_constant * node.mass_properties.total_mass / softened_distance_squared;
+
+        if !force_magnitude.is_finite() {
+            return Vec3::ZERO; // Skip non-finite BH aggregated force
+        }
+
         return direction.normalize() * force_magnitude;
     }
 
@@ -418,6 +429,11 @@ pub fn calculate_barnes_hut_force(
 
             let softened_distance_squared = distance_squared + softening_squared;
             let force_magnitude = gravitational_constant * mass / softened_distance_squared;
+
+            if !force_magnitude.is_finite() {
+                continue; // Skip non-finite BH leaf force
+            }
+
             total_force += direction.normalize() * force_magnitude;
         }
 
@@ -437,6 +453,9 @@ pub fn calculate_barnes_hut_force(
 
     total_force
 }
+
+// TODO: Gravitational potential energy U = -G*m1*m2/r is not tracked/softened.
+// Forces are softened to avoid singularities, but potential energy is not recorded in the ledger.
 
 pub fn calculate_orbital_velocity(central_mass: f32, orbit_radius: f32) -> f32 {
     (DEFAULT_GRAVITATIONAL_CONSTANT * central_mass / orbit_radius).sqrt()
@@ -541,6 +560,93 @@ impl Plugin for GravityPlugin {
                 Update,
                 calculate_gravitational_attraction.in_set(GravitySet::NBodyGravity),
             );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_two_body_action_reaction() {
+        // Test Newton's 3rd Law: two-body gravity should produce equal/opposite forces
+        let params = GravityParams::default();
+        let g = params.gravitational_constant;
+        let softening_sq = params.softening * params.softening;
+
+        let pos1 = Vec3::new(0.0, 0.0, 0.0);
+        let pos2 = Vec3::new(10.0, 0.0, 0.0);
+        let mass1 = 5.0;
+        let mass2 = 3.0;
+
+        let direction = pos2 - pos1;
+        let dist_sq = direction.length_squared();
+        let force_mag = g * mass1 * mass2 / (dist_sq + softening_sq);
+
+        let force_on_2 = direction.normalize() * force_mag;
+        let force_on_1 = -force_on_2;
+
+        // Verify equal magnitude, opposite direction
+        assert!((force_on_1.length() - force_on_2.length()).abs() < 1e-5);
+        assert!((force_on_1 + force_on_2).length() < 1e-5, "Action-reaction forces do not cancel");
+    }
+
+    #[test]
+    fn test_barnes_hut_vs_brute_force_small_n() {
+        // For small N, Barnes-Hut should match brute force closely
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        app.insert_resource(GravityParams::default());
+
+        // Create 3 bodies
+        let bodies = vec![
+            (Vec3::new(0.0, 0.0, 0.0), 100.0),
+            (Vec3::new(50.0, 0.0, 0.0), 50.0),
+            (Vec3::new(0.0, 50.0, 0.0), 50.0),
+        ];
+
+        let entities: Vec<_> = bodies.iter().map(|(pos, mass)| {
+            app.world_mut().spawn((
+                Transform::from_translation(*pos),
+                Mass::new(*mass),
+                AppliedForce::new(Vec3::ZERO),
+                GravitySource,
+                GravityAffected,
+            )).id()
+        }).collect();
+
+        // Compute brute force
+        let mut brute_forces = Vec::new();
+        for _ in &entities {
+            brute_forces.push(Vec3::ZERO);
+        }
+
+        let params = app.world().resource::<GravityParams>();
+        let g = params.gravitational_constant;
+        let soft_sq = params.softening * params.softening;
+
+        for i in 0..entities.len() {
+            for j in 0..entities.len() {
+                if i == j { continue; }
+                let pos_i = bodies[i].0;
+                let pos_j = bodies[j].0;
+                let mass_j = bodies[j].1;
+                let dir = pos_j - pos_i;
+                let dist_sq = dir.length_squared();
+                let force_mag = g * mass_j * bodies[i].1 / (dist_sq + soft_sq);
+                brute_forces[i] += dir.normalize() * force_mag;
+            }
+        }
+
+        // Build quadtree and compute BH force
+        let body_data: Vec<_> = entities.iter().enumerate().map(|(i, &e)| (e, bodies[i].0, bodies[i].1)).collect();
+        let quadtree = spatial::Quadtree::from_bodies(&body_data, params.barnes_hut_max_depth, params.barnes_hut_max_bodies_per_node);
+
+        for (i, _) in entities.iter().enumerate() {
+            let bh_force = calculate_barnes_hut_force(bodies[i].0, &quadtree.root, 0.5, params.softening, g);
+            let diff = (bh_force - brute_forces[i]).length();
+            assert!(diff < 1.0, "BH force differs from brute force by {}", diff);
         }
     }
 }

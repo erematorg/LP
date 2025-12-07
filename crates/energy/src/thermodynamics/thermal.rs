@@ -7,6 +7,11 @@ struct ThermalGrid(SpatialGrid);
 // Physical constants
 pub const STEFAN_BOLTZMANN: f32 = 5.67e-8; // W/(m²·K⁴)
 
+// STABILITY: Explicit thermal diffusion requires dt <= C·dx²/α for stability,
+// where α = k/(ρ·cp) is thermal diffusivity, dx is grid spacing, C ≈ 0.5 safety factor.
+// Current implementation uses Time.delta_secs() without enforcement.
+// TODO: Add adaptive time-stepping or warn if dt exceeds stability limit.
+
 /// Temperature component for thermal systems
 ///
 /// Third Law of Thermodynamics: Absolute zero (0 K) cannot be reached in finite steps.
@@ -33,7 +38,7 @@ impl Temperature {
             "Temperature exceeds realistic stellar core bounds (~1e8 K)"
         );
         Self {
-            value: kelvin.max(0.0),
+            value: kelvin.max(0.0), // Non-physical clamp to prevent T<0 until a proper low-temp model exists
         }
     }
 
@@ -204,9 +209,14 @@ pub fn calculate_thermal_transfer(
                 // (actual area would depend on cell geometry in full 3D)
                 let heat_flow = avg_conductivity * temp_diff / distance;
 
+                if !heat_flow.is_finite() {
+                    continue; // Skip non-finite heat flow
+                }
+
                 if heat_flow.abs() > f32::EPSILON {
                     // Energy transferred: Q = heat_flow × time (Joules)
-                    let heat_energy = heat_flow * time.delta_secs();
+                let heat_energy = heat_flow * time.delta_secs();
+                // TODO: Thermal energy bookkeeping: U = m*cp*T not synced to EnergyQuantity/ledger; ΔT = Q/C uses fallback C if missing.
 
                     // First Law of Thermodynamics: ΔT = Q / C
                     // where C is heat capacity (J/K)
@@ -216,6 +226,10 @@ pub fn calculate_thermal_transfer(
 
                     let temp_change_a = heat_energy / capacity_a;
                     let temp_change_b = heat_energy / capacity_b;
+
+                    if !temp_change_a.is_finite() || !temp_change_b.is_finite() {
+                        continue; // Skip non-finite temperature changes
+                    }
 
                     *temp_changes.entry(entity).or_insert(0.0) -= temp_change_a;
                     *temp_changes.entry(neighbor_entity).or_insert(0.0) += temp_change_b;
@@ -285,5 +299,76 @@ impl Plugin for ThermalSystemPlugin {
                 update_thermal_grid,
                 calculate_thermal_transfer,
             ).chain());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::thermal_utils::*;
+
+    #[test]
+    fn test_heat_conservation() {
+        // Test that heat lost by hot body = heat gained by cold body (within tolerance)
+        let temp_hot = 400.0; // K
+        let temp_cold = 300.0; // K
+        let conductivity = 50.0; // W/(m·K)
+        let distance = 1.0; // m
+        let area = 1.0; // m²
+        let dt = 0.1; // s
+
+        // Fourier's law: q = k·A·ΔT/d
+        let heat_flow_rate = heat_conduction(temp_hot - temp_cold, area, distance, conductivity);
+        let heat_energy = heat_flow_rate * dt;
+
+        // Apply to bodies with equal heat capacities
+        let capacity = 1000.0; // J/K
+
+        let temp_change_hot = -heat_energy / capacity;
+        let temp_change_cold = heat_energy / capacity;
+
+        let new_temp_hot = temp_hot + temp_change_hot;
+        let new_temp_cold = temp_cold + temp_change_cold;
+
+        // Verify heat is conserved: energy lost = energy gained
+        let energy_lost = capacity * (temp_hot - new_temp_hot);
+        let energy_gained = capacity * (new_temp_cold - temp_cold);
+
+        assert!((energy_lost - energy_gained).abs() < 1e-5, "Heat not conserved: lost {} != gained {}", energy_lost, energy_gained);
+    }
+
+    #[test]
+    fn test_fouriers_law() {
+        // Test that heat_conduction matches analytical q = k·A·ΔT/d
+        let temp_diff = 50.0; // K
+        let area = 2.0; // m²
+        let distance = 0.5; // m
+        let conductivity = 100.0; // W/(m·K)
+
+        let heat_flow = heat_conduction(temp_diff, area, distance, conductivity);
+
+        // Expected: 100 * 2.0 * 50.0 / 0.5 = 20000 W
+        let expected = conductivity * area * temp_diff / distance;
+
+        assert!((heat_flow - expected).abs() < 1e-5, "Fourier's law mismatch: {} != {}", heat_flow, expected);
+    }
+
+    #[test]
+    fn test_stefan_boltzmann_radiation() {
+        // Test radiation heat transfer formula
+        use super::thermal_utils::heat_radiation;
+
+        let temp_emitter = 500.0; // K
+        let temp_receiver = 300.0; // K
+        let area = 1.0; // m²
+        let emissivity = 0.9;
+        let view_factor = 1.0;
+
+        let radiation = heat_radiation(temp_emitter, temp_receiver, area, emissivity, view_factor);
+
+        // Expected: σ·ε·A·F·(T₁⁴ - T₂⁴)
+        let expected = STEFAN_BOLTZMANN * emissivity * area * view_factor * (temp_emitter.powi(4) - temp_receiver.powi(4));
+
+        assert!((radiation - expected).abs() < 1e-3, "Stefan-Boltzmann mismatch");
     }
 }

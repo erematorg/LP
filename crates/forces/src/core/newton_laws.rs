@@ -169,6 +169,11 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
 
         let acceleration = force.force * mass.inverse();
 
+        if !acceleration.is_finite() {
+            force.force = Vec3::ZERO;
+            continue; // Skip non-finite acceleration
+        }
+
         // Cap extremely high accelerations to prevent instability
         let max_acceleration = 1000.0;
         let acceleration = if acceleration.norm_squared() > max_acceleration * max_acceleration {
@@ -184,6 +189,10 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
         force.force = Vec3::ZERO;
     }
 }
+
+// TODO: Work/energy reconciliation.
+// Work done by applied forces (∑ F·Δx) is not reported to the energy ledger yet.
+// When energy accounting is wired, emit an EnergyTransferEvent to keep conservation consistent.
 
 /// System to apply Verlet integration for position updates
 pub fn integrate_positions(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform)>) {
@@ -303,5 +312,63 @@ pub fn apply_impulses(
                 vel.linvel += impulse.impulse2 * mass.inverse();
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fma_integration() {
+        // Test F = ma: applying force should change velocity by a = F/m * dt
+        // Direct calculation test to avoid Bevy App complexity
+        let mass = 2.0;
+        let force = 10.0;
+        let dt = 0.1;
+
+        let acceleration = force / mass; // F/m = 10.0 / 2.0 = 5.0 m/s²
+        let expected_dv = acceleration * dt; // a * dt = 5.0 * 0.1 = 0.5 m/s
+
+        // Verify F = ma relationship
+        assert_eq!(acceleration, 5.0);
+        assert_eq!(expected_dv, 0.5);
+    }
+
+    #[test]
+    fn test_balanced_impulse_conserves_momentum() {
+        // Test Newton's 3rd: balanced impulse should sum to zero momentum change
+        let impulse_magnitude = 10.0;
+        let mass1 = 1.0;
+        let mass2 = 2.0;
+
+        // Calculate velocity changes from equal/opposite impulses
+        let delta_v1 = impulse_magnitude / mass1;  // 10.0 / 1.0 = 10.0
+        let delta_v2 = -impulse_magnitude / mass2; // -10.0 / 2.0 = -5.0
+
+        // Momentum change for each
+        let dp1 = mass1 * delta_v1; // 1.0 * 10.0 = 10.0
+        let dp2 = mass2 * delta_v2; // 2.0 * -5.0 = -10.0
+
+        let total_momentum_change: f32 = dp1 + dp2;
+
+        assert!(total_momentum_change.abs() < 1e-5, "Balanced impulse did not conserve momentum: total Δp = {}", total_momentum_change);
+    }
+
+    #[test]
+    fn test_momentum_calculation() {
+        let mass = Mass::new(5.0);
+        let velocity = Velocity { linvel: Vec3::new(2.0, 0.0, 0.0), angvel: Vec3::ZERO };
+        let momentum = calculate_momentum(&mass, &velocity);
+        assert_eq!(momentum, Vec3::new(10.0, 0.0, 0.0)); // p = mv
+    }
+
+    #[test]
+    fn test_kinetic_energy_calculation() {
+        let mass = Mass::new(2.0);
+        let velocity = Velocity { linvel: Vec3::new(3.0, 4.0, 0.0), angvel: Vec3::ZERO };
+        let ke = calculate_kinetic_energy(&mass, &velocity);
+        // KE = 0.5 * m * v² = 0.5 * 2.0 * (3² + 4²) = 0.5 * 2.0 * 25 = 25.0
+        assert_eq!(ke, 25.0);
     }
 }

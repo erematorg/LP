@@ -7,6 +7,7 @@ pub struct Entropy {
     /// Entropy in J/K
     pub value: f32,
 }
+// NOTE: No systems currently update Entropy in the world; helper functions return ΔS but callers must apply them.
 
 impl Entropy {
     pub fn new(value: f32) -> Self {

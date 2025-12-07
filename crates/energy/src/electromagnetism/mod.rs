@@ -3,6 +3,8 @@ pub mod interactions;
 
 use bevy::prelude::*;
 
+// NOTE: Charge is NOT conserved; EM is quasi-static (no charge continuity equation).
+// Ref: .claude/skills/lp-physics-chem-invariants/references/em.md
 pub struct ElectromagnetismPlugin;
 
 impl Plugin for ElectromagnetismPlugin {
