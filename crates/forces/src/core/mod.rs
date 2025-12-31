@@ -7,15 +7,17 @@ pub mod newton_laws;
 pub mod prelude {
     // Re-export from gravity module
     pub use crate::core::gravity::{
-        DEFAULT_GRAVITATIONAL_CONSTANT, GravityAffected, GravityParams, GravitySource, MassiveBody,
-        UniformGravity, calculate_elliptical_orbit_velocity, calculate_escape_velocity,
-        calculate_gravitational_attraction, calculate_orbital_velocity,
+        DEFAULT_GRAVITATIONAL_CONSTANT, GravityAffected, GravityForceMode, GravityParams,
+        GravitySource, MassiveBody, UniformGravity, calculate_elliptical_orbit_velocity,
+        calculate_escape_velocity, calculate_gravitational_attraction,
+        calculate_mutual_gravitational_attraction, calculate_orbital_velocity,
     };
 
     // Re-export from newton_laws module
     pub use crate::core::newton_laws::{
-        AppliedForce, Distance, ForceImpulse, Mass, NewtonLawsPlugin, Norm, PairedForce,
-        PairedForceInteraction, Velocity, apply_forces, calculate_kinetic_energy,
-        calculate_momentum, integrate_positions,
+        AppliedForce, Distance, ForceImpulse, ForcesDiagnostics, ForcesDiagnosticsPlugin,
+        IntegratorKind, Mass, NewtonLawsPlugin, Norm, PairedForce, PairedForceInteraction,
+        Velocity, apply_forces, calculate_kinetic_energy, calculate_momentum,
+        integrate_positions_symplectic_euler, update_forces_diagnostics,
     };
 }

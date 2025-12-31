@@ -6,6 +6,7 @@ pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
+use crate::conservation::{EnergyQuantity, EnergyAccountingLedger, EnergyTransaction, TransactionType};
 
 // Calculate modified angular frequency with dispersion
 #[inline]
@@ -130,7 +131,67 @@ pub(crate) fn update_wave_grid(
     }
 }
 
-pub fn update_wave_displacements(
+/// System to track wave energy loss from damping and report to energy ledger
+/// Runs before wave displacement updates
+pub fn apply_wave_damping_with_energy(
+    time: Res<Time>,
+    mut wave_sources: Query<(
+        Entity,
+        &WaveParameters,
+        Option<&mut EnergyQuantity>,
+    ), With<WaveCenterMarker>>,
+    mut ledger_query: Query<&mut EnergyAccountingLedger>,
+) {
+    let dt = time.delta_secs();
+    if dt == 0.0 {
+        return; // Skip first frame
+    }
+
+    let current_time = time.elapsed_secs();
+
+    for (entity, params, energy_opt) in wave_sources.iter_mut() {
+        if params.damping <= 0.0 {
+            continue; // No damping, no energy loss
+        }
+
+        // Wave energy proportional to amplitude²
+        // E = 0.5 * k * A² where k is a proportionality constant
+        // For simplicity, use E = A² (k absorbed into amplitude units)
+        let amplitude_now = params.amplitude * (-params.damping * current_time).exp();
+        let amplitude_prev = params.amplitude * (-params.damping * (current_time - dt)).exp();
+
+        let energy_now = 0.5 * amplitude_now * amplitude_now;
+        let energy_prev = 0.5 * amplitude_prev * amplitude_prev;
+        let energy_lost = energy_prev - energy_now;
+
+        if energy_lost > f32::EPSILON {
+            // Update wave's energy component if it has one
+            if let Some(mut energy_quantity) = energy_opt {
+                if energy_quantity.value >= energy_lost {
+                    energy_quantity.value -= energy_lost;
+                } else {
+                    let _actual_loss = energy_quantity.value;  // Can't lose more than we have
+                    energy_quantity.value = 0.0;
+                }
+            }
+
+            // Record transaction to ledger
+            if let Ok(mut ledger) = ledger_query.single_mut() {
+                ledger.record_transaction(EnergyTransaction {
+                    transaction_type: TransactionType::Output,
+                    amount: energy_lost,
+                    source: Some(entity),
+                    destination: None,  // TODO: Dissipated to heat (awaits MPM thermal coupling)
+                    timestamp: current_time,
+                    transfer_rate: energy_lost / dt,
+                    duration: dt,
+                });
+            }
+        }
+    }
+}
+
+pub(crate) fn update_wave_displacements(
     time: Res<Time>,
     grid: Res<WaveGrid>,
     mut query: Query<(

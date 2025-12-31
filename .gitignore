@@ -28,6 +28,8 @@ Thumbs.db
 *.temp
 *.log
 /tmp
+.claude/
+CLAUDE.md
 
 # Environment files
 .env
@@ -36,9 +38,3 @@ Thumbs.db
 
 # Application save files
 save.json
-
-# MCP and Serena files
-.mcp.json
-.serena/
-.claude/
-CLAUDE.md

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use utils::{GridCell, SpatialGrid};
 
 #[derive(Resource, Deref, DerefMut)]
-struct ThermalGrid(SpatialGrid);
+pub(crate) struct ThermalGrid(SpatialGrid);
 
 // Physical constants
 pub const STEFAN_BOLTZMANN: f32 = 5.67e-8; // W/(m²·K⁴)
@@ -174,7 +174,7 @@ fn attach_grid_cells_to_temperatures(
     }
 }
 
-pub fn calculate_thermal_transfer(
+pub(crate) fn calculate_thermal_transfer(
     mut commands: Commands,
     grid: Res<ThermalGrid>,
     time: Res<Time>,
@@ -282,6 +282,51 @@ pub mod thermal_utils {
 }
 
 /// Plugin for thermal system management
+/// System to check CFL stability condition for thermal diffusion
+/// Runs once at startup to warn if timestep may cause instability
+fn check_thermal_stability(
+    grid: Res<ThermalGrid>,
+    time: Res<Time>,
+    diffusivities: Query<&ThermalDiffusivity>,
+) {
+    if diffusivities.is_empty() {
+        return; // No thermal objects yet
+    }
+
+    let dt = time.delta_secs();
+    if dt == 0.0 {
+        return; // First frame, time not initialized yet
+    }
+
+    let dx = grid.cell_size;
+    let safety_factor = 0.5; // Conservative CFL constant for explicit diffusion
+
+    for diffusivity in diffusivities.iter() {
+        let alpha = diffusivity.value;
+        if alpha <= 0.0 {
+            continue;
+        }
+
+        // CFL condition: dt <= C * dx² / α
+        let max_stable_dt = safety_factor * dx * dx / alpha;
+
+        if dt > max_stable_dt {
+            warn!(
+                "⚠️  Thermal diffusion may be UNSTABLE!\n\
+                 Current timestep: dt = {:.6} s\n\
+                 Stability limit:  dt <= {:.6} s\n\
+                 Thermal diffusivity: α = {:.2e} m²/s\n\
+                 Grid spacing: dx = {:.2} m\n\
+                 → Simulation may diverge or explode. Consider:\n\
+                   • Smaller timestep (use fixed timestep plugin)\n\
+                   • Coarser grid (increase SpatialGrid cell_size)\n\
+                   • Implicit solver (future MPM work)",
+                dt, max_stable_dt, alpha, dx
+            );
+        }
+    }
+}
+
 pub struct ThermalSystemPlugin;
 
 impl Plugin for ThermalSystemPlugin {
@@ -294,6 +339,7 @@ impl Plugin for ThermalSystemPlugin {
             .register_type::<Emissivity>()
             .register_type::<HeatCapacity>()
             .add_message::<ThermalTransferEvent>()
+            .add_systems(Startup, check_thermal_stability)
             .add_systems(Update, (
                 attach_grid_cells_to_temperatures,
                 update_thermal_grid,

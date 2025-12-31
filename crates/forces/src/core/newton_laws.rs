@@ -194,8 +194,11 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
 // Work done by applied forces (∑ F·Δx) is not reported to the energy ledger yet.
 // When energy accounting is wired, emit an EnergyTransferEvent to keep conservation consistent.
 
-/// System to apply Verlet integration for position updates
-pub fn integrate_positions(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform)>) {
+/// System to apply symplectic Euler integration for position updates
+pub fn integrate_positions_symplectic_euler(
+    time: Res<Time>,
+    mut query: Query<(&Velocity, &mut Transform)>,
+) {
     let dt = time.delta_secs();
 
     for (velocity, mut transform) in query.iter_mut() {
@@ -205,6 +208,25 @@ pub fn integrate_positions(time: Res<Time>, mut query: Query<(&Velocity, &mut Tr
             transform.rotation *= Quat::from_scaled_axis(velocity.angvel * dt);
         }
     }
+}
+
+/// Selects which integration path the Newton systems should use.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IntegratorKind {
+    /// Standard symplectic Euler (velocity update then position update).
+    SymplecticEuler,
+    /// Skip position integration so an external system can drive it (e.g., MPM).
+    External,
+}
+
+impl Default for IntegratorKind {
+    fn default() -> Self {
+        Self::SymplecticEuler
+    }
+}
+
+fn use_symplectic_euler(kind: Res<IntegratorKind>) -> bool {
+    *kind == IntegratorKind::SymplecticEuler
 }
 
 /// Calculate momentum of an object
@@ -260,10 +282,11 @@ pub struct NewtonLawsPlugin;
 
 impl Plugin for NewtonLawsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_message::<ForceImpulse>().add_systems(
-            Update,
-            (apply_forces, apply_impulses, integrate_positions).chain(),
-        );
+        let integrate = integrate_positions_symplectic_euler.run_if(use_symplectic_euler);
+
+        app.init_resource::<IntegratorKind>()
+            .add_message::<ForceImpulse>()
+            .add_systems(Update, (apply_forces, apply_impulses, integrate).chain());
     }
 }
 
@@ -312,6 +335,45 @@ pub fn apply_impulses(
                 vel.linvel += impulse.impulse2 * mass.inverse();
             }
         }
+    }
+}
+
+/// Snapshot diagnostics for total momentum and kinetic energy.
+#[derive(Resource, Debug, Default, Clone)]
+pub struct ForcesDiagnostics {
+    pub total_momentum: Vec3,
+    pub total_kinetic_energy: f32,
+}
+
+/// Updates diagnostics after velocity changes are applied.
+pub fn update_forces_diagnostics(
+    mut diagnostics: ResMut<ForcesDiagnostics>,
+    query: Query<(&Mass, &Velocity)>,
+) {
+    let mut total_momentum = Vec3::ZERO;
+    let mut total_kinetic_energy = 0.0;
+
+    for (mass, velocity) in &query {
+        if mass.is_infinite {
+            continue;
+        }
+
+        total_momentum += calculate_momentum(mass, velocity);
+        total_kinetic_energy += calculate_kinetic_energy(mass, velocity);
+    }
+
+    diagnostics.total_momentum = total_momentum;
+    diagnostics.total_kinetic_energy = total_kinetic_energy;
+}
+
+/// Plugin to enable Newton-law diagnostics.
+#[derive(Default)]
+pub struct ForcesDiagnosticsPlugin;
+
+impl Plugin for ForcesDiagnosticsPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<ForcesDiagnostics>()
+            .add_systems(Update, update_forces_diagnostics.after(apply_impulses));
     }
 }
 

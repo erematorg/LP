@@ -29,6 +29,21 @@ impl Default for GravityParams {
     }
 }
 
+/// Selects how gravitational forces are applied.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GravityForceMode {
+    /// Apply forces only to affected bodies (one-way).
+    OneWay,
+    /// Apply equal and opposite forces between participating bodies.
+    Mutual,
+}
+
+impl Default for GravityForceMode {
+    fn default() -> Self {
+        Self::OneWay
+    }
+}
+
 impl GravityParams {
     pub fn with_softening(mut self, softening: f32) -> Self {
         self.softening = softening;
@@ -303,6 +318,50 @@ pub fn apply_uniform_gravity(
     }
 }
 
+/// Compute mutual gravitational attraction for bodies that are gravity sources.
+/// In this mode, every source both exerts and receives force.
+pub fn calculate_mutual_gravitational_attraction(
+    gravity_params: Res<GravityParams>,
+    mut query: Query<(Entity, &Transform, &Mass, &mut AppliedForce), With<GravitySource>>,
+) {
+    let softening_squared = gravity_params.softening * gravity_params.softening;
+    let gravitational_constant = gravity_params.gravitational_constant;
+
+    // Collect force updates to avoid mutable aliasing
+    let mut force_updates: Vec<(Entity, Vec3)> = Vec::new();
+
+    // Read-only iteration to compute forces
+    let entities: Vec<_> = query.iter().map(|(e, t, m, _)| (e, t.translation, m.value)).collect();
+
+    for i in 0..entities.len() {
+        for j in (i + 1)..entities.len() {
+            let (entity1, pos1, mass1) = entities[i];
+            let (entity2, pos2, mass2) = entities[j];
+
+            let direction = pos2 - pos1;
+            let distance_squared = direction.length_squared();
+            if distance_squared <= f32::EPSILON {
+                continue;
+            }
+
+            let softened_distance_squared = distance_squared + softening_squared;
+            let force_magnitude = gravitational_constant * mass1 * mass2
+                / softened_distance_squared;
+            let force_vector = direction.normalize() * force_magnitude;
+
+            force_updates.push((entity1, force_vector));
+            force_updates.push((entity2, -force_vector));
+        }
+    }
+
+    // Apply accumulated forces
+    for (entity, force) in force_updates {
+        if let Ok((_, _, _, mut applied_force)) = query.get_mut(entity) {
+            applied_force.force += force;
+        }
+    }
+}
+
 pub fn calculate_gravitational_attraction(
     gravity_params: Res<GravityParams>,
     query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
@@ -511,10 +570,27 @@ pub enum GravitySet {
     NBodyGravity,
 }
 
+fn use_mutual(mode: Res<GravityForceMode>) -> bool {
+    *mode == GravityForceMode::Mutual
+}
+
+fn use_one_way(mode: Res<GravityForceMode>) -> bool {
+    *mode == GravityForceMode::OneWay
+}
+
+fn has_many_sources(query: Query<(Entity, &Transform, &Mass), With<GravitySource>>) -> bool {
+    query.iter().count() >= 20
+}
+
+fn has_few_sources(query: Query<(Entity, &Transform, &Mass), With<GravitySource>>) -> bool {
+    query.iter().count() < 20
+}
+
 impl Plugin for GravityPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GravityParams>()
             .init_resource::<UniformGravity>()
+            .init_resource::<GravityForceMode>()
             .configure_sets(
                 Update,
                 (GravitySet::UniformGravity, GravitySet::NBodyGravity).chain(),
@@ -523,6 +599,13 @@ impl Plugin for GravityPlugin {
                 Update,
                 apply_uniform_gravity.in_set(GravitySet::UniformGravity),
             );
+
+        app.add_systems(
+            Update,
+            calculate_mutual_gravitational_attraction
+                .in_set(GravitySet::NBodyGravity)
+                .run_if(use_mutual),
+        );
 
         if self.use_barnes_hut {
             let theta = self.barnes_hut_theta;
@@ -538,27 +621,23 @@ impl Plugin for GravityPlugin {
                     calculate_barnes_hut_attraction(gravity_params, query, affected_query, theta);
                 })
                 .in_set(GravitySet::NBodyGravity)
-                .run_if(
-                    |query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
-                        query.iter().count() >= 20
-                    },
-                ),
+                .run_if(use_one_way)
+                .run_if(has_many_sources),
             );
 
             app.add_systems(
                 Update,
                 calculate_gravitational_attraction
                     .in_set(GravitySet::NBodyGravity)
-                    .run_if(
-                        |query: Query<(Entity, &Transform, &Mass), With<GravitySource>>| {
-                            query.iter().count() < 20
-                        },
-                    ),
+                    .run_if(use_one_way)
+                    .run_if(has_few_sources),
             );
         } else {
             app.add_systems(
                 Update,
-                calculate_gravitational_attraction.in_set(GravitySet::NBodyGravity),
+                calculate_gravitational_attraction
+                    .in_set(GravitySet::NBodyGravity)
+                    .run_if(use_one_way),
             );
         }
     }

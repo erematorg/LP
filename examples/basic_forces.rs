@@ -19,7 +19,7 @@ fn main() {
                 reset_forces,
                 calculate_gravitational_attraction,
                 apply_forces,
-                integrate_positions,
+                integrate_positions_symplectic_euler,
                 (update_sprites, keep_in_bounds),
             )
                 .chain(),
