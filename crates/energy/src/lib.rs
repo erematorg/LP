@@ -114,8 +114,8 @@ pub mod prelude {
 
     pub use crate::conservation::{
         EnergyAccountingLedger, EnergyConservationPlugin, EnergyConservationTracker,
-        EnergyQuantity, EnergyTransaction, EnergyTransferEvent, EnergyType, TransactionType,
-        conversion_efficiency, verify_conservation,
+        EnergyDriftMonitor, EnergyQuantity, EnergyTransaction, EnergyTransferEvent, EnergyType,
+        TransactionType, conversion_efficiency, verify_conservation,
     };
 
     pub use crate::electromagnetism::prelude::*;

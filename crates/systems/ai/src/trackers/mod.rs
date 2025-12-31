@@ -1,11 +1,14 @@
 // Entity tracking with clean separation:
 // - entity_tracker: Stores raw data (position, last_seen, metadata)
 // - Specialized trackers: Read entity_tracker and evaluate (threat, prey, etc.)
+// - Energy trackers: Read Temperature/ElectricField components (MPM-safe)
 
+pub mod electric_tracker;
 pub mod entity_tracker;
 pub mod needs_tracker;
 pub mod perception_tracker;
 pub mod prey_tracker;
+pub mod thermal_tracker;
 pub mod threat_tracker;
 
 use bevy::prelude::*;
@@ -62,11 +65,15 @@ impl Plugin for TrackerPlugin {
             .init_resource::<prey_tracker::PreyConfig>()
             .register_type::<threat_tracker::ThreatConfig>()
             .register_type::<prey_tracker::PreyConfig>()
+            .register_type::<thermal_tracker::ThermalSensor>()
+            .register_type::<electric_tracker::ElectricSensor>()
             .add_systems(
                 Update,
                 (
                     threat_tracker::threat_tracker_system,
                     prey_tracker::prey_tracker_system,
+                    thermal_tracker::update_thermal_trackers,
+                    electric_tracker::update_electric_trackers,
                 ),
             );
     }
@@ -82,6 +89,10 @@ pub mod prelude {
     // Evaluation trackers
     pub use crate::trackers::prey_tracker::{PreyConfig, PreyTracker};
     pub use crate::trackers::threat_tracker::{ThreatConfig, ThreatTracker};
+
+    // Energy perception trackers
+    pub use crate::trackers::electric_tracker::{ElectricSensor, ElectricTracker};
+    pub use crate::trackers::thermal_tracker::{ThermalSensor, ThermalTracker};
 
     // Other trackers
     pub use crate::trackers::needs_tracker::NeedsTracker;

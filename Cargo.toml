@@ -12,6 +12,7 @@ members = [
     "crates/forces",
     "crates/information",
     "crates/matter",
+    "crates/utils",
 ]
 
 # Enable a small amount of optimization in the dev profile.
@@ -29,6 +30,7 @@ energy = { path = "crates/energy" }
 forces = { path = "crates/forces" }
 information = { path = "crates/information" }
 matter = { path = "crates/matter" }
+utils = { path = "crates/utils" }
 
 bevy = { version = "0.17", features = ["dynamic_linking"] }
 

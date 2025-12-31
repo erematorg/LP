@@ -6,3 +6,4 @@ description = "Core systems governing how energy manifests, transforms and flows
 
 [dependencies]
 bevy = "0.17"
+utils = { path = "../utils" }

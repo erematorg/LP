@@ -231,6 +231,33 @@ pub fn conversion_efficiency(energy_input: f32, energy_output: f32) -> f32 {
     }
 }
 
+/// Optional resource to monitor energy drift over time (diagnostic only, not enforced)
+#[derive(Resource, Debug)]
+pub struct EnergyDriftMonitor {
+    pub initial_energy: f32,
+    pub tolerance: f32,
+}
+
+impl EnergyDriftMonitor {
+    pub fn new(initial_energy: f32, tolerance: f32) -> Self {
+        Self {
+            initial_energy,
+            tolerance,
+        }
+    }
+
+    /// Check if current energy has drifted beyond tolerance
+    /// Returns Some(drift) if drift exceeds tolerance, None otherwise
+    pub fn check_drift(&self, current_energy: f32) -> Option<f32> {
+        let drift = (current_energy - self.initial_energy).abs();
+        if drift > self.tolerance {
+            Some(drift)
+        } else {
+            None
+        }
+    }
+}
+
 /// Plugin to manage energy conservation systems
 pub struct EnergyConservationPlugin;
 
@@ -247,5 +274,94 @@ impl Plugin for EnergyConservationPlugin {
             .init_resource::<EnergyConservationTracker>()
             // Add event channel
             .add_message::<EnergyTransferEvent>();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ledger_arithmetic() {
+        // Test that net_energy_change = total_input - total_output
+        let mut ledger = EnergyAccountingLedger::default();
+
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Input,
+            amount: 100.0,
+            source: None,
+            destination: None,
+            timestamp: 0.0,
+            transfer_rate: 0.0,
+            duration: 0.0,
+        });
+
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Output,
+            amount: 30.0,
+            source: None,
+            destination: None,
+            timestamp: 0.0,
+            transfer_rate: 0.0,
+            duration: 0.0,
+        });
+
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Input,
+            amount: 50.0,
+            source: None,
+            destination: None,
+            timestamp: 0.0,
+            transfer_rate: 0.0,
+            duration: 0.0,
+        });
+
+        assert_eq!(ledger.total_input, 150.0);
+        assert_eq!(ledger.total_output, 30.0);
+        assert_eq!(ledger.net_energy_change(), 120.0);
+    }
+
+    #[test]
+    fn test_current_flux_sums_active_rates() {
+        // Test that current_flux sums transfer rates correctly
+        let mut ledger = EnergyAccountingLedger::default();
+
+        let current_time = 10.0;
+
+        // Add active transfer (within time window)
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Input,
+            amount: 50.0,
+            source: None,
+            destination: None,
+            timestamp: 9.5,
+            transfer_rate: 10.0, // W
+            duration: 1.0,
+        });
+
+        // Add another active transfer
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Input,
+            amount: 30.0,
+            source: None,
+            destination: None,
+            timestamp: 9.8,
+            transfer_rate: 5.0, // W
+            duration: 0.5,
+        });
+
+        // Add old transfer (outside time window)
+        ledger.record_transaction(EnergyTransaction {
+            transaction_type: TransactionType::Input,
+            amount: 100.0,
+            source: None,
+            destination: None,
+            timestamp: 5.0,
+            transfer_rate: 20.0, // W
+            duration: 2.0,
+        });
+
+        let flux = ledger.current_flux(current_time, 1.0);
+        assert_eq!(flux, 15.0, "Expected sum of active rates: 10.0 + 5.0");
     }
 }

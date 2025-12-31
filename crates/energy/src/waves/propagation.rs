@@ -1,7 +1,12 @@
 use bevy::prelude::*;
+use utils::{GridCell, SpatialGrid};
+
+#[derive(Resource, Deref, DerefMut)]
+pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
+use crate::conservation::{EnergyQuantity, EnergyAccountingLedger, EnergyTransaction, TransactionType};
 
 // Calculate modified angular frequency with dispersion
 #[inline]
@@ -99,15 +104,103 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, 
     params.amplitude * spatial_falloff * damping_factor * phase.sin()
 }
 
-pub fn update_wave_displacements(
+pub(crate) fn attach_grid_cells_to_wave_centers(
+    mut commands: Commands,
+    mut grid: ResMut<WaveGrid>,
+    query: Query<(Entity, &Transform), (With<WaveCenterMarker>, Without<GridCell>)>,
+) {
+    for (entity, transform) in query.iter() {
+        let position = transform.translation.truncate();
+        let cell = grid.world_to_grid(position);
+        grid.insert_in_cell(entity, cell);
+        commands.entity(entity).insert(GridCell { cell });
+    }
+}
+
+pub(crate) fn update_wave_grid(
+    mut grid: ResMut<WaveGrid>,
+    mut query: Query<(Entity, &Transform, &mut GridCell), (With<WaveCenterMarker>, Changed<Transform>)>,
+) {
+    for (entity, transform, mut cell) in query.iter_mut() {
+        let position = transform.translation.truncate();
+        let new_cell = grid.world_to_grid(position);
+        if new_cell != cell.cell {
+            grid.move_entity(entity, cell.cell, new_cell);
+            cell.cell = new_cell;
+        }
+    }
+}
+
+/// System to track wave energy loss from damping and report to energy ledger
+/// Runs before wave displacement updates
+pub fn apply_wave_damping_with_energy(
     time: Res<Time>,
+    mut wave_sources: Query<(
+        Entity,
+        &WaveParameters,
+        Option<&mut EnergyQuantity>,
+    ), With<WaveCenterMarker>>,
+    mut ledger_query: Query<&mut EnergyAccountingLedger>,
+) {
+    let dt = time.delta_secs();
+    if dt == 0.0 {
+        return; // Skip first frame
+    }
+
+    let current_time = time.elapsed_secs();
+
+    for (entity, params, energy_opt) in wave_sources.iter_mut() {
+        if params.damping <= 0.0 {
+            continue; // No damping, no energy loss
+        }
+
+        // Wave energy proportional to amplitude²
+        // E = 0.5 * k * A² where k is a proportionality constant
+        // For simplicity, use E = A² (k absorbed into amplitude units)
+        let amplitude_now = params.amplitude * (-params.damping * current_time).exp();
+        let amplitude_prev = params.amplitude * (-params.damping * (current_time - dt)).exp();
+
+        let energy_now = 0.5 * amplitude_now * amplitude_now;
+        let energy_prev = 0.5 * amplitude_prev * amplitude_prev;
+        let energy_lost = energy_prev - energy_now;
+
+        if energy_lost > f32::EPSILON {
+            // Update wave's energy component if it has one
+            if let Some(mut energy_quantity) = energy_opt {
+                if energy_quantity.value >= energy_lost {
+                    energy_quantity.value -= energy_lost;
+                } else {
+                    let _actual_loss = energy_quantity.value;  // Can't lose more than we have
+                    energy_quantity.value = 0.0;
+                }
+            }
+
+            // Record transaction to ledger
+            if let Ok(mut ledger) = ledger_query.single_mut() {
+                ledger.record_transaction(EnergyTransaction {
+                    transaction_type: TransactionType::Output,
+                    amount: energy_lost,
+                    source: Some(entity),
+                    destination: None,  // TODO: Dissipated to heat (awaits MPM thermal coupling)
+                    timestamp: current_time,
+                    transfer_rate: energy_lost / dt,
+                    duration: dt,
+                });
+            }
+        }
+    }
+}
+
+pub(crate) fn update_wave_displacements(
+    time: Res<Time>,
+    grid: Res<WaveGrid>,
     mut query: Query<(
         &mut Transform,
         &WaveParameters,
         &WavePosition,
         Option<&WaveType>,
     )>,
-    wave_centers: Query<(&Transform, &WaveCenterMarker)>,
+    wave_centers: Query<&Transform, With<WaveCenterMarker>>,
 ) {
     let t = time.elapsed_secs();
 
@@ -116,22 +209,20 @@ pub fn update_wave_displacements(
 
         let displacement = match wave_type {
             Some(WaveType::Radial) => {
-                // Find the nearest wave center
-                let center = wave_centers
-                    .iter()
-                    .map(|(t, _)| t.translation.truncate())
+                let nearby_centers = grid.get_entities_in_radius(position.0, params.wavelength * 10.0);
+
+                let center = nearby_centers
+                    .filter_map(|entity| wave_centers.get(entity).ok())
+                    .map(|t| t.translation.truncate())
                     .min_by(|a, b| {
                         let dist_a = a.distance(position.0);
                         let dist_b = b.distance(position.0);
-                        dist_a
-                            .partial_cmp(&dist_b)
-                            .unwrap_or(std::cmp::Ordering::Equal)
+                        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
                     })
                     .unwrap_or(Vec2::ZERO);
 
                 solve_radial_wave(params, center, position.0, t)
             }
-            // Standing waves should be handled by the superposition system
             Some(WaveType::Standing) => 0.0,
             _ => solve_wave(params, position.0, t),
         };

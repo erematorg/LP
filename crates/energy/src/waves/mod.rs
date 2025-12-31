@@ -21,8 +21,8 @@ pub struct WavesPlugin;
 
 impl Plugin for WavesPlugin {
     fn build(&self, app: &mut App) {
-        // Register wave components
-        app.register_type::<oscillation::WaveParameters>()
+        app.insert_resource(propagation::WaveGrid(utils::SpatialGrid::new(100.0)))
+            .register_type::<oscillation::WaveParameters>()
             .register_type::<propagation::WavePosition>()
             .register_type::<propagation::WaveType>()
             .register_type::<propagation::WaveCenterMarker>()
@@ -32,10 +32,13 @@ impl Plugin for WavesPlugin {
             .add_systems(
                 Update,
                 (
+                    propagation::attach_grid_cells_to_wave_centers,
+                    propagation::update_wave_grid,
+                    propagation::apply_wave_damping_with_energy,  // Track energy loss from damping
                     propagation::update_wave_displacements,
                     superposition::update_standing_waves,
                     wave_equation::update_wave_equation,
-                ),
+                ).chain(),
             );
     }
 }
@@ -47,7 +50,7 @@ pub mod prelude {
     };
     pub use crate::waves::propagation::{
         WaveCenterMarker, WavePosition, WaveType, create_linear_wave, solve_radial_wave,
-        solve_wave, update_wave_displacements,
+        solve_wave,
     };
     pub use crate::waves::superposition::{
         StandingWaveMarker, create_standing_wave_parameters, solve_standing_wave,

@@ -9,7 +9,7 @@ struct GameData {
 }
 
 impl Default for GameData {
-    fn default() -> Self {
+fn default() -> Self {
         Self {
             version: SAVE_VERSION.to_string(),
             score: 42,
@@ -21,6 +21,8 @@ impl Default for GameData {
 fn main() {
     let path = "save.json";
     let settings = SaveSettings::default();
+
+    // Load existing save or fall back to defaults
     let mut data = load::<GameData>(&settings, path).unwrap_or_default();
 
     data.score += 1;
