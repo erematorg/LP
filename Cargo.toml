@@ -32,7 +32,7 @@ information = { path = "crates/information" }
 matter = { path = "crates/matter" }
 utils = { path = "crates/utils" }
 
-bevy = { version = "0.17", features = ["dynamic_linking"] }
+bevy = { version = "0.18", features = ["dynamic_linking"] }
 
 glam = "0.29.2"
 

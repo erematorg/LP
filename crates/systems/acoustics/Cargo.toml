@@ -5,4 +5,4 @@ edition = "2024"
 description = "Sound generation, playback, and spatial processing system for ambient and interactive audio experiences."
 
 [dependencies]
-bevy = "0.17"
+bevy = "0.18"

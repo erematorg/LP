@@ -8,7 +8,7 @@ description = "Utility-based AI framework for life form simulation with modular 
 doctest = false
 
 [dependencies]
-bevy = "0.17"
+bevy = "0.18"
 rand = "0.9"
 energy = { path = "../../energy" }
 
