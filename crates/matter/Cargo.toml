@@ -5,4 +5,4 @@ edition = "2024"
 description = "Physical substance modeling from fundamental particles to complex materials, defining how tangible elements behave and interact."
 
 [dependencies]
-bevy = "0.17"
+bevy = "0.18"

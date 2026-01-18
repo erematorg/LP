@@ -5,4 +5,4 @@ edition = "2024"
 description = "Shared utility structures and algorithms for the LP ecosystem."
 
 [dependencies]
-bevy = "0.17"
+bevy = "0.18"
