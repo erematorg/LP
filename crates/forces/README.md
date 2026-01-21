@@ -8,6 +8,11 @@ Gravitational mechanics and Newton's laws for physics-based force systems.
 - Gravity supports uniform fields and n-body/Barnes–Hut, with configurable softening/theta.
 - Integration uses variable `Time.delta_secs()` (no fixed physics tick yet); dual-clock (physics vs diurnal/biology) is not implemented.
 
+## Scope & Limits
+- LP-0 integrates F = ma with explicit/symplectic Euler and optional acceleration clamps for stability; this is a numerical method, not a physical law.
+- Gravity defaults to a sim-tuned constant and softened inverse-square forces; Barnes-Hut is an approximation for large N.
+- Potential energy and work accounting are not yet tracked; conservation diagnostics are partial.
+
 ## Conservation status
 - Linear momentum is computable via `calculate_momentum()` but **not enforced globally**.
 - **Angular momentum is NOT conserved**; `Velocity.angvel` exists but no torque/conservation tracking yet.

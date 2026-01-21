@@ -3,7 +3,10 @@ name = "energy"
 version = "0.1.0"
 edition = "2024"
 description = "Core systems governing how energy manifests, transforms and flows."
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = "0.18"
+forces = { path = "../forces" }
+matter = { path = "../matter" }
 utils = { path = "../utils" }

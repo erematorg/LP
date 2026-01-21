@@ -3,6 +3,7 @@ name = "utils"
 version = "0.1.0"
 edition = "2024"
 description = "Shared utility structures and algorithms for the LP ecosystem."
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = "0.18"
