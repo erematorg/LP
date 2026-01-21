@@ -9,10 +9,10 @@ scheduling.
 ## Modules
 
 - `ai` - utility-driven agency used by LP's creatures and actors.
-- `acoustics` - scaffold for physics-based sound that will hook into matter and
+- `acoustics` - early-stage module for physics-based sound that will hook into matter and
   wave simulation.
-- `mpm` - placeholder for the upcoming Material Point Method solver (MLS-MPM
-  first; PB-MPM is a gated evolution).
+- `mpm` - planned module for the Material Point Method solver (MLS-MPM first;
+  PB-MPM is a gated evolution).
 - `save_system` - shared save / load infrastructure.
 
 Each module exposes a `prelude` for selective use, while

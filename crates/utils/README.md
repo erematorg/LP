@@ -7,6 +7,11 @@ Shared utilities and optimizations.
 - `spatial::SpatialGrid` - Sparse spatial hash grid for neighbor queries
 - `pool::EntityPool` - Entity recycling for spawn/despawn scenarios
 
+## Scope & Limits
+- SpatialGrid and UnifiedSpatialIndex are 2D, point-entity hash grids; large bodies or 3D need other structures.
+- Radius queries return candidate sets from grid cells; exact distance filtering remains a caller responsibility.
+- ECS-based helpers are tuned for LP-0 scale; high-N systems will move to SoA/MPM paths.
+
 ## Usage
 
 ```rust

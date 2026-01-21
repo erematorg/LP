@@ -3,6 +3,7 @@ name = "forces"
 version = "0.1.0"
 edition = "2024"
 description = "Fundamental interaction mechanisms that create relationships between entities and drive dynamic behaviors across scales."
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = "0.18"

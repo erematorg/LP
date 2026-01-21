@@ -3,7 +3,7 @@ name = "LP"
 version = "0.1.0"
 edition = "2024"
 description = "A systemic 2D platformer in a dynamic living ecosystem.."
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 
 [workspace]
 members = [
