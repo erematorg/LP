@@ -1,3 +1,4 @@
+use crate::PhysicsSet;
 use bevy::prelude::*;
 
 /// Trait for computing the squared norm of a vector efficiently
@@ -34,6 +35,27 @@ impl Norm for Vec2 {
 }
 
 impl Distance for Vec2 {}
+
+/// Configuration for Newton's laws integration.
+///
+/// **Numerical stability parameters** - not IRL physics.
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct IntegrationConfig {
+    /// Maximum acceleration clamp (m/s²).
+    /// **NUMERICAL STABILITY**: Not IRL physics, purely for integration safety.
+    /// Prevents explosive forces from breaking time integration.
+    /// **Units**: meters / second² (m/s²)
+    pub max_acceleration: f32,
+}
+
+impl Default for IntegrationConfig {
+    fn default() -> Self {
+        Self {
+            max_acceleration: 1000.0, // ~100g
+        }
+    }
+}
 
 /// Component for mass properties of an entity
 #[derive(Component, Debug, Clone, Copy, Reflect)]
@@ -153,8 +175,34 @@ pub struct Velocity {
     pub angvel: Vec3,
 }
 
-/// System to apply forces according to Newton's Second Law (F = ma)
-pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>) {
+/// Integrate Newton's Second Law to update velocities from forces.
+///
+/// **PHYSICS**: Newton's Second Law F = ma → a = F/m
+/// - F: Net force (Newtons)
+/// - m: Mass (kilograms)
+/// - a: Acceleration (m/s²)
+/// - Δv = a·Δt (velocity update via Euler integration)
+///
+/// **UNITS**:
+/// - Force: Newtons (N) = kg·m/s²
+/// - Mass: kilograms (kg)
+/// - Velocity: meters/second (m/s)
+/// - Time: seconds (s)
+///
+/// **APPROXIMATIONS**:
+/// - Explicit Euler: v_new = v_old + a·dt (first-order accurate)
+/// - Acceleration clamp: max 1000 m/s² (numerical stability, not IRL physics)
+///
+/// **CONSERVATION**: Momentum conserved if all forces are action-reaction pairs (F_ab = -F_ba).
+/// Energy NOT conserved in this system (work tracking missing, no PE accounting).
+///
+/// **NUMERICAL STABILITY**: Clamps extremely high accelerations to prevent explosive forces
+/// from breaking integration. If forces exceed limit, likely a bug (check softening, timestep, scales).
+pub fn integrate_newton_second_law(
+    time: Res<Time>,
+    config: Res<IntegrationConfig>,
+    mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>,
+) {
     let dt = time.delta_secs();
 
     for (mass, mut velocity, mut force) in query.iter_mut() {
@@ -175,7 +223,7 @@ pub fn apply_forces(time: Res<Time>, mut query: Query<(&Mass, &mut Velocity, &mu
         }
 
         // Cap extremely high accelerations to prevent instability
-        let max_acceleration = 1000.0;
+        let max_acceleration = config.max_acceleration;
         let acceleration = if acceleration.norm_squared() > max_acceleration * max_acceleration {
             acceleration.normalize() * max_acceleration
         } else {
@@ -285,8 +333,26 @@ impl Plugin for NewtonLawsPlugin {
         let integrate = integrate_positions_symplectic_euler.run_if(use_symplectic_euler);
 
         app.init_resource::<IntegratorKind>()
+            .init_resource::<IntegrationConfig>()
             .add_message::<ForceImpulse>()
-            .add_systems(Update, (apply_forces, apply_impulses, integrate).chain());
+            // Configure physics sets
+            .configure_sets(
+                Update,
+                (
+                    PhysicsSet::AccumulateForces,
+                    PhysicsSet::ApplyForces,
+                    PhysicsSet::Integrate,
+                )
+                    .chain(),
+            )
+            // Apply forces and integrate - chain integrate_newton_second_law and apply_impulses
+            .add_systems(
+                Update,
+                (integrate_newton_second_law, apply_impulses)
+                    .chain()
+                    .in_set(PhysicsSet::ApplyForces),
+            )
+            .add_systems(Update, integrate.in_set(PhysicsSet::Integrate));
     }
 }
 
@@ -405,7 +471,7 @@ mod tests {
         let mass2 = 2.0;
 
         // Calculate velocity changes from equal/opposite impulses
-        let delta_v1 = impulse_magnitude / mass1;  // 10.0 / 1.0 = 10.0
+        let delta_v1 = impulse_magnitude / mass1; // 10.0 / 1.0 = 10.0
         let delta_v2 = -impulse_magnitude / mass2; // -10.0 / 2.0 = -5.0
 
         // Momentum change for each
@@ -414,13 +480,20 @@ mod tests {
 
         let total_momentum_change: f32 = dp1 + dp2;
 
-        assert!(total_momentum_change.abs() < 1e-5, "Balanced impulse did not conserve momentum: total Δp = {}", total_momentum_change);
+        assert!(
+            total_momentum_change.abs() < 1e-5,
+            "Balanced impulse did not conserve momentum: total Δp = {}",
+            total_momentum_change
+        );
     }
 
     #[test]
     fn test_momentum_calculation() {
         let mass = Mass::new(5.0);
-        let velocity = Velocity { linvel: Vec3::new(2.0, 0.0, 0.0), angvel: Vec3::ZERO };
+        let velocity = Velocity {
+            linvel: Vec3::new(2.0, 0.0, 0.0),
+            angvel: Vec3::ZERO,
+        };
         let momentum = calculate_momentum(&mass, &velocity);
         assert_eq!(momentum, Vec3::new(10.0, 0.0, 0.0)); // p = mv
     }
@@ -428,7 +501,10 @@ mod tests {
     #[test]
     fn test_kinetic_energy_calculation() {
         let mass = Mass::new(2.0);
-        let velocity = Velocity { linvel: Vec3::new(3.0, 4.0, 0.0), angvel: Vec3::ZERO };
+        let velocity = Velocity {
+            linvel: Vec3::new(3.0, 4.0, 0.0),
+            angvel: Vec3::ZERO,
+        };
         let ke = calculate_kinetic_energy(&mass, &velocity);
         // KE = 0.5 * m * v² = 0.5 * 2.0 * (3² + 4²) = 0.5 * 2.0 * 25 = 25.0
         assert_eq!(ke, 25.0);

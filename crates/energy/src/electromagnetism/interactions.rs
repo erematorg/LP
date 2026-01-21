@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::fields::{ElectricField, MagneticField};
 
 // Speed of light (in m/s) constant physical value
-//TODO: Making this cleaner later on to make units of measure dynamic rather than admiting 1 meter = 1 meter, same for seconds and much more
+// TODO: Units are fixed to SI for now; make unit scaling configurable.
 const C: f32 = 299_792_458.0;
 
 /// Represents an electromagnetic wave component

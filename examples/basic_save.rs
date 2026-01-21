@@ -9,7 +9,7 @@ struct GameData {
 }
 
 impl Default for GameData {
-fn default() -> Self {
+    fn default() -> Self {
         Self {
             version: SAVE_VERSION.to_string(),
             score: 42,

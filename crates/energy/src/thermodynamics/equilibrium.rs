@@ -11,7 +11,7 @@ pub struct ThermalEquilibrium {
 
 /// Component for phase state of matter that will use the matter crate later once implemented, soon once PBMPM will be in place
 /// and the matter crate is implemented
-/// This is a placeholder for the actual phase state representation
+/// Stub phase state representation until matter integration is ready.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 #[reflect(Component)]
 pub enum PhaseState {

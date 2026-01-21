@@ -41,7 +41,7 @@ impl SystemsPlugin {
         self
     }
 
-    /// Enable or disable the Material Point Method placeholder systems.
+    /// Enable or disable the Material Point Method stub systems (until MPM integration is ready).
     pub fn with_mpm(mut self, enabled: bool) -> Self {
         self.include_mpm = enabled;
         self

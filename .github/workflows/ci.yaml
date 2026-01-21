@@ -16,6 +16,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   DEBIAN_FRONTEND: noninteractive
+  RUSTFLAGS: "-Ctarget-cpu=generic"
 
 jobs:
   test:

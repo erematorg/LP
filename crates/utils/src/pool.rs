@@ -80,9 +80,7 @@ impl EntityPool {
     /// migration overhead may become significant. Consider soft-pooling (Inactive marker) instead.
     pub fn release(&mut self, commands: &mut Commands, entity: Entity) {
         // Ensure Pooled marker is present, then strip everything else
-        commands.entity(entity)
-            .insert(Pooled)
-            .retain::<Pooled>();
+        commands.entity(entity).insert(Pooled).retain::<Pooled>();
 
         if self.available.len() < self.capacity {
             self.available.push(entity);

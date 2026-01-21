@@ -25,8 +25,8 @@ impl Default for ThermalSensor {
     fn default() -> Self {
         Self {
             range: 50.0,
-            sensitivity: 1.0,  // Can detect 1K difference
-            preferred_temp: 293.0,  // Room temp default (~20°C)
+            sensitivity: 1.0,      // Can detect 1K difference
+            preferred_temp: 293.0, // Room temp default (~20°C)
         }
     }
 }
@@ -73,7 +73,7 @@ pub struct ThermalTracker {
 impl ThermalTracker {
     /// Is creature thermally comfortable?
     pub fn is_comfortable(&self) -> bool {
-        self.discomfort < 0.3  // Low discomfort threshold
+        self.discomfort < 0.3 // Low discomfort threshold
     }
 
     /// Should creature seek new thermal zone?
@@ -108,7 +108,7 @@ pub fn update_thermal_trackers(
         let mut hottest_temp = f32::NEG_INFINITY;
         let mut coldest_temp = f32::INFINITY;
         let mut weighted_gradient = Vec2::ZERO;
-        let mut current_creature_temp = sensor.preferred_temp;  // Assume creature at preferred temp if no data
+        let mut current_creature_temp = sensor.preferred_temp; // Assume creature at preferred temp if no data
 
         // Find nearby thermal entities
         for (entity, transform, temperature) in heat_sources.iter() {
@@ -116,14 +116,14 @@ pub fn update_thermal_trackers(
             let distance = creature_pos.distance(heat_pos);
 
             if distance > sensor.range {
-                continue;  // Out of sensing range
+                continue; // Out of sensing range
             }
 
             let temp = temperature.value;
             let temp_diff = (temp - sensor.preferred_temp).abs();
 
             if temp_diff < sensor.sensitivity {
-                continue;  // Temperature difference too small to detect
+                continue; // Temperature difference too small to detect
             }
 
             // Track hottest
@@ -160,7 +160,8 @@ pub fn update_thermal_trackers(
 
         if let Some((_, pos, temp)) = tracker.hottest_nearby {
             let distance = creature_pos.distance(pos);
-            if distance < sensor.range * 0.5 {  // Close influence
+            if distance < sensor.range * 0.5 {
+                // Close influence
                 total_nearby_temp_influence += temp * (1.0 - distance / (sensor.range * 0.5));
                 influence_count += 1.0 - distance / (sensor.range * 0.5);
             }
@@ -170,7 +171,8 @@ pub fn update_thermal_trackers(
             current_creature_temp = total_nearby_temp_influence / influence_count;
         }
 
-        tracker.discomfort = (current_creature_temp - sensor.preferred_temp).abs() / sensor.sensitivity;
+        tracker.discomfort =
+            (current_creature_temp - sensor.preferred_temp).abs() / sensor.sensitivity;
         tracker.gradient_direction = weighted_gradient;
     }
 }

@@ -20,7 +20,10 @@ fn main() {
         .insert_resource(EntityPool::new(100))
         .insert_resource(SpawnTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
         .add_systems(Startup, setup)
-        .add_systems(Update, (spawn_particles, update_particles, cleanup_particles).chain())
+        .add_systems(
+            Update,
+            (spawn_particles, update_particles, cleanup_particles).chain(),
+        )
         .run();
 }
 
@@ -48,10 +51,7 @@ fn spawn_particles(
     }
 }
 
-fn update_particles(
-    mut query: Query<(Entity, &mut Particle), Without<Pooled>>,
-    time: Res<Time>,
-) {
+fn update_particles(mut query: Query<(Entity, &mut Particle), Without<Pooled>>, time: Res<Time>) {
     for (entity, mut particle) in query.iter_mut() {
         particle.lifetime -= time.delta_secs();
         if particle.lifetime <= 0.0 {
@@ -68,7 +68,11 @@ fn cleanup_particles(
     for (entity, particle) in query.iter() {
         if particle.lifetime <= 0.0 {
             pool.release(&mut commands, entity);
-            println!("Returned {:?} to pool (available: {})", entity, pool.available_count());
+            println!(
+                "Returned {:?} to pool (available: {})",
+                entity,
+                pool.available_count()
+            );
         }
     }
 }

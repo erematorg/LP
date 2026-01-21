@@ -18,7 +18,7 @@ fn main() {
             (
                 reset_forces,
                 calculate_gravitational_attraction,
-                apply_forces,
+                integrate_newton_second_law,
                 integrate_positions_symplectic_euler,
                 (update_sprites, keep_in_bounds),
             )

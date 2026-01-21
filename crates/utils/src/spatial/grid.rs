@@ -120,7 +120,11 @@ impl SpatialGrid {
     /// Returns an iterator for zero-allocation queries
     /// Note: Currently assumes point entities (one cell per entity). If AABB support is added,
     /// duplicates may need to be handled at the call site.
-    pub fn get_entities_in_radius(&self, position: Vec2, radius: f32) -> impl Iterator<Item = Entity> + '_ {
+    pub fn get_entities_in_radius(
+        &self,
+        position: Vec2,
+        radius: f32,
+    ) -> impl Iterator<Item = Entity> + '_ {
         let min_grid = self.world_to_grid(position - Vec2::splat(radius));
         let max_grid = self.world_to_grid(position + Vec2::splat(radius));
 
@@ -202,7 +206,9 @@ mod tests {
         grid.insert(near, Vec2::new(0.0, 0.0));
         grid.insert(far, Vec2::new(100.0, 100.0));
 
-        let in_radius: Vec<_> = grid.get_entities_in_radius(Vec2::new(0.0, 0.0), 30.0).collect();
+        let in_radius: Vec<_> = grid
+            .get_entities_in_radius(Vec2::new(0.0, 0.0), 30.0)
+            .collect();
         assert!(in_radius.contains(&near));
         assert!(!in_radius.contains(&far));
     }
@@ -219,4 +225,3 @@ mod tests {
         assert_eq!(grid.get_cell_entities(Vec2::new(5.0, 5.0)).len(), 0);
     }
 }
-
