@@ -35,7 +35,7 @@ pub mod prelude {
         validate_equilibrium_group_consistency,
     };
     pub use super::thermal::{
-        Temperature, ThermalConductivity, ThermalDiffusivity, HeatCapacity,
+        HeatCapacity, Temperature, ThermalConductivity, ThermalDiffusivity,
         thermal_utils::heat_conduction,
     };
 }

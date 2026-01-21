@@ -6,7 +6,9 @@ pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
-use crate::conservation::{EnergyQuantity, EnergyAccountingLedger, EnergyTransaction, TransactionType};
+use crate::conservation::{
+    EnergyAccountingLedger, EnergyQuantity, EnergyTransaction, TransactionType,
+};
 
 // Calculate modified angular frequency with dispersion
 #[inline]
@@ -119,7 +121,10 @@ pub(crate) fn attach_grid_cells_to_wave_centers(
 
 pub(crate) fn update_wave_grid(
     mut grid: ResMut<WaveGrid>,
-    mut query: Query<(Entity, &Transform, &mut GridCell), (With<WaveCenterMarker>, Changed<Transform>)>,
+    mut query: Query<
+        (Entity, &Transform, &mut GridCell),
+        (With<WaveCenterMarker>, Changed<Transform>),
+    >,
 ) {
     for (entity, transform, mut cell) in query.iter_mut() {
         let position = transform.translation.truncate();
@@ -135,11 +140,10 @@ pub(crate) fn update_wave_grid(
 /// Runs before wave displacement updates
 pub fn apply_wave_damping_with_energy(
     time: Res<Time>,
-    mut wave_sources: Query<(
-        Entity,
-        &WaveParameters,
-        Option<&mut EnergyQuantity>,
-    ), With<WaveCenterMarker>>,
+    mut wave_sources: Query<
+        (Entity, &WaveParameters, Option<&mut EnergyQuantity>),
+        With<WaveCenterMarker>,
+    >,
     mut ledger_query: Query<&mut EnergyAccountingLedger>,
 ) {
     let dt = time.delta_secs();
@@ -170,7 +174,7 @@ pub fn apply_wave_damping_with_energy(
                 if energy_quantity.value >= energy_lost {
                     energy_quantity.value -= energy_lost;
                 } else {
-                    let _actual_loss = energy_quantity.value;  // Can't lose more than we have
+                    let _actual_loss = energy_quantity.value; // Can't lose more than we have
                     energy_quantity.value = 0.0;
                 }
             }
@@ -181,7 +185,7 @@ pub fn apply_wave_damping_with_energy(
                     transaction_type: TransactionType::Output,
                     amount: energy_lost,
                     source: Some(entity),
-                    destination: None,  // TODO: Dissipated to heat (awaits MPM thermal coupling)
+                    destination: None, // TODO: Dissipated to heat (awaits MPM thermal coupling)
                     timestamp: current_time,
                     transfer_rate: energy_lost / dt,
                     duration: dt,
@@ -193,13 +197,15 @@ pub fn apply_wave_damping_with_energy(
 
 pub(crate) fn update_wave_displacements(
     time: Res<Time>,
-    grid: Res<WaveGrid>,
-    mut query: Query<(
-        &mut Transform,
-        &WaveParameters,
-        &WavePosition,
-        Option<&WaveType>,
-    )>,
+    mut query: Query<
+        (
+            &mut Transform,
+            &WaveParameters,
+            &WavePosition,
+            Option<&WaveType>,
+        ),
+        Without<WaveCenterMarker>,
+    >, // Disjoint from wave_centers query
     wave_centers: Query<&Transform, With<WaveCenterMarker>>,
 ) {
     let t = time.elapsed_secs();
@@ -209,17 +215,21 @@ pub(crate) fn update_wave_displacements(
 
         let displacement = match wave_type {
             Some(WaveType::Radial) => {
-                let nearby_centers = grid.get_entities_in_radius(position.0, params.wavelength * 10.0);
-
-                let center = nearby_centers
-                    .filter_map(|entity| wave_centers.get(entity).ok())
+                // Find nearest wave center (O(N) but typically few wave centers)
+                let Some(center) = wave_centers
+                    .iter()
                     .map(|t| t.translation.truncate())
+                    .filter(|c| c.distance(position.0) < params.wavelength * 10.0)
                     .min_by(|a, b| {
                         let dist_a = a.distance(position.0);
                         let dist_b = b.distance(position.0);
-                        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+                        dist_a
+                            .partial_cmp(&dist_b)
+                            .unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .unwrap_or(Vec2::ZERO);
+                else {
+                    continue; // Skip entities without nearby wave center
+                };
 
                 solve_radial_wave(params, center, position.0, t)
             }

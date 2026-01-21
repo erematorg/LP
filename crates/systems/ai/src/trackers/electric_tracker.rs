@@ -21,7 +21,7 @@ impl Default for ElectricSensor {
     fn default() -> Self {
         Self {
             range: 30.0,
-            sensitivity: 0.1,  // Can detect weak fields
+            sensitivity: 0.1, // Can detect weak fields
         }
     }
 }
@@ -72,9 +72,8 @@ impl ElectricTracker {
 
     /// Get direction toward strongest field source
     pub fn strongest_source_direction(&self, creature_pos: Vec2) -> Option<Vec2> {
-        self.strongest_field.map(|(_, pos, _)| {
-            (pos - creature_pos).normalize_or_zero()
-        })
+        self.strongest_field
+            .map(|(_, pos, _)| (pos - creature_pos).normalize_or_zero())
     }
 }
 
@@ -100,14 +99,14 @@ pub fn update_electric_trackers(
             let distance = creature_pos.distance(field_pos);
 
             if distance > sensor.range {
-                continue;  // Out of sensing range
+                continue; // Out of sensing range
             }
 
             // Field strength at this point
             let field_strength = e_field.strength();
 
             if field_strength < sensor.sensitivity {
-                continue;  // Field too weak to detect
+                continue; // Field too weak to detect
             }
 
             // Superpose field vectors (EM superposition principle)

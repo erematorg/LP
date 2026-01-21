@@ -1,4 +1,5 @@
 use super::newton_laws::{AppliedForce, Mass};
+use crate::PhysicsSet;
 use bevy::prelude::*;
 
 // Simulation constants
@@ -331,7 +332,10 @@ pub fn calculate_mutual_gravitational_attraction(
     let mut force_updates: Vec<(Entity, Vec3)> = Vec::new();
 
     // Read-only iteration to compute forces
-    let entities: Vec<_> = query.iter().map(|(e, t, m, _)| (e, t.translation, m.value)).collect();
+    let entities: Vec<_> = query
+        .iter()
+        .map(|(e, t, m, _)| (e, t.translation, m.value))
+        .collect();
 
     for i in 0..entities.len() {
         for j in (i + 1)..entities.len() {
@@ -345,8 +349,8 @@ pub fn calculate_mutual_gravitational_attraction(
             }
 
             let softened_distance_squared = distance_squared + softening_squared;
-            let force_magnitude = gravitational_constant * mass1 * mass2
-                / softened_distance_squared;
+            let force_magnitude =
+                gravitational_constant * mass1 * mass2 / softened_distance_squared;
             let force_vector = direction.normalize() * force_magnitude;
 
             force_updates.push((entity1, force_vector));
@@ -593,7 +597,9 @@ impl Plugin for GravityPlugin {
             .init_resource::<GravityForceMode>()
             .configure_sets(
                 Update,
-                (GravitySet::UniformGravity, GravitySet::NBodyGravity).chain(),
+                (GravitySet::UniformGravity, GravitySet::NBodyGravity)
+                    .chain()
+                    .in_set(PhysicsSet::AccumulateForces),
             )
             .add_systems(
                 Update,
@@ -668,7 +674,10 @@ mod tests {
 
         // Verify equal magnitude, opposite direction
         assert!((force_on_1.length() - force_on_2.length()).abs() < 1e-5);
-        assert!((force_on_1 + force_on_2).length() < 1e-5, "Action-reaction forces do not cancel");
+        assert!(
+            (force_on_1 + force_on_2).length() < 1e-5,
+            "Action-reaction forces do not cancel"
+        );
     }
 
     #[test]
@@ -685,15 +694,20 @@ mod tests {
             (Vec3::new(0.0, 50.0, 0.0), 50.0),
         ];
 
-        let entities: Vec<_> = bodies.iter().map(|(pos, mass)| {
-            app.world_mut().spawn((
-                Transform::from_translation(*pos),
-                Mass::new(*mass),
-                AppliedForce::new(Vec3::ZERO),
-                GravitySource,
-                GravityAffected,
-            )).id()
-        }).collect();
+        let entities: Vec<_> = bodies
+            .iter()
+            .map(|(pos, mass)| {
+                app.world_mut()
+                    .spawn((
+                        Transform::from_translation(*pos),
+                        Mass::new(*mass),
+                        AppliedForce::new(Vec3::ZERO),
+                        GravitySource,
+                        GravityAffected,
+                    ))
+                    .id()
+            })
+            .collect();
 
         // Compute brute force
         let mut brute_forces = Vec::new();
@@ -707,7 +721,9 @@ mod tests {
 
         for i in 0..entities.len() {
             for j in 0..entities.len() {
-                if i == j { continue; }
+                if i == j {
+                    continue;
+                }
                 let pos_i = bodies[i].0;
                 let pos_j = bodies[j].0;
                 let mass_j = bodies[j].1;
@@ -719,11 +735,20 @@ mod tests {
         }
 
         // Build quadtree and compute BH force
-        let body_data: Vec<_> = entities.iter().enumerate().map(|(i, &e)| (e, bodies[i].0, bodies[i].1)).collect();
-        let quadtree = spatial::Quadtree::from_bodies(&body_data, params.barnes_hut_max_depth, params.barnes_hut_max_bodies_per_node);
+        let body_data: Vec<_> = entities
+            .iter()
+            .enumerate()
+            .map(|(i, &e)| (e, bodies[i].0, bodies[i].1))
+            .collect();
+        let quadtree = spatial::Quadtree::from_bodies(
+            &body_data,
+            params.barnes_hut_max_depth,
+            params.barnes_hut_max_bodies_per_node,
+        );
 
         for (i, _) in entities.iter().enumerate() {
-            let bh_force = calculate_barnes_hut_force(bodies[i].0, &quadtree.root, 0.5, params.softening, g);
+            let bh_force =
+                calculate_barnes_hut_force(bodies[i].0, &quadtree.root, 0.5, params.softening, g);
             let diff = (bh_force - brute_forces[i]).length();
             assert!(diff < 1.0, "BH force differs from brute force by {}", diff);
         }

@@ -80,8 +80,7 @@ fn setup(mut commands: Commands) {
         commands.spawn((
             Text2d::new("Neutral"),
             TextLayout::new_with_justify(Justify::Center),
-            Transform::from_translation(Vec3::new(x, y + 25.0, 1.0))
-                .with_scale(Vec3::splat(0.5)),
+            Transform::from_translation(Vec3::new(x, y + 25.0, 1.0)).with_scale(Vec3::splat(0.5)),
             CreatureLabel { creature: entity },
         ));
     }
@@ -155,12 +154,7 @@ fn update_trackers(
 fn move_creatures(
     time: Res<Time>,
     food_query: Query<&Transform, (With<Food>, Without<Creature>)>,
-    mut creature_query: Query<(
-        &mut Transform,
-        &mut Creature,
-        &PreyTracker,
-        &Personality,
-    )>,
+    mut creature_query: Query<(&mut Transform, &mut Creature, &PreyTracker, &Personality)>,
 ) {
     for (mut transform, mut creature, prey_tracker, personality) in &mut creature_query {
         let creature_pos = transform.translation.truncate();
@@ -264,7 +258,10 @@ fn update_visuals(mut query: Query<(&Creature, &mut Sprite)>) {
 fn update_labels(
     mut commands: Commands,
     creature_query: Query<(Entity, &Creature, &Transform, &Personality)>,
-    mut label_query: Query<(Entity, &mut Text2d, &mut Transform, &CreatureLabel), Without<Creature>>,
+    mut label_query: Query<
+        (Entity, &mut Text2d, &mut Transform, &CreatureLabel),
+        Without<Creature>,
+    >,
 ) {
     for (label_entity, mut text, mut label_transform, label) in &mut label_query {
         if let Ok((_, creature, creature_transform, personality)) =

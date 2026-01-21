@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use energy::thermodynamics::thermal::ThermalSystemPlugin;
 use energy::thermodynamics::prelude::*;
+use energy::thermodynamics::thermal::ThermalSystemPlugin;
 
 const GRID_SIZE: usize = 10;
 const CELL_SIZE: f32 = 50.0;
