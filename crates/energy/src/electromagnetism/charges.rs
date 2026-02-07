@@ -197,10 +197,12 @@ pub fn apply_coulomb_pairwise_forces(
                 continue;
             }
 
-            // Coulomb force: F = k·q₁·q₂/r²
+            // Coulomb force: F_on_A = -k·q₁·q₂/r² · r̂_AB
+            // Same-sign charges (k_qq > 0) → repulsive (force pushes A away from B)
+            // Opposite-sign charges (k_qq < 0) → attractive (force pulls A toward B)
             let k_qq = config.coulomb_constant * charge_a * charge_b;
             let force_magnitude = k_qq / r.powi(2);
-            let force_bare = (force_magnitude / r) * r_vec; // F_bare = (k·q₁·q₂/r²) · r̂
+            let force_bare = -(force_magnitude / r) * r_vec;
 
             // Apply C¹ force-switch for smooth cutoff
             let switch = force_switch(r, config.switch_on_radius, config.cutoff_radius);

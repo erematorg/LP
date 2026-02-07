@@ -1,6 +1,4 @@
 use bevy::prelude::*;
-use forces::PhysicsSet;
-use forces::core::newton_laws::Mass;
 use matter::geometry::Radius;
 use std::collections::HashMap;
 use utils::{SpatialIndexSet, SpatiallyIndexed, UnifiedSpatialIndex, force_switch};
@@ -474,20 +472,22 @@ fn check_thermal_stability(
 /// **Conservation**: Thermal energy tracked, but not yet integrated with ledger.
 fn sync_thermal_energy(
     mut commands: Commands,
-    changed_temps: Query<(Entity, &Temperature, &HeatCapacity, &Mass), Changed<Temperature>>,
+    changed_temps: Query<(Entity, &Temperature, &HeatCapacity), Changed<Temperature>>,
 ) {
-    // **LP-0 SCAFFOLDING**: U = m·c_p·T (simplified thermal energy).
+    // **LP-0 SCAFFOLDING**: U = C·T (simplified thermal energy).
+    // HeatCapacity already includes mass: C = m·c_p (J/K).
     // Future: Use proper thermodynamic potentials (enthalpy for constant P, etc.).
 
-    for (entity, temp, heat_cap, mass) in changed_temps.iter() {
-        // Thermal energy: U = m·c_p·T (Joules)
+    for (entity, temp, heat_cap) in changed_temps.iter() {
+        // Thermal energy: U = C·T (Joules)
+        // where C = HeatCapacity = m·c_p (J/K), already accounts for mass.
         //
         // **APPROXIMATION**: Assumes constant c_p (valid for small ΔT).
         // Assumes T_ref = 0 K (absolute thermal energy).
         //
         // **IRL PHYSICS**: For phase changes, need enthalpy H = U + PV.
         // For proper thermodynamics, need U(S,V) or H(S,P).
-        let thermal_energy = mass.value * heat_cap.value * temp.value;
+        let thermal_energy = heat_cap.value * temp.value;
 
         commands.entity(entity).insert(EnergyQuantity {
             value: thermal_energy,
@@ -515,8 +515,18 @@ impl Plugin for ThermalSystemPlugin {
                 PreUpdate,
                 mark_thermal_entities_spatially_indexed.in_set(SpatialIndexSet::InjectMarkers),
             )
-            // Thermal transfer in Update - doesn't write AppliedForce, no conflict
-            .add_systems(Update, sync_thermal_energy);
+            // Thermal conduction → flush commands → sync energy.
+            // conduction inserts Temperature via Commands; apply_deferred flushes
+            // so sync_thermal_energy sees Changed<Temperature> in the same frame.
+            .add_systems(
+                Update,
+                (
+                    compute_fourier_conduction,
+                    ApplyDeferred,
+                    sync_thermal_energy,
+                )
+                    .chain(),
+            );
     }
 }
 

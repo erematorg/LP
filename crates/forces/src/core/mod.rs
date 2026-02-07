@@ -17,7 +17,8 @@ pub mod prelude {
     pub use crate::core::newton_laws::{
         AppliedForce, Distance, ForceImpulse, ForcesDiagnostics, ForcesDiagnosticsPlugin,
         IntegratorKind, Mass, NewtonLawsPlugin, Norm, PairedForce, PairedForceInteraction,
-        Velocity, calculate_kinetic_energy, calculate_momentum, integrate_newton_second_law,
-        integrate_positions_symplectic_euler, update_forces_diagnostics,
+        Velocity, WorkDoneEvent, calculate_kinetic_energy, calculate_momentum,
+        integrate_newton_second_law, integrate_positions_symplectic_euler,
+        update_forces_diagnostics,
     };
 }

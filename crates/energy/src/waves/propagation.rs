@@ -6,9 +6,7 @@ pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
 use super::oscillation::{WaveParameters, angular_frequency, wave_number};
-use crate::conservation::{
-    EnergyAccountingLedger, EnergyQuantity, EnergyTransaction, TransactionType,
-};
+use crate::conservation::{EnergyBalance, EnergyQuantity, EnergyTransaction, TransactionType};
 
 // Calculate modified angular frequency with dispersion
 #[inline]
@@ -144,7 +142,7 @@ pub fn apply_wave_damping_with_energy(
         (Entity, &WaveParameters, Option<&mut EnergyQuantity>),
         With<WaveCenterMarker>,
     >,
-    mut ledger_query: Query<&mut EnergyAccountingLedger>,
+    mut ledger_query: Query<&mut EnergyBalance>,
 ) {
     let dt = time.delta_secs();
     if dt == 0.0 {
@@ -179,8 +177,8 @@ pub fn apply_wave_damping_with_energy(
                 }
             }
 
-            // Record transaction to ledger
-            if let Ok(mut ledger) = ledger_query.single_mut() {
+            // Record transaction to this entity's ledger
+            if let Ok(mut ledger) = ledger_query.get_mut(entity) {
                 ledger.record_transaction(EnergyTransaction {
                     transaction_type: TransactionType::Output,
                     amount: energy_lost,

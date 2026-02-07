@@ -194,18 +194,19 @@ pub struct Velocity {
 /// - Acceleration clamp: max 1000 m/s² (numerical stability, not IRL physics)
 ///
 /// **CONSERVATION**: Momentum conserved if all forces are action-reaction pairs (F_ab = -F_ba).
-/// Energy NOT conserved in this system (work tracking missing, no PE accounting).
+/// Energy conservation: work done by forces reported via WorkDoneEvent for ledger tracking.
 ///
 /// **NUMERICAL STABILITY**: Clamps extremely high accelerations to prevent explosive forces
 /// from breaking integration. If forces exceed limit, likely a bug (check softening, timestep, scales).
 pub fn integrate_newton_second_law(
     time: Res<Time>,
     config: Res<IntegrationConfig>,
-    mut query: Query<(&Mass, &mut Velocity, &mut AppliedForce)>,
+    mut query: Query<(Entity, &Mass, &mut Velocity, &mut AppliedForce)>,
+    mut work_events: MessageWriter<WorkDoneEvent>,
 ) {
     let dt = time.delta_secs();
 
-    for (mass, mut velocity, mut force) in query.iter_mut() {
+    for (entity, mass, mut velocity, mut force) in query.iter_mut() {
         if mass.is_infinite || mass.is_negligible() {
             continue;
         }
@@ -230,17 +231,27 @@ pub fn integrate_newton_second_law(
             acceleration
         };
 
+        // Calculate work using average velocity for better accuracy
+        // (Landau Vol 1 §6: dT = F·dr, where dr = v_avg·dt)
+        let v_old = velocity.linvel;
         velocity.linvel += acceleration * dt;
+        let v_avg = (v_old + velocity.linvel) * 0.5;
+        let work_done = force.force.dot(v_avg) * dt;
+
         force.elapsed += dt;
+
+        // Report work done for energy conservation tracking
+        if work_done.abs() > f32::EPSILON {
+            work_events.write(WorkDoneEvent {
+                entity,
+                work: work_done,
+            });
+        }
 
         // Clear accumulated force so subsequent systems can rebuild it per-frame
         force.force = Vec3::ZERO;
     }
 }
-
-// TODO: Work/energy reconciliation.
-// Work done by applied forces (∑ F·Δx) is not reported to the energy ledger yet.
-// When energy accounting is wired, emit an EnergyTransferEvent to keep conservation consistent.
 
 /// System to apply symplectic Euler integration for position updates
 pub fn integrate_positions_symplectic_euler(
@@ -324,6 +335,14 @@ impl ForceImpulse {
     }
 }
 
+/// Event for reporting work done by forces (W = F·dx)
+/// Energy crate listens to this to track kinetic energy changes
+#[derive(Message)]
+pub struct WorkDoneEvent {
+    pub entity: Entity,
+    pub work: f32, // Joules
+}
+
 /// Plugin that adds Newton's Laws mechanics systems in the correct order
 #[derive(Default)]
 pub struct NewtonLawsPlugin;
@@ -335,6 +354,7 @@ impl Plugin for NewtonLawsPlugin {
         app.init_resource::<IntegratorKind>()
             .init_resource::<IntegrationConfig>()
             .add_message::<ForceImpulse>()
+            .add_message::<WorkDoneEvent>()
             // Configure physics sets
             .configure_sets(
                 Update,
