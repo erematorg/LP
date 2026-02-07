@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use forces::prelude::{RotationalWorkEvent, WorkDoneEvent};
 
 /// Enum representing different types of energy
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
@@ -86,7 +87,7 @@ pub struct EnergyTransferEvent {
 /// Component for precise energy accounting
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
-pub struct EnergyAccountingLedger {
+pub struct EnergyBalance {
     /// History of all transactions, newest first
     pub transactions: Vec<EnergyTransaction>,
     /// Maximum number of transactions to store
@@ -116,7 +117,7 @@ pub struct EnergyTransaction {
     pub duration: f32,
 }
 
-impl Default for EnergyAccountingLedger {
+impl Default for EnergyBalance {
     fn default() -> Self {
         Self {
             transactions: Vec::new(),
@@ -127,7 +128,7 @@ impl Default for EnergyAccountingLedger {
     }
 }
 
-impl EnergyAccountingLedger {
+impl EnergyBalance {
     /// Record a new energy transaction
     pub fn record_transaction(&mut self, transaction: EnergyTransaction) {
         match transaction.transaction_type {
@@ -258,6 +259,72 @@ impl EnergyDriftMonitor {
     }
 }
 
+/// System to ensure entities with Mass have energy balance tracking
+pub fn initialize_energy_balance(
+    mut commands: Commands,
+    query: Query<Entity, (With<forces::prelude::Mass>, Without<EnergyBalance>)>,
+) {
+    for entity in query.iter() {
+        commands.entity(entity).insert(EnergyBalance::default());
+    }
+}
+
+/// System to track work done by forces and record in energy balance
+pub fn track_work_from_forces(
+    mut work_events: MessageReader<WorkDoneEvent>,
+    mut query: Query<&mut EnergyBalance>,
+    time: Res<Time>,
+) {
+    for event in work_events.read() {
+        if let Ok(mut ledger) = query.get_mut(event.entity) {
+            // Correct transaction direction based on work sign
+            let (transaction_type, source, destination) = if event.work > 0.0 {
+                (TransactionType::Input, None, Some(event.entity))
+            } else {
+                (TransactionType::Output, Some(event.entity), None)
+            };
+
+            ledger.record_transaction(EnergyTransaction {
+                transaction_type,
+                amount: event.work.abs(),
+                source,
+                destination,
+                timestamp: time.elapsed_secs(),
+                transfer_rate: event.work.abs() / time.delta_secs().max(f32::EPSILON),
+                duration: time.delta_secs(),
+            });
+        }
+    }
+}
+
+/// System to track rotational work done by torques and record in energy balance
+pub fn track_rotational_work_from_torques(
+    mut work_events: MessageReader<RotationalWorkEvent>,
+    mut query: Query<&mut EnergyBalance>,
+    time: Res<Time>,
+) {
+    for event in work_events.read() {
+        if let Ok(mut ledger) = query.get_mut(event.entity) {
+            // Same logic as linear work: positive work = energy input, negative = output
+            let (transaction_type, source, destination) = if event.work > 0.0 {
+                (TransactionType::Input, None, Some(event.entity))
+            } else {
+                (TransactionType::Output, Some(event.entity), None)
+            };
+
+            ledger.record_transaction(EnergyTransaction {
+                transaction_type,
+                amount: event.work.abs(),
+                source,
+                destination,
+                timestamp: time.elapsed_secs(),
+                transfer_rate: event.work.abs() / time.delta_secs().max(f32::EPSILON),
+                duration: time.delta_secs(),
+            });
+        }
+    }
+}
+
 /// Plugin to manage energy conservation systems
 pub struct EnergyConservationPlugin;
 
@@ -269,11 +336,22 @@ impl Plugin for EnergyConservationPlugin {
             .register_type::<EnergyQuantity>()
             .register_type::<TransactionType>()
             .register_type::<EnergyTransaction>()
-            .register_type::<EnergyAccountingLedger>()
+            .register_type::<EnergyBalance>()
             // Add resources
             .init_resource::<EnergyConservationTracker>()
             // Add event channel
-            .add_message::<EnergyTransferEvent>();
+            .add_message::<EnergyTransferEvent>()
+            // Add systems with explicit ordering
+            .add_systems(
+                Update,
+                (
+                    initialize_energy_balance,
+                    ApplyDeferred,
+                    (track_work_from_forces, track_rotational_work_from_torques)
+                        .after(forces::PhysicsSet::ApplyForces),
+                )
+                    .chain(),
+            );
     }
 }
 
@@ -284,7 +362,7 @@ mod tests {
     #[test]
     fn test_ledger_arithmetic() {
         // Test that net_energy_change = total_input - total_output
-        let mut ledger = EnergyAccountingLedger::default();
+        let mut ledger = EnergyBalance::default();
 
         ledger.record_transaction(EnergyTransaction {
             transaction_type: TransactionType::Input,
@@ -324,7 +402,7 @@ mod tests {
     #[test]
     fn test_current_flux_sums_active_rates() {
         // Test that current_flux sums transfer rates correctly
-        let mut ledger = EnergyAccountingLedger::default();
+        let mut ledger = EnergyBalance::default();
 
         let current_time = 10.0;
 

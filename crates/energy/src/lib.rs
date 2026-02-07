@@ -113,9 +113,9 @@ pub mod prelude {
     pub use super::{EnergySystem, EnergyTransferError};
 
     pub use crate::conservation::{
-        EnergyAccountingLedger, EnergyConservationPlugin, EnergyConservationTracker,
-        EnergyDriftMonitor, EnergyQuantity, EnergyTransaction, EnergyTransferEvent, EnergyType,
-        TransactionType, conversion_efficiency, verify_conservation,
+        EnergyBalance, EnergyConservationPlugin, EnergyConservationTracker, EnergyDriftMonitor,
+        EnergyQuantity, EnergyTransaction, EnergyTransferEvent, EnergyType, TransactionType,
+        conversion_efficiency, verify_conservation,
     };
 
     pub use crate::electromagnetism::prelude::*;

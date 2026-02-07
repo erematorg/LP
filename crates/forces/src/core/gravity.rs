@@ -437,15 +437,13 @@ pub fn calculate_barnes_hut_attraction(
 
     affected_query
         .par_iter_mut()
-        .for_each(|(entity, transform, _, mut force)| {
+        .for_each(|(entity, transform, mass, mut force)| {
             let position = transform.translation;
 
-            if bodies.iter().any(|&(e, _, _)| e == entity) {
-                return;
-            }
-
             let force_vector = calculate_barnes_hut_force(
+                entity,
                 position,
+                mass.value,
                 &quadtree.root,
                 theta,
                 softening,
@@ -457,7 +455,9 @@ pub fn calculate_barnes_hut_attraction(
 }
 
 pub fn calculate_barnes_hut_force(
+    affected_entity: Entity,
     affected_position: Vec3,
+    affected_mass: f32,
     node: &spatial::QuadtreeNode,
     theta: f32,
     softening: f32,
@@ -470,7 +470,8 @@ pub fn calculate_barnes_hut_force(
         let distance_squared = direction.length_squared();
         let softened_distance_squared = distance_squared + softening_squared;
         let force_magnitude =
-            gravitational_constant * node.mass_properties.total_mass / softened_distance_squared;
+            gravitational_constant * affected_mass * node.mass_properties.total_mass
+                / softened_distance_squared;
 
         if !force_magnitude.is_finite() {
             return Vec3::ZERO; // Skip non-finite BH aggregated force
@@ -482,7 +483,12 @@ pub fn calculate_barnes_hut_force(
     if node.children.iter().all(|c| c.is_none()) {
         let mut total_force = Vec3::ZERO;
 
-        for &(_, position, mass) in &node.bodies {
+        for &(entity, position, mass) in &node.bodies {
+            // Skip self-interaction
+            if entity == affected_entity {
+                continue;
+            }
+
             let direction = position - affected_position;
             let distance_squared = direction.length_squared();
 
@@ -491,7 +497,8 @@ pub fn calculate_barnes_hut_force(
             }
 
             let softened_distance_squared = distance_squared + softening_squared;
-            let force_magnitude = gravitational_constant * mass / softened_distance_squared;
+            let force_magnitude =
+                gravitational_constant * affected_mass * mass / softened_distance_squared;
 
             if !force_magnitude.is_finite() {
                 continue; // Skip non-finite BH leaf force
@@ -506,7 +513,9 @@ pub fn calculate_barnes_hut_force(
     let mut total_force = Vec3::ZERO;
     for child_node in node.children.iter().flatten() {
         total_force += calculate_barnes_hut_force(
+            affected_entity,
             affected_position,
+            affected_mass,
             child_node,
             theta,
             softening,
@@ -746,9 +755,16 @@ mod tests {
             params.barnes_hut_max_bodies_per_node,
         );
 
-        for (i, _) in entities.iter().enumerate() {
-            let bh_force =
-                calculate_barnes_hut_force(bodies[i].0, &quadtree.root, 0.5, params.softening, g);
+        for (i, &entity) in entities.iter().enumerate() {
+            let bh_force = calculate_barnes_hut_force(
+                entity,
+                bodies[i].0,
+                bodies[i].1,
+                &quadtree.root,
+                0.5,
+                params.softening,
+                g,
+            );
             let diff = (bh_force - brute_forces[i]).length();
             assert!(diff < 1.0, "BH force differs from brute force by {}", diff);
         }

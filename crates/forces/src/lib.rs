@@ -30,15 +30,13 @@ pub struct ForcesPlugin;
 
 impl Plugin for ForcesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(NewtonLawsPlugin)
+        app.add_plugins((NewtonLawsPlugin, core::gravity::GravityPlugin::new()))
             .register_type::<core::newton_laws::Mass>()
             .register_type::<core::newton_laws::Velocity>()
             .register_type::<core::newton_laws::AppliedForce>()
             .register_type::<core::gravity::GravityAffected>()
             .register_type::<core::gravity::GravitySource>()
-            .register_type::<core::gravity::MassiveBody>()
-            .init_resource::<core::gravity::GravityParams>()
-            .init_resource::<core::gravity::UniformGravity>();
+            .register_type::<core::gravity::MassiveBody>();
     }
 }
 
