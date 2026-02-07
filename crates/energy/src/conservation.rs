@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use forces::prelude::WorkDoneEvent;
+use forces::prelude::{RotationalWorkEvent, WorkDoneEvent};
 
 /// Enum representing different types of energy
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
@@ -297,6 +297,34 @@ pub fn track_work_from_forces(
     }
 }
 
+/// System to track rotational work done by torques and record in energy balance
+pub fn track_rotational_work_from_torques(
+    mut work_events: MessageReader<RotationalWorkEvent>,
+    mut query: Query<&mut EnergyBalance>,
+    time: Res<Time>,
+) {
+    for event in work_events.read() {
+        if let Ok(mut ledger) = query.get_mut(event.entity) {
+            // Same logic as linear work: positive work = energy input, negative = output
+            let (transaction_type, source, destination) = if event.work > 0.0 {
+                (TransactionType::Input, None, Some(event.entity))
+            } else {
+                (TransactionType::Output, Some(event.entity), None)
+            };
+
+            ledger.record_transaction(EnergyTransaction {
+                transaction_type,
+                amount: event.work.abs(),
+                source,
+                destination,
+                timestamp: time.elapsed_secs(),
+                transfer_rate: event.work.abs() / time.delta_secs().max(f32::EPSILON),
+                duration: time.delta_secs(),
+            });
+        }
+    }
+}
+
 /// Plugin to manage energy conservation systems
 pub struct EnergyConservationPlugin;
 
@@ -319,7 +347,8 @@ impl Plugin for EnergyConservationPlugin {
                 (
                     initialize_energy_balance,
                     ApplyDeferred,
-                    track_work_from_forces.after(forces::PhysicsSet::ApplyForces),
+                    (track_work_from_forces, track_rotational_work_from_torques)
+                        .after(forces::PhysicsSet::ApplyForces),
                 )
                     .chain(),
             );
