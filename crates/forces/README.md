@@ -11,6 +11,7 @@ Gravitational mechanics and Newton's laws for physics-based force systems.
 ## Scope & Limits
 - LP-0 integrates F = ma with explicit/symplectic Euler and optional acceleration clamps for stability; this is a numerical method, not a physical law.
 - Gravity defaults to a sim-tuned constant and softened inverse-square forces; Barnes-Hut is an approximation for large N.
+- Mutual gravity mode is exact pairwise O(N^2); treat ~100 active sources as the LP-0 realtime comfort range.
 - Potential energy and work accounting are not yet tracked; conservation diagnostics are partial.
 
 ## Conservation status

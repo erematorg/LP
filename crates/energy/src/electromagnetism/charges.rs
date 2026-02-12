@@ -4,7 +4,7 @@
 //! Future: Will be replaced by grid-based Poisson solve (ρ → φ → E).
 //!
 //! Physics: F = k·q₁·q₂/r² (Coulomb's law)
-//! Complexity: O(N) with SpatialGrid
+//! Complexity: Candidate lookup via UnifiedSpatialIndex backend (uniform cell field or hierarchy)
 //! Conservation: Force-only (EM potential energy = 0 for LP-0)
 
 use bevy::prelude::*;
@@ -115,7 +115,7 @@ pub fn mark_charged_entities_spatially_indexed(
 
 /// Apply Coulomb electrostatic forces between charged particles.
 ///
-/// **LP-0 SCAFFOLDING**: Pairwise particle-particle Coulomb interactions (O(N) via spatial hash grid).
+/// **LP-0 SCAFFOLDING**: Pairwise particle-particle Coulomb interactions.
 /// **TEMPORARY**: Will be replaced by grid-based Poisson solve (ρ → φ → E) in LP-1.
 ///
 /// **PHYSICS**: Coulomb's Law F = k·q₁·q₂/r² (Newtons)
@@ -129,7 +129,7 @@ pub fn mark_charged_entities_spatially_indexed(
 /// - Cutoff radius: 20m default (performance hack, IRL Coulomb has infinite range in vacuum)
 /// - Softening: 0.01m default (singularity avoidance for r→0)
 /// - Potential energy: Not tracked (force-only, PE = 0 in LP-0)
-/// - Pair-once guarantee: Only processes pairs where entity_b.index() > entity_a.index() to avoid double-counting
+/// - Pair-once guarantee: Only processes pairs where entity_b.id > entity_a.id to avoid double-counting
 ///
 /// **CONSERVATION**: Momentum conserved (F_ab = -F_ba, Newton's 3rd law).
 /// Energy NOT conserved (PE missing from accounting).
@@ -174,27 +174,34 @@ pub fn apply_coulomb_pairwise_forces(
         charge_data.insert(entity, (charge.value, pos, soft.value));
     }
 
-    // Iterate pairs via UnifiedSpatialIndex
-    for (entity_a, (charge_a, pos_a, soft_a)) in charge_data.iter() {
-        // Find neighbors within cutoff using UnifiedSpatialIndex (O(N) average)
-        for entity_b in index.query_radius(*pos_a, config.cutoff_radius) {
+    // Deterministic outer iteration: sort entities by stable id
+    let mut sorted_entities: Vec<Entity> = charge_data.keys().copied().collect();
+    sorted_entities.sort_by_key(|e| e.to_bits());
+
+    // Iterate pairs via UnifiedSpatialIndex.
+    // TODO(LP-0 determinism mode): For exact replay builds, collect and sort emitted neighbors
+    // by entity id before accumulation. Default path stays allocation-free for realtime.
+    for entity_a in sorted_entities {
+        let (charge_a, pos_a, soft_a) = charge_data[&entity_a];
+        // Find neighbors within cutoff using UnifiedSpatialIndex backend
+        index.for_each_neighbor_candidate_in_radius(pos_a, config.cutoff_radius, |entity_b| {
             // **Pair-once guarantee**: Only process pairs where B > A
-            if entity_b.index() <= entity_a.index() {
-                continue;
+            if entity_b.to_bits() <= entity_a.to_bits() {
+                return;
             }
 
             // Get data for entity B from staged map
             let Some((charge_b, pos_b, soft_b)) = charge_data.get(&entity_b) else {
-                continue;
+                return;
             };
 
-            let r_vec = *pos_b - *pos_a;
+            let r_vec = *pos_b - pos_a;
             let r = r_vec.length();
 
             // Property-based softening: use max of the two particles' softening lengths
             let softening = soft_a.max(*soft_b);
             if r < softening || r >= config.cutoff_radius {
-                continue;
+                return;
             }
 
             // Coulomb force: F_on_A = -k·q₁·q₂/r² · r̂_AB
@@ -210,7 +217,7 @@ pub fn apply_coulomb_pairwise_forces(
             let force = force_2d.extend(0.0); // Convert to Vec3 for AppliedForce
 
             // Apply forces symmetrically (Newton's 3rd law)
-            if let Ok((_, _, _, _, mut force_a)) = charges.get_mut(*entity_a) {
+            if let Ok((_, _, _, _, mut force_a)) = charges.get_mut(entity_a) {
                 force_a.force += force;
             }
             if let Ok((_, _, _, _, mut force_b)) = charges.get_mut(entity_b) {
@@ -219,6 +226,6 @@ pub fn apply_coulomb_pairwise_forces(
 
             // **LP-0**: EM potential energy = 0 (force-only).
             // Future: Track U(r) = integral of switched force for energy conservation.
-        }
+        });
     }
 }

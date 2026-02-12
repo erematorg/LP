@@ -200,7 +200,7 @@ fn mark_thermal_entities_spatially_indexed(
 
 /// Compute thermal transfer via Fourier's Law of conduction.
 ///
-/// **LP-0 SCAFFOLDING**: Pairwise particle-particle thermal conduction (O(N) via spatial hash grid).
+/// **LP-0 SCAFFOLDING**: Pairwise particle-particle thermal conduction.
 /// **TEMPORARY**: Will be replaced by grid-based diffusion PDE (∇·(k∇T) = ρc_p ∂T/∂t) in LP-1.
 ///
 /// **PHYSICS**: Fourier's Law q = k·A·ΔT/d (W), Q = P·dt (J)
@@ -292,28 +292,35 @@ pub(crate) fn compute_fourier_conduction(
     let cutoff_radius = config.cutoff_radius;
     let switch_on_radius = config.switch_on_radius;
 
-    // Iterate pairs via UnifiedSpatialIndex
-    for (entity_a, (pos_a, temp_a, k_a, capacity_a, radius_a)) in thermal_data.iter() {
-        // Find neighbors within cutoff using UnifiedSpatialIndex (O(N) average)
-        for entity_b in index.query_radius(*pos_a, cutoff_radius) {
+    // Deterministic outer iteration: sort entities by stable id
+    let mut sorted_entities: Vec<Entity> = thermal_data.keys().copied().collect();
+    sorted_entities.sort_by_key(|e| e.to_bits());
+
+    // Iterate pairs via UnifiedSpatialIndex.
+    // TODO(LP-0 determinism mode): For exact replay builds, collect and sort emitted neighbors
+    // by entity id before accumulation. Default path stays allocation-free for realtime.
+    for entity_a in sorted_entities {
+        let (pos_a, temp_a, k_a, capacity_a, radius_a) = thermal_data[&entity_a];
+        // Find neighbors within cutoff using UnifiedSpatialIndex backend
+        index.for_each_neighbor_candidate_in_radius(pos_a, cutoff_radius, |entity_b| {
             // **Pair-once guarantee**: Only process pairs where B > A
-            if entity_b.index() <= entity_a.index() {
-                continue;
+            if entity_b.to_bits() <= entity_a.to_bits() {
+                return;
             }
 
             // Get data for entity B from staged map
             let Some((pos_b, temp_b, k_b, capacity_b, radius_b)) = thermal_data.get(&entity_b)
             else {
-                continue;
+                return;
             };
 
-            let r_vec = *pos_b - *pos_a;
+            let r_vec = *pos_b - pos_a;
             let distance = r_vec.length();
 
             // Property-based softening: use smaller radius as minimum distance
             let softening = radius_a.min(*radius_b);
             if distance < softening || distance >= cutoff_radius {
-                continue;
+                return;
             }
 
             let temp_diff = temp_a - temp_b; // +: A hotter, -: B hotter
@@ -335,7 +342,7 @@ pub(crate) fn compute_fourier_conduction(
             let power = k_avg * contact_area * temp_diff / distance; // W
 
             if !power.is_finite() {
-                continue; // Skip non-finite power
+                return; // Skip non-finite power
             }
 
             // Apply C¹ force-switch for smooth cutoff
@@ -359,18 +366,18 @@ pub(crate) fn compute_fourier_conduction(
             let delta_t_b = heat_energy / capacity_b; // Heating if heat_energy > 0
 
             if !delta_t_a.is_finite() || !delta_t_b.is_finite() {
-                continue; // Skip non-finite temperature changes
+                return; // Skip non-finite temperature changes
             }
 
-            *temp_changes.entry(*entity_a).or_insert(0.0) += delta_t_a;
+            *temp_changes.entry(entity_a).or_insert(0.0) += delta_t_a;
             *temp_changes.entry(entity_b).or_insert(0.0) += delta_t_b;
 
             thermal_transfer_events.write(ThermalTransferEvent {
-                source: *entity_a,
+                source: entity_a,
                 target: entity_b,
                 heat_flow: power_switched.abs(),
             });
-        }
+        });
     }
 
     // Apply temperature changes
@@ -448,15 +455,15 @@ fn check_thermal_stability(
 
         if dt > max_stable_dt {
             warn!(
-                "⚠️  Thermal diffusion may be UNSTABLE!\n\
+                "Thermal diffusion may be UNSTABLE!\n\
                  Current timestep: dt = {:.6} s\n\
                  Stability limit:  dt <= {:.6} s\n\
                  Thermal diffusivity: α = {:.2e} m²/s\n\
                  Grid spacing: dx = {:.2} m\n\
-                 → Simulation may diverge or explode. Consider:\n\
-                   • Smaller timestep (use fixed timestep plugin)\n\
-                   • Coarser grid (increase SpatialGrid cell_size)\n\
-                   • Implicit solver (future MPM work)",
+                 Simulation may diverge or explode. Consider:\n\
+                   - Smaller timestep (use fixed timestep plugin)\n\
+                   - Coarser grid (increase SpatialGrid cell_size)\n\
+                   - Implicit solver (future MPM work)",
                 dt, max_stable_dt, alpha, dx
             );
         }

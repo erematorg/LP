@@ -4,13 +4,15 @@ Shared utilities and optimizations.
 
 ## Modules
 
-- `spatial::SpatialGrid` - Sparse spatial hash grid for neighbor queries
+- `spatial::UnifiedSpatialIndex` - Hybrid spatial index (grid hash + optional tree backend)
+- `spatial::SpatialGrid` - Sparse spatial hash grid used by UnifiedSpatialIndex
 - `pool::EntityPool` - Entity recycling for spawn/despawn scenarios
 
 ## Scope & Limits
-- SpatialGrid and UnifiedSpatialIndex are 2D, point-entity hash grids; large bodies or 3D need other structures.
-- Radius queries return candidate sets from grid cells; exact distance filtering remains a caller responsibility.
+- UnifiedSpatialIndex is 2D and point-entity based; large bodies or 3D need other structures.
+- Radius queries return candidate sets from the active backend; exact distance filtering remains a caller responsibility.
 - ECS-based helpers are tuned for LP-0 scale; high-N systems will move to SoA/MPM paths.
+- LP-0 uses 2D neighbor search. If LP moves core continuum simulation to 3D MPM, this layer needs a 3D upgrade path.
 
 ## Usage
 
@@ -22,9 +24,10 @@ app.add_plugins(utils::UtilsPlugin);
 
 ### Current Implementation
 
-**SpatialGrid:** Incremental updates for ECS queries (thermal, waves, AI)
-- Handles 100-10k entities efficiently
-- Prefer stable cell sizes to avoid churn; reuse a single grid per query domain to reduce allocations.
+**UnifiedSpatialIndex:** Runtime backend policy for ECS queries (thermal, EM, AI)
+- `UniformCellField`: fastest for dense, highly dynamic domains.
+- `HierarchicalEnvelopeField`: useful for sparse/non-uniform distributions.
+- `Adaptive`: switches backend from observed density with cooldown to avoid thrashing.
 
 **EntityPool (Hard Pool):** Strips components on release
 - Use for moderate spawn rates (<100/frame)
@@ -46,7 +49,16 @@ struct ParticleSystem {
 }
 ```
 
+### LP-0 Spatial TODO (Non-Overkill)
+
+These are the next practical upgrades from the current hybrid index work:
+
+- Add `for_each_in_aabb` query path for batch neighborhood pulls (important for later MPM coupling).
+- Add an optional strict-determinism query mode that emits neighbors sorted by entity id (debug/replay builds).
+- Tune tree split/rebuild heuristics using LP scene profiles before adding new backend complexity.
+- Keep scope 2D for LP-0; only move to 3D index primitives when MPM integration starts.
+
 ## Architecture
 
-- **Mind (ECS):** Behavior, AI -> SpatialGrid + EntityPool
+- **Mind (ECS):** Behavior, AI -> UnifiedSpatialIndex + EntityPool
 - **Body (SoA):** Physics, chemistry -> custom structures

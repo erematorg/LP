@@ -5,6 +5,8 @@ use bevy::prelude::*;
 // Simulation constants
 // NOTE: Sim-tuned G (not SI 6.67e-11). Pixel→meter mapping TBD; adjust after scale is fixed.
 pub const DEFAULT_GRAVITATIONAL_CONSTANT: f32 = 0.1;
+/// Practical LP-0 guideline for exact mutual O(N^2) gravity in realtime.
+pub const MUTUAL_REALTIME_BODY_LIMIT: usize = 100;
 
 /// Resource for gravity simulation parameters
 #[derive(Resource, Clone, Debug)]
@@ -96,6 +98,50 @@ pub struct GravitySource;
 #[derive(Component, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
 pub struct MassiveBody;
+
+#[derive(Clone, Copy, Debug)]
+struct GravityBody {
+    entity: Entity,
+    position: Vec3,
+    mass: f32,
+}
+
+fn stage_gravity_bodies(
+    query: &Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+) -> Vec<GravityBody> {
+    query
+        .iter()
+        .map(|(entity, transform, mass)| GravityBody {
+            entity,
+            position: transform.translation,
+            mass: mass.value,
+        })
+        .collect()
+}
+
+fn pair_force_vector(
+    source_pos: Vec3,
+    source_mass: f32,
+    affected_pos: Vec3,
+    affected_mass: f32,
+    gravitational_constant: f32,
+    softening_squared: f32,
+) -> Option<Vec3> {
+    let direction = source_pos - affected_pos;
+    let distance_squared = direction.length_squared();
+    if distance_squared <= f32::EPSILON {
+        return None;
+    }
+
+    let softened_distance_squared = distance_squared + softening_squared;
+    let force_magnitude =
+        gravitational_constant * source_mass * affected_mass / softened_distance_squared;
+    if !force_magnitude.is_finite() {
+        return None;
+    }
+
+    Some(direction.normalize() * force_magnitude)
+}
 
 // Barnes-Hut spatial partitioning
 mod spatial {
@@ -328,40 +374,45 @@ pub fn calculate_mutual_gravitational_attraction(
     let softening_squared = gravity_params.softening * gravity_params.softening;
     let gravitational_constant = gravity_params.gravitational_constant;
 
-    // Collect force updates to avoid mutable aliasing
-    let mut force_updates: Vec<(Entity, Vec3)> = Vec::new();
-
-    // Read-only iteration to compute forces
-    let entities: Vec<_> = query
+    // Stage source data once (particular-style storage split).
+    let mut bodies: Vec<_> = query
         .iter()
-        .map(|(e, t, m, _)| (e, t.translation, m.value))
+        .map(|(entity, transform, mass, _)| GravityBody {
+            entity,
+            position: transform.translation,
+            mass: mass.value,
+        })
         .collect();
+    // Stable ordering keeps accumulation deterministic for replay/debug.
+    bodies.sort_by_key(|body| body.entity.to_bits());
+    let mut accumulated_forces = vec![Vec3::ZERO; bodies.len()];
+    // TODO(LP-1): For mutual mode above MUTUAL_REALTIME_BODY_LIMIT, add an approximate
+    // path (e.g. Barnes-Hut variant with symmetry corrections) to keep realtime budgets.
 
-    for i in 0..entities.len() {
-        for j in (i + 1)..entities.len() {
-            let (entity1, pos1, mass1) = entities[i];
-            let (entity2, pos2, mass2) = entities[j];
-
-            let direction = pos2 - pos1;
-            let distance_squared = direction.length_squared();
-            if distance_squared <= f32::EPSILON {
+    // Pair-once pass, add opposite forces by index.
+    for i in 0..bodies.len() {
+        let body_a = bodies[i];
+        for j in (i + 1)..bodies.len() {
+            let body_b = bodies[j];
+            let Some(force_on_a) = pair_force_vector(
+                body_b.position,
+                body_b.mass,
+                body_a.position,
+                body_a.mass,
+                gravitational_constant,
+                softening_squared,
+            ) else {
                 continue;
-            }
-
-            let softened_distance_squared = distance_squared + softening_squared;
-            let force_magnitude =
-                gravitational_constant * mass1 * mass2 / softened_distance_squared;
-            let force_vector = direction.normalize() * force_magnitude;
-
-            force_updates.push((entity1, force_vector));
-            force_updates.push((entity2, -force_vector));
+            };
+            accumulated_forces[i] += force_on_a;
+            accumulated_forces[j] -= force_on_a; // Newton's 3rd law
         }
     }
 
-    // Apply accumulated forces
-    for (entity, force) in force_updates {
-        if let Ok((_, _, _, mut applied_force)) = query.get_mut(entity) {
-            applied_force.force += force;
+    // Single writeback pass to ECS.
+    for (index, body) in bodies.iter().enumerate() {
+        if let Ok((_, _, _, mut applied_force)) = query.get_mut(body.entity) {
+            applied_force.force += accumulated_forces[index];
         }
     }
 }
@@ -377,31 +428,29 @@ pub fn calculate_gravitational_attraction(
     let softening_squared = gravity_params.softening * gravity_params.softening;
     let gravitational_constant = gravity_params.gravitational_constant;
 
-    let sources: Vec<(Entity, Vec3, f32)> = query
-        .iter()
-        .map(|(e, t, m)| (e, t.translation, m.value))
-        .collect();
+    let sources = stage_gravity_bodies(&query);
 
+    // Safe to parallelize: each worker mutates a distinct affected entity while sources stay read-only.
     affected_query.par_iter_mut().for_each(
         |(affected_entity, affected_transform, affected_mass, mut force)| {
             let affected_pos = affected_transform.translation;
 
-            for &(source_entity, source_pos, source_mass) in &sources {
-                if source_entity == affected_entity {
+            for source in &sources {
+                if source.entity == affected_entity {
                     continue;
                 }
 
-                let direction = source_pos - affected_pos;
-                let distance_squared = direction.length_squared();
-                let softened_distance_squared = distance_squared + softening_squared;
-                let force_magnitude = gravitational_constant * source_mass * affected_mass.value
-                    / softened_distance_squared;
-
-                if !force_magnitude.is_finite() {
-                    continue; // Skip non-finite gravity force
-                }
-
-                force.force += direction.normalize() * force_magnitude;
+                let Some(force_vector) = pair_force_vector(
+                    source.position,
+                    source.mass,
+                    affected_pos,
+                    affected_mass.value,
+                    gravitational_constant,
+                    softening_squared,
+                ) else {
+                    continue;
+                };
+                force.force += force_vector;
             }
         },
     );
@@ -422,13 +471,14 @@ pub fn calculate_barnes_hut_attraction(
         return;
     }
 
-    let bodies: Vec<(Entity, Vec3, f32)> = query
-        .iter()
-        .map(|(e, t, m)| (e, t.translation, m.value))
-        .collect();
+    let bodies = stage_gravity_bodies(&query);
 
+    let body_data: Vec<_> = bodies
+        .iter()
+        .map(|body| (body.entity, body.position, body.mass))
+        .collect();
     let quadtree = spatial::Quadtree::from_bodies(
-        &bodies,
+        &body_data,
         gravity_params.barnes_hut_max_depth,
         gravity_params.barnes_hut_max_bodies_per_node,
     );
