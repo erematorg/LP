@@ -12,6 +12,11 @@ use forces::core::newton_laws::AppliedForce;
 use std::collections::HashMap;
 use utils::{SpatiallyIndexed, UnifiedSpatialIndex, force_switch};
 
+use crate::pairwise::{
+    PairwiseDeterminismConfig, for_each_neighbor_candidate, is_forward_entity_pair,
+    prepare_sorted_entities_from_keys, prepare_staging_map,
+};
+
 /// Electric charge component.
 ///
 /// Units: Coulombs (C)
@@ -56,6 +61,13 @@ pub struct SofteningLength {
     ///
     /// Typically ~0.01m for particle-scale simulations.
     pub value: f32,
+}
+
+#[derive(Default)]
+pub(crate) struct CoulombComputeContext {
+    charge_data: HashMap<Entity, (f32, Vec2, f32)>,
+    sorted_entities: Vec<Entity>,
+    neighbor_candidates: Vec<Entity>,
 }
 
 impl Default for SofteningLength {
@@ -133,7 +145,7 @@ pub fn mark_charged_entities_spatially_indexed(
 ///
 /// **CONSERVATION**: Momentum conserved (F_ab = -F_ba, Newton's 3rd law).
 /// Energy NOT conserved (PE missing from accounting).
-pub fn apply_coulomb_pairwise_forces(
+pub(crate) fn apply_coulomb_pairwise_forces(
     mut charges: Query<(
         Entity,
         &Charge,
@@ -143,12 +155,15 @@ pub fn apply_coulomb_pairwise_forces(
     )>,
     index: Res<UnifiedSpatialIndex>,
     config: Res<CoulombConfig>,
+    determinism: Res<PairwiseDeterminismConfig>,
+    mut ctx: Local<CoulombComputeContext>,
 ) {
     // **LP-0 SCAFFOLDING**: Pairwise particle-particle Coulomb forces.
     // Future: Grid-based Poisson solve (ρ → φ → E).
 
-    // Stage charges into map to avoid nested query
-    let mut charge_data: HashMap<Entity, (f32, Vec2, f32)> = HashMap::new();
+    // Reuse staging buffers across frames to avoid per-frame allocation churn.
+    let estimated = charges.iter().len();
+    prepare_staging_map(&mut ctx.charge_data, estimated);
     for (entity, charge, trans, softening, _) in charges.iter() {
         let pos = trans.translation.truncate();
 
@@ -171,61 +186,71 @@ pub fn apply_coulomb_pairwise_forces(
             }
         };
 
-        charge_data.insert(entity, (charge.value, pos, soft.value));
+        ctx.charge_data
+            .insert(entity, (charge.value, pos, soft.value));
     }
 
     // Deterministic outer iteration: sort entities by stable id
-    let mut sorted_entities: Vec<Entity> = charge_data.keys().copied().collect();
-    sorted_entities.sort_by_key(|e| e.to_bits());
+    let staged_entities: Vec<Entity> = ctx.charge_data.keys().copied().collect();
+    prepare_sorted_entities_from_keys(&mut ctx.sorted_entities, staged_entities);
 
     // Iterate pairs via UnifiedSpatialIndex.
-    // TODO(LP-0 determinism mode): For exact replay builds, collect and sort emitted neighbors
-    // by entity id before accumulation. Default path stays allocation-free for realtime.
-    for entity_a in sorted_entities {
+    let sorted_entities = std::mem::take(&mut ctx.sorted_entities);
+    let charge_data = std::mem::take(&mut ctx.charge_data);
+    for &entity_a in &sorted_entities {
         let (charge_a, pos_a, soft_a) = charge_data[&entity_a];
-        // Find neighbors within cutoff using UnifiedSpatialIndex backend
-        index.for_each_neighbor_candidate_in_radius(pos_a, config.cutoff_radius, |entity_b| {
-            // **Pair-once guarantee**: Only process pairs where B > A
-            if entity_b.to_bits() <= entity_a.to_bits() {
-                return;
-            }
+        // Find neighbors within cutoff using UnifiedSpatialIndex backend.
+        for_each_neighbor_candidate(
+            &index,
+            pos_a,
+            config.cutoff_radius,
+            determinism.strict_neighbor_order,
+            &mut ctx.neighbor_candidates,
+            |entity_b| {
+                // **Pair-once guarantee**: Only process pairs where B > A
+                if !is_forward_entity_pair(entity_a, entity_b) {
+                    return;
+                }
 
-            // Get data for entity B from staged map
-            let Some((charge_b, pos_b, soft_b)) = charge_data.get(&entity_b) else {
-                return;
-            };
+                // Get data for entity B from staged map
+                let Some((charge_b, pos_b, soft_b)) = charge_data.get(&entity_b) else {
+                    return;
+                };
 
-            let r_vec = *pos_b - pos_a;
-            let r = r_vec.length();
+                let r_vec = *pos_b - pos_a;
+                let r = r_vec.length();
 
-            // Property-based softening: use max of the two particles' softening lengths
-            let softening = soft_a.max(*soft_b);
-            if r < softening || r >= config.cutoff_radius {
-                return;
-            }
+                // Property-based softening: use max of the two particles' softening lengths
+                let softening = soft_a.max(*soft_b);
+                if r < softening || r >= config.cutoff_radius {
+                    return;
+                }
 
-            // Coulomb force: F_on_A = -k·q₁·q₂/r² · r̂_AB
-            // Same-sign charges (k_qq > 0) → repulsive (force pushes A away from B)
-            // Opposite-sign charges (k_qq < 0) → attractive (force pulls A toward B)
-            let k_qq = config.coulomb_constant * charge_a * charge_b;
-            let force_magnitude = k_qq / r.powi(2);
-            let force_bare = -(force_magnitude / r) * r_vec;
+                // Coulomb force: F_on_A = -k·q₁·q₂/r² · r̂_AB
+                // Same-sign charges (k_qq > 0) → repulsive (force pushes A away from B)
+                // Opposite-sign charges (k_qq < 0) → attractive (force pulls A toward B)
+                let k_qq = config.coulomb_constant * charge_a * charge_b;
+                let force_magnitude = k_qq / r.powi(2);
+                let force_bare = -(force_magnitude / r) * r_vec;
 
-            // Apply C¹ force-switch for smooth cutoff
-            let switch = force_switch(r, config.switch_on_radius, config.cutoff_radius);
-            let force_2d = force_bare * switch;
-            let force = force_2d.extend(0.0); // Convert to Vec3 for AppliedForce
+                // Apply C¹ force-switch for smooth cutoff
+                let switch = force_switch(r, config.switch_on_radius, config.cutoff_radius);
+                let force_2d = force_bare * switch;
+                let force = force_2d.extend(0.0); // Convert to Vec3 for AppliedForce
 
-            // Apply forces symmetrically (Newton's 3rd law)
-            if let Ok((_, _, _, _, mut force_a)) = charges.get_mut(entity_a) {
-                force_a.force += force;
-            }
-            if let Ok((_, _, _, _, mut force_b)) = charges.get_mut(entity_b) {
-                force_b.force -= force; // F_ba = -F_ab
-            }
+                // Apply forces symmetrically (Newton's 3rd law)
+                if let Ok((_, _, _, _, mut force_a)) = charges.get_mut(entity_a) {
+                    force_a.force += force;
+                }
+                if let Ok((_, _, _, _, mut force_b)) = charges.get_mut(entity_b) {
+                    force_b.force -= force; // F_ba = -F_ab
+                }
 
-            // **LP-0**: EM potential energy = 0 (force-only).
-            // Future: Track U(r) = integral of switched force for energy conservation.
-        });
+                // **LP-0**: EM potential energy = 0 (force-only).
+                // Future: Track U(r) = integral of switched force for energy conservation.
+            },
+        );
     }
+    ctx.charge_data = charge_data;
+    ctx.sorted_entities = sorted_entities;
 }

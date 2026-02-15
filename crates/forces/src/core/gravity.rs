@@ -106,6 +106,13 @@ struct GravityBody {
     mass: f32,
 }
 
+#[derive(Default)]
+struct StagedGravitySources {
+    entities: Vec<Entity>,
+    positions: Vec<Vec3>,
+    masses: Vec<f32>,
+}
+
 fn stage_gravity_bodies(
     query: &Query<(Entity, &Transform, &Mass), With<GravitySource>>,
 ) -> Vec<GravityBody> {
@@ -117,6 +124,27 @@ fn stage_gravity_bodies(
             mass: mass.value,
         })
         .collect()
+}
+
+fn stage_gravity_sources_soa(
+    query: &Query<(Entity, &Transform, &Mass), With<GravitySource>>,
+) -> StagedGravitySources {
+    let mut staged = StagedGravitySources::default();
+    let source_count = query.iter().count();
+    staged.entities.reserve(source_count);
+    staged.positions.reserve(source_count);
+    staged.masses.reserve(source_count);
+
+    for (entity, transform, mass) in query.iter() {
+        if mass.value <= f32::EPSILON {
+            continue;
+        }
+        staged.entities.push(entity);
+        staged.positions.push(transform.translation);
+        staged.masses.push(mass.value);
+    }
+
+    staged
 }
 
 fn pair_force_vector(
@@ -428,21 +456,23 @@ pub fn calculate_gravitational_attraction(
     let softening_squared = gravity_params.softening * gravity_params.softening;
     let gravitational_constant = gravity_params.gravitational_constant;
 
-    let sources = stage_gravity_bodies(&query);
+    // Particular-style storage split: stage read-only source data into tight SoA
+    // buffers once, then iterate without ECS lookups in the hot loop.
+    let sources = stage_gravity_sources_soa(&query);
 
     // Safe to parallelize: each worker mutates a distinct affected entity while sources stay read-only.
     affected_query.par_iter_mut().for_each(
         |(affected_entity, affected_transform, affected_mass, mut force)| {
             let affected_pos = affected_transform.translation;
 
-            for source in &sources {
-                if source.entity == affected_entity {
+            for i in 0..sources.entities.len() {
+                if sources.entities[i] == affected_entity {
                     continue;
                 }
 
                 let Some(force_vector) = pair_force_vector(
-                    source.position,
-                    source.mass,
+                    sources.positions[i],
+                    sources.masses[i],
                     affected_pos,
                     affected_mass.value,
                     gravitational_constant,

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
@@ -191,9 +192,73 @@ pub fn save<T: Serialize>(data: &T, settings: &SaveSettings, key: &str) -> Resul
     }
     let json =
         serde_json::to_string_pretty(data).map_err(|e| format!("Serialization failed: {}", e))?;
-    fs::write(&full_path, json)
-        .map_err(|e| format!("File write failed ({}): {}", full_path.display(), e))?;
+    write_json_atomic(&full_path, &json)?;
     Ok(full_path)
+}
+
+fn write_json_atomic(path: &Path, json: &str) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("Cannot resolve parent directory for {}", path.display()))?;
+
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| format!("Invalid save file name for {}", path.display()))?;
+
+    let unique = format!(
+        "{}_{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let temp_path = parent.join(format!(".{}.{}.tmp", file_name, unique));
+
+    {
+        let mut temp_file = fs::File::create(&temp_path).map_err(|err| {
+            format!(
+                "Failed to create temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+
+        temp_file.write_all(json.as_bytes()).map_err(|err| {
+            format!(
+                "Failed to write temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+        temp_file.sync_all().map_err(|err| {
+            format!(
+                "Failed to flush temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+    }
+
+    if path.exists() {
+        fs::remove_file(path).map_err(|err| {
+            format!(
+                "Failed to replace existing save {}: {}",
+                path.display(),
+                err
+            )
+        })?;
+    }
+
+    fs::rename(&temp_path, path).map_err(|err| {
+        format!(
+            "Failed to move temp save {} to {}: {}",
+            temp_path.display(),
+            path.display(),
+            err
+        )
+    })
 }
 
 pub fn load<T>(settings: &SaveSettings, key: &str) -> Result<T, String>
@@ -563,6 +628,8 @@ pub fn load_game_data(settings: &SaveSettings, key: &str) -> Result<GameSaveData
 pub trait WorldSaveExt {
     fn save_game(&mut self, path: &str) -> Result<(), String>;
     fn load_game(&mut self, path: &str) -> Result<(), String>;
+    fn checkpoint_game(&mut self, name: &str) -> Result<(), String>;
+    fn rollback_game_checkpoint(&mut self, name: Option<&str>) -> Result<(), String>;
 }
 
 impl WorldSaveExt for World {
@@ -619,5 +686,96 @@ impl WorldSaveExt for World {
         }
 
         Ok(())
+    }
+
+    fn checkpoint_game(&mut self, name: &str) -> Result<(), String> {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+
+        let snapshot_name = if name.is_empty() {
+            format!("checkpoint-{:.3}", timestamp)
+        } else {
+            name.to_string()
+        };
+
+        let mut tracker = self
+            .get_resource_mut::<GameTracker>()
+            .ok_or_else(|| "GameTracker resource not found".to_string())?;
+        tracker.snapshot(snapshot_name, timestamp);
+        Ok(())
+    }
+
+    fn rollback_game_checkpoint(&mut self, name: Option<&str>) -> Result<(), String> {
+        let mut tracker = self
+            .get_resource_mut::<GameTracker>()
+            .ok_or_else(|| "GameTracker resource not found".to_string())?;
+
+        match name {
+            Some(snapshot_name) => tracker.rollback_to(snapshot_name).map(|_| ()),
+            None => tracker.rollback().map(|_| ()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+    struct TestSave {
+        value: i32,
+    }
+
+    #[test]
+    fn save_replaces_file_atomically() {
+        let unique = format!(
+            "lp_save_test_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        );
+        let directory = std::env::temp_dir().join(unique);
+        let settings = SaveSettings::default().with_custom_directory(&directory);
+
+        let first = TestSave { value: 10 };
+        let second = TestSave { value: 42 };
+
+        let path = save(&first, &settings, "slot.json").expect("first save should succeed");
+        save(&second, &settings, "slot.json").expect("second save should succeed");
+
+        let loaded: TestSave = load(&settings, "slot.json").expect("load should succeed");
+        assert_eq!(loaded, second);
+        assert!(path.exists());
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn tracker_snapshot_limit_and_rollback_work() {
+        let mut tracker = GameTracker::new(Duration::from_secs(5));
+        tracker.max_snapshots = 2;
+
+        tracker.state.total_energy = 1.0;
+        tracker.snapshot("s1".to_string(), 1.0);
+
+        tracker.state.total_energy = 2.0;
+        tracker.snapshot("s2".to_string(), 2.0);
+
+        tracker.state.total_energy = 3.0;
+        tracker.snapshot("s3".to_string(), 3.0);
+
+        assert_eq!(tracker.snapshots.len(), 2);
+        assert_eq!(tracker.snapshots[0].name, "s2");
+        assert_eq!(tracker.snapshots[1].name, "s3");
+
+        tracker.state.total_energy = 99.0;
+        tracker
+            .rollback_to("s2")
+            .expect("rollback to known snapshot should succeed");
+        assert_eq!(tracker.state.total_energy, 2.0);
     }
 }
