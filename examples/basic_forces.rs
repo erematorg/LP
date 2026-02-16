@@ -116,7 +116,7 @@ impl Default for SimulationControls {
             speed_multiplier: 1.0,
             trail_lifetime: TRAIL_LIFETIME,
             gravity_multiplier: 1.0,
-            coulomb_multiplier: 1.0,
+            coulomb_multiplier: 0.0, // Start disabled; users enable via slider
             enable_coulomb: true,
         }
     }
