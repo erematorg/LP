@@ -106,7 +106,7 @@ fn verify_all(
     );
 
     // Step 2: Verify spatial queries find entities
-    let neighbors: Vec<Entity> = index.query_radius(Vec2::ZERO, 20.0).collect();
+    let neighbors: Vec<Entity> = index.query_radius(Vec2::ZERO, 20.0);
     info!(
         "🔍 Found {} neighbors within 20m of origin",
         neighbors.len()

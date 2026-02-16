@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use utils::{GridCell, SpatialGrid};
 
+/// TODO: Wave grid-based solver (LP-1 feature, currently scaffolded)
+/// Pending full wave equation implementation
 #[derive(Resource, Deref, DerefMut)]
+#[allow(dead_code)]
 pub(crate) struct WaveGrid(pub(crate) SpatialGrid);
 
 use super::normalize_or;
@@ -104,6 +107,8 @@ pub fn solve_radial_wave(params: &WaveParameters, center: Vec2, position: Vec2, 
     params.amplitude * spatial_falloff * damping_factor * phase.sin()
 }
 
+/// TODO: Grid cell attachment (wave grid solver, LP-1)
+#[allow(dead_code)]
 pub(crate) fn attach_grid_cells_to_wave_centers(
     mut commands: Commands,
     mut grid: ResMut<WaveGrid>,
@@ -117,6 +122,8 @@ pub(crate) fn attach_grid_cells_to_wave_centers(
     }
 }
 
+/// TODO: Wave grid update (wave equation solver, LP-1)
+#[allow(dead_code)]
 pub(crate) fn update_wave_grid(
     mut grid: ResMut<WaveGrid>,
     mut query: Query<

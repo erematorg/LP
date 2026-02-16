@@ -81,9 +81,10 @@ impl Default for SofteningLength {
 pub struct CoulombConfig {
     /// Coulomb constant k = 1/(4πε₀).
     ///
-    /// **UNITS**: Newtons × meters² / Coulombs² (N·m²/C²)
-    /// **Default**: 8.99×10⁹ N·m²/C² (vacuum permittivity ε₀ = 8.854×10⁻¹² F/m)
-    /// **IRL PHYSICS**: k = 8.987551792×10⁹ N·m²/C² (exact)
+    /// **UNITS**: Simulation units (not IRL N·m²/C²)
+    /// **Default**: 1.0 (scaled for simulation, tunable via UI controls)
+    /// **IRL PHYSICS**: k = 8.987551792×10⁹ N·m²/C² (not used in LP)
+    /// **NOTE**: LP uses simulation-scaled values to keep EM forces visible but non-dominant vs gravity
     pub coulomb_constant: f32,
 
     /// Cutoff radius for Coulomb interactions.
@@ -105,7 +106,9 @@ impl Default for CoulombConfig {
     fn default() -> Self {
         let cutoff = 20.0;
         Self {
-            coulomb_constant: 8.99e9, // N⋅m²/C²
+            // Simulation-scaled constant (not IRL 8.99e9)
+            // Scaled to produce visible but non-dominant EM forces vs gravity
+            coulomb_constant: 1.0, // Simulation units (tune via egui controls)
             cutoff_radius: cutoff,
             switch_on_radius: 0.8 * cutoff,
         }
@@ -220,18 +223,28 @@ pub(crate) fn apply_coulomb_pairwise_forces(
                 let r_vec = *pos_b - pos_a;
                 let r = r_vec.length();
 
-                // Property-based softening: use max of the two particles' softening lengths
-                let softening = soft_a.max(*soft_b);
-                if r < softening || r >= config.cutoff_radius {
+                // Skip if beyond cutoff (but apply softened force within softening zone)
+                if r >= config.cutoff_radius {
                     return;
                 }
+
+                // Property-based softening: use max of the two particles' softening lengths
+                let softening = soft_a.max(*soft_b);
 
                 // Coulomb force: F_on_A = -k·q₁·q₂/r² · r̂_AB
                 // Same-sign charges (k_qq > 0) → repulsive (force pushes A away from B)
                 // Opposite-sign charges (k_qq < 0) → attractive (force pulls A toward B)
                 let k_qq = config.coulomb_constant * charge_a * charge_b;
-                let force_magnitude = k_qq / r.powi(2);
-                let force_bare = -(force_magnitude / r) * r_vec;
+
+                // Apply softened force using 1/(r² + softening²)^1.5 near singularity
+                // This smoothly reduces force as r→0 instead of disabling it
+                let r_softened = (r * r + softening * softening).sqrt();
+                let force_magnitude = k_qq / (r_softened * r_softened * r_softened);
+                let force_bare = if r > 1e-6 {
+                    -(force_magnitude / r) * r_vec
+                } else {
+                    Vec2::ZERO // Avoid division by zero at r≈0
+                };
 
                 // Apply C¹ force-switch for smooth cutoff
                 let switch = force_switch(r, config.switch_on_radius, config.cutoff_radius);

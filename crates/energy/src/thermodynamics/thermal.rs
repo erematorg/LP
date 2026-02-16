@@ -438,7 +438,7 @@ pub(crate) fn compute_fourier_conduction(
     // Apply temperature changes
     for (&entity, &delta) in &temp_changes {
         if let Ok((_, _, temp, _, _, _)) = entities.get(entity) {
-            let new_temp = (temp.value + delta).max(0.0); // Clamp to 0 K (Third Law approximation)
+            let new_temp = (temp.value + delta).max(0.0); // Numerical guard: clamp to non-negative temperature
             commands
                 .entity(entity)
                 .insert(Temperature { value: new_temp });
