@@ -1,7 +1,17 @@
 # Matter
 
-Material properties and states including solids, fluids, gases, and plasma.
+Material properties and phase states (solids, fluids, gases).
+
+## Core API
+
+(Planned; placeholder stage)
+
+## Scope & Limits
+
+- Will couple to MPM (MLS-MPM first; PB-MPM is gated)
+- Phase transitions, density, viscosity not yet implemented
+- Blocked on MPM solver stabilization
 
 ## Status
-- Early-stage module for material properties and phase handling.
-- Will couple to MPM with an MLS-MPM first step; PB-MPM is a future, gated evolution.
+
+Early-stage. Do not use yet.

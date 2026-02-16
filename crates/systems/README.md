@@ -1,48 +1,37 @@
 # Systems
 
-The `systems` workspace crate bundles LP's high-level simulation layers
-(decision-making, acoustics, future MPM integration, and persistence) so they
-can be added to a Bevy app with a single plugin. It sits on top of the domain
-crates (`energy`, `forces`, `information`, `matter`) and takes care of wiring and
-scheduling.
+High-level simulation orchestration: AI, acoustics, MPM, persistence.
 
-## Modules
+## Core Modules
 
-- `ai` - utility-driven agency used by LP's creatures and actors.
-- `acoustics` - early-stage module for physics-based sound that will hook into matter and
-  wave simulation.
-- `mpm` - planned module for the Material Point Method solver (MLS-MPM first;
-  PB-MPM is a gated evolution).
-- `save_system` - shared save / load infrastructure.
+- `ai` - utility-driven agency for creatures/actors
+- `acoustics` - physics-based sound (early-stage)
+- `mpm` - Material Point Method solver (planned)
+- `save_system` - save/load infrastructure
 
-Each module exposes a `prelude` for selective use, while
-`systems::SystemsPlugin` pulls everything together.
-
-## Quick start
+## Quick Start
 
 ```rust
 use bevy::prelude::*;
-use systems::prelude::*;
+use systems::SystemsPlugin;
 
-fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(SystemsPlugin::default())
-        .run();
-}
+App::new()
+    .add_plugins(DefaultPlugins)
+    .add_plugins(SystemsPlugin::default())
+    .run();
 ```
 
-### Configuration
+Each module can be enabled/disabled via builder methods.
 
-`SystemsPlugin` can be customised before registration:
+## Scope & Limits
 
-```rust
-use systems::save_system::prelude::SaveSettings;
+- Sits on top of domain crates (energy, forces, information, matter)
+- Handles scheduling and plugin wiring only
+- AI: utility-driven only (reactive agents, not planners)
+- Acoustics: hooks to wave simulation when available
+- MPM: MLS-MPM first; PB-MPM gated
 
-let systems = SystemsPlugin::default()
-    .with_ai(true)
-    .with_acoustics(false)
-    .with_save_settings(SaveSettings::default().with_default_file("saves/slot_a.json"));
+## Status
 
-app.add_plugins(systems);
-```
+Production-ready for: AI, save_system
+Early-stage: acoustics, mpm

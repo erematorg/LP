@@ -6,6 +6,12 @@ use bevy::prelude::*;
 // Re-export main plugins following energy/forces pattern
 pub use measures::MutualInformationPlugin;
 
+// TODO: Add encoding module (DNA/RNA types, genotype-phenotype mapping) -- foundation for evolution
+// TODO: Add evolution operators (selection, mutation, fitness metrics) -- connect to information theory
+// TODO: Replace L-systems in fractals with reaction-diffusion model -- more emergent, less hardcoded
+// NOTE: Current state: Shannon/MI k-NN estimators (Feb 2026) provide agent-environment coupling metrics.
+//       Next phase: Encode agent behavior as genotype, measure phenotype-environment MI to drive selection.
+
 /// Core trait for information processing systems
 pub trait InformationProcessor: Send + Sync {
     /// Calculate information content for this system

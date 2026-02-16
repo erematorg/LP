@@ -6,6 +6,11 @@
 //! Controls: comprehensive egui panel for all physics parameters
 //!
 //! Run: `cargo run --example basic_forces`
+//!
+//! TODO: Full rewrite of parameter exposure and UI layout -- current egui controls are patched;
+//!       should expose full physics parameter space (integrator choice, gravity mode, contact physics when available)
+//! NOTE: egui slider controls (speed_multiplier, coulomb_multiplier) now functional (Feb 2026 fix);
+//!       Coulomb disabled by default (coulomb_multiplier=0.0) to prevent charge destabilization
 
 use bevy::{color::palettes::css::*, prelude::*};
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};

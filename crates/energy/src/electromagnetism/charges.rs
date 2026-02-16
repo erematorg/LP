@@ -6,6 +6,12 @@
 //! Physics: F = k·q₁·q₂/r² (Coulomb's law)
 //! Complexity: Candidate lookup via UnifiedSpatialIndex backend (uniform cell field or hierarchy)
 //! Conservation: Force-only (EM potential energy = 0 for LP-0)
+//!
+//! FIXME: Coulomb singularity at r<softening causes instability with alternating charges and 1st-order integrator
+//!        Workaround: Per-charge coulomb_multiplier (default 0.0 disables Coulomb). Replace with:
+//!        1. Upgrade integrator to Velocity Verlet (2nd order)
+//!        2. Use softened Coulomb: F = k·q₁·q₂·r / (r² + ε²)^1.5 (standard N-body approach)
+//!        3. Add proper charge sign handling and test orbital/binding stability
 
 use bevy::prelude::*;
 use forces::core::newton_laws::AppliedForce;
