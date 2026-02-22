@@ -16,7 +16,6 @@ use bevy::{color::palettes::css::*, prelude::*};
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 use energy::EnergyPlugin;
 use energy::prelude::*;
-use forces::PhysicsSet;
 use forces::prelude::*;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -50,16 +49,25 @@ fn main() {
         .init_resource::<EnergyBaseline>()
         .insert_resource(DiagTimer(Timer::from_seconds(5.0, TimerMode::Repeating)))
         .insert_resource(TrailTimer(Timer::from_seconds(0.05, TimerMode::Repeating)))
+        .insert_resource(PositionLogTimer(Timer::from_seconds(
+            1.0,
+            TimerMode::Repeating,
+        )))
         .init_resource::<SimulationControls>()
         .add_systems(Startup, (setup, spawn_starfield, log_initial_velocities))
         .add_systems(EguiPrimaryContextPass, egui_controls)
+        // PreUpdate: set time speed + physics params before FixedUpdate physics runs
+        .add_systems(PreUpdate, apply_controls)
         .add_systems(
             Update,
+            // Camera, trails, diagnostics read Transform written by FixedUpdate.
+            // Update always runs after FixedUpdate — no explicit ordering needed.
             (
-                apply_controls,
+                log_positions,
                 spawn_trails,
                 fade_trails,
-                (camera_follow, physics_diagnostics).after(PhysicsSet::Integrate),
+                camera_follow,
+                physics_diagnostics,
             ),
         )
         .run();
@@ -100,6 +108,9 @@ struct DiagTimer(Timer);
 
 #[derive(Resource)]
 struct TrailTimer(Timer);
+
+#[derive(Resource)]
+struct PositionLogTimer(Timer);
 
 #[derive(Resource, Default)]
 struct EnergyBaseline(Option<f32>);
@@ -156,7 +167,7 @@ fn setup(mut commands: Commands) {
     let mut debug_file = OpenOptions::new()
         .create(true)
         .write(true)
-        .open("C:\\Users\\mathi\\AppData\\Local\\Temp\\nbody_setup_debug.txt")
+        .open(std::env::temp_dir().join("nbody_setup_debug.txt"))
         .ok();
 
     for (i, &(name, distance, mass, radius, color)) in planets.iter().enumerate() {
@@ -216,6 +227,7 @@ fn setup(mut commands: Commands) {
             linvel: star_vel,
             angvel: Vec3::ZERO,
         },
+        PreviousAcceleration::default(),
         AppliedForce::new(Vec3::ZERO),
         GravitySource,
         GravityAffected,
@@ -248,6 +260,7 @@ fn setup(mut commands: Commands) {
                 linvel: vel,
                 angvel: Vec3::ZERO,
             },
+            PreviousAcceleration::default(),
             AppliedForce::new(Vec3::ZERO),
             GravitySource,
             GravityAffected,
@@ -295,7 +308,7 @@ fn log_initial_velocities(bodies: Query<(&Name, &Transform, &Velocity), With<Gra
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .write(true)
-        .open("C:\\Users\\mathi\\AppData\\Local\\Temp\\nbody_initial_velocities.txt")
+        .open(std::env::temp_dir().join("nbody_initial_velocities.txt"))
     {
         let _ = writeln!(file, "═══ INITIAL VELOCITIES (after first frame) ═══");
         for (name, tf, vel) in &bodies {
@@ -593,7 +606,7 @@ fn physics_diagnostics(
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("C:\\Users\\mathi\\AppData\\Local\\Temp\\nbody_diag.txt")
+        .open(std::env::temp_dir().join("nbody_diag.txt"))
     {
         let _ = writeln!(file, "{}", msg);
         for (name, transform, velocity, mass, orbital_ref) in &bodies {
@@ -626,6 +639,42 @@ fn physics_diagnostics(
                 let _ = writeln!(file, "{}", star_msg);
                 info!("{}", star_msg);
             }
+        }
+        let _ = writeln!(file);
+    }
+}
+
+fn log_positions(
+    time: Res<Time>,
+    mut timer: ResMut<PositionLogTimer>,
+    bodies: Query<(&Name, &Transform, &Velocity), With<CelestialBody>>,
+) {
+    timer.0.tick(time.delta());
+    if !timer.0.just_finished() {
+        return;
+    }
+
+    let elapsed = time.elapsed_secs();
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(std::env::temp_dir().join("nbody_positions.txt"))
+    {
+        let _ = writeln!(file, "Time: {:.2}s", elapsed);
+
+        for (name, transform, velocity) in &bodies {
+            let pos = transform.translation.truncate();
+            let dist = pos.length();
+            let speed = velocity.linvel.length();
+            let _ = writeln!(
+                file,
+                "  {}: pos=({:.1},{:.1}) r={:.1} v={:.3}",
+                name.as_str(),
+                pos.x,
+                pos.y,
+                dist,
+                speed
+            );
         }
         let _ = writeln!(file);
     }

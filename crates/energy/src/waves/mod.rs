@@ -31,7 +31,7 @@ impl Plugin for WavesPlugin {
             .add_message::<oscillation::WaveGenerationEvent>()
             // Wave updates after physics integration (to avoid Transform conflicts)
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     propagation::apply_wave_damping_with_energy,
                     propagation::update_wave_displacements,

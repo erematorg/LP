@@ -43,7 +43,9 @@ pub enum GravityForceMode {
 
 impl Default for GravityForceMode {
     fn default() -> Self {
-        Self::OneWay
+        // Mutual by default: planets pull on the star too (Newton's 3rd law, CoM frame).
+        // Switch to OneWay when using Barnes-Hut with large N (>50 bodies) for performance.
+        Self::Mutual
     }
 }
 
@@ -744,18 +746,18 @@ impl Plugin for GravityPlugin {
             .init_resource::<UniformGravity>()
             .init_resource::<GravityForceMode>()
             .configure_sets(
-                Update,
+                FixedUpdate,
                 (GravitySet::UniformGravity, GravitySet::NBodyGravity)
                     .chain()
                     .in_set(PhysicsSet::AccumulateForces),
             )
             .add_systems(
-                Update,
+                FixedUpdate,
                 apply_uniform_gravity.in_set(GravitySet::UniformGravity),
             );
 
         app.add_systems(
-            Update,
+            FixedUpdate,
             calculate_mutual_gravitational_attraction
                 .in_set(GravitySet::NBodyGravity)
                 .run_if(use_mutual),
@@ -765,7 +767,7 @@ impl Plugin for GravityPlugin {
             let theta = self.barnes_hut_theta;
 
             app.add_systems(
-                Update,
+                FixedUpdate,
                 (move |gravity_params: Res<GravityParams>,
                        query: Query<(Entity, &Transform, &Mass), With<GravitySource>>,
                        affected_query: Query<
@@ -780,7 +782,7 @@ impl Plugin for GravityPlugin {
             );
 
             app.add_systems(
-                Update,
+                FixedUpdate,
                 calculate_gravitational_attraction
                     .in_set(GravitySet::NBodyGravity)
                     .run_if(use_one_way)
@@ -788,7 +790,7 @@ impl Plugin for GravityPlugin {
             );
         } else {
             app.add_systems(
-                Update,
+                FixedUpdate,
                 calculate_gravitational_attraction
                     .in_set(GravitySet::NBodyGravity)
                     .run_if(use_one_way),

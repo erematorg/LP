@@ -18,10 +18,11 @@ pub mod prelude {
     pub use crate::core::newton_laws::{
         AppliedForce, AppliedTorque, Distance, ForceImpulse, ForcesDiagnostics,
         ForcesDiagnosticsPlugin, IntegratorKind, Mass, MomentOfInertia, NewtonLawsPlugin, Norm,
-        PairedForce, PairedForceInteraction, RotationalWorkEvent, Velocity, WorkDoneEvent,
-        calculate_angular_momentum, calculate_kinetic_energy, calculate_momentum,
+        PairedForce, PairedForceInteraction, PreviousAcceleration, RotationalWorkEvent, Velocity,
+        WorkDoneEvent, calculate_angular_momentum, calculate_kinetic_energy, calculate_momentum,
         calculate_rotational_kinetic_energy, calculate_torque_from_force,
-        integrate_newton_second_law, integrate_positions_symplectic_euler, integrate_torques,
-        update_forces_diagnostics,
+        integrate_newton_second_law, integrate_newton_second_law_velocity_verlet,
+        integrate_positions_symplectic_euler, integrate_positions_velocity_verlet,
+        integrate_torques, integrate_torques_velocity_verlet, update_forces_diagnostics,
     };
 }
