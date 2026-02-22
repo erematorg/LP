@@ -85,10 +85,11 @@ pub fn digamma(x: f64) -> f64 {
         // Recursion for small x
         digamma(x + 1.0) - 1.0 / x
     } else {
-        // Asymptotic expansion for large x
+        // Stirling asymptotic expansion: ψ(x) = ln(x) - 1/(2x) - 1/(12x²) + 1/(120x⁴) - ...
+        // Ref: DLMF 5.11.2 — accurate to <1e-7 for x >= 8
         let inv_x = 1.0 / x;
-        let ln_2pi = std::f64::consts::PI.ln() + std::f64::consts::LN_2;
-        0.5 * inv_x * (1.0 - inv_x * inv_x / 12.0) + x.ln() - 0.5 * ln_2pi
+        let inv_x2 = inv_x * inv_x;
+        x.ln() - 0.5 * inv_x - inv_x2 / 12.0 + inv_x2 * inv_x2 / 120.0
     }
 }
 
@@ -107,7 +108,37 @@ mod tests {
     fn test_digamma_convergence() {
         let d5 = digamma(5.0);
         let d6 = digamma(6.0);
-        // digamma(n+1) ≈ digamma(n) + 1/n
+        // digamma(n+1) = digamma(n) + 1/n (recurrence relation)
         assert!((d6 - d5 - 0.2).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_digamma_known_values() {
+        // Ground-truth tabulated values (DLMF 5.4.14):
+        // digamma(1) = -γ where γ = 0.5772156649... (Euler-Mascheroni constant)
+        const EULER_MASCHERONI: f64 = 0.5772156649015328;
+        let d1 = digamma(1.0);
+        assert!(
+            (d1 - (-EULER_MASCHERONI)).abs() < 1e-5,
+            "digamma(1) should be -γ ≈ -0.5772, got {}",
+            d1
+        );
+
+        // digamma(2) = 1 - γ
+        let d2 = digamma(2.0);
+        assert!(
+            (d2 - (1.0 - EULER_MASCHERONI)).abs() < 1e-5,
+            "digamma(2) should be 1-γ ≈ 0.4228, got {}",
+            d2
+        );
+
+        // digamma(1/2) = -γ - 2*ln(2) ≈ -1.9635
+        let d_half = digamma(0.5);
+        let expected_half = -EULER_MASCHERONI - 2.0 * std::f64::consts::LN_2;
+        assert!(
+            (d_half - expected_half).abs() < 1e-4,
+            "digamma(0.5) should be ≈ -1.9635, got {}",
+            d_half
+        );
     }
 }

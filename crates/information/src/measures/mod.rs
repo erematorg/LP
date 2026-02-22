@@ -10,8 +10,9 @@ pub use mutual::MutualInformationPlugin;
 pub mod prelude {
     pub use super::divergence::KLDivergence;
     pub use super::estimators::{
-        DiscreteEntropyEstimator, DiscreteMutualInformationEstimator,
-        EmpiricalMutualInformationEstimator, ShannonEstimator,
+        ContinuousEntropyEstimator, ContinuousMutualInformationEstimator, DiscreteEntropyEstimator,
+        DiscreteMutualInformationEstimator, EmpiricalMutualInformationEstimator,
+        KnnEntropyEstimator, KnnMutualInformationEstimator, ShannonEstimator,
     };
     pub use super::mutual::*;
     pub use super::shannon::Shannon;
