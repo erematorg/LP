@@ -86,17 +86,18 @@ fn main() {
         println!("{}: {} ({})", symbol, count, description);
     }
 
-    // Render the L-System using randomized values
-    run_renderer(
-        &output,
-        angle,
-        scaling_factor,
-        segment_length,
-        depth_scale_factor,
-        angle_variation,
-        base_thickness,
-        thickness_scale_factor,
-        directional_bias,
-        angle_evolution_factor,
+    // Print render parameters (renderer removed; future: wire to Bevy-based PBMPM renderer)
+    println!("Generated L-System string ({} chars)", output.len());
+    println!(
+        "Params: angle={:.2} scaling={:.2} segment_len={:.2} depth_scale={:.2}",
+        angle, scaling_factor, segment_length, depth_scale_factor
+    );
+    println!(
+        "        angle_var={:.2} base_thickness={:.2} thickness_scale={:.2}",
+        angle_variation, base_thickness, thickness_scale_factor
+    );
+    println!(
+        "        directional_bias={:.2} angle_evolution={:.2}",
+        directional_bias, angle_evolution_factor
     );
 }

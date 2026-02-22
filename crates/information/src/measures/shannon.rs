@@ -1,7 +1,9 @@
+use super::knn_estimators;
 use std::collections::HashMap;
 
 /// Minimal Shannon entropy implementation following energy crate patterns
 /// Domain-independent entropy calculation for any discrete system
+/// Extended with continuous k-NN estimators (Kraskov et al. 2004)
 pub struct Shannon;
 
 impl Shannon {
@@ -88,5 +90,71 @@ impl Shannon {
         }
 
         entropy
+    }
+
+    // ========== CONTINUOUS ENTROPY (K-NN ESTIMATORS) ==========
+    // Following Kraskov, Stögbauer, Grassberger 2004
+    // Port of NPEET: https://github.com/gregversteeg/NPEET
+
+    /// Continuous entropy estimation via k-NN (Kraskov et al.)
+    /// Input: data points as vectors of f32 (e.g., [[1.3], [3.7], [5.1]])
+    /// k: number of nearest neighbors (default 3)
+    /// Returns entropy in nats (natural log), divide by ln(2) for bits
+    pub fn continuous_entropy(data: &[Vec<f32>], k: usize) -> f64 {
+        if data.is_empty() || data[0].is_empty() {
+            return 0.0;
+        }
+
+        assert!(k < data.len(), "k must be smaller than number of points");
+
+        let n = data.len() as f64;
+        let d = data[0].len() as f64;
+
+        // Add noise to avoid exact duplicates
+        let noisy_data = knn_estimators::add_noise(data, 1e-5);
+
+        // Build distance matrix
+        let distances = knn_estimators::build_distance_matrix(&noisy_data);
+
+        // Get k-NN distances
+        let knn_dists = knn_estimators::knn_distances(&distances, k);
+
+        // Kraskov formula: H(X) = (digamma(n) - digamma(k) + d*<ln(r_k)>) / ln(base)
+        let const_term = knn_estimators::digamma(n) - knn_estimators::digamma(k as f64)
+            + d * std::f64::consts::LN_2;
+
+        let avg_log_dist: f64 = knn_dists
+            .iter()
+            .filter(|&&d| d > 1e-9)
+            .map(|&d| (d as f64).ln())
+            .sum::<f64>()
+            / knn_dists.len() as f64;
+
+        (const_term + d * avg_log_dist) / std::f64::consts::LN_2 // Convert to bits
+    }
+
+    /// Conditional entropy H(X|Y) = H(X,Y) - H(Y) for continuous data
+    pub fn continuous_conditional_entropy(x: &[Vec<f32>], y: &[Vec<f32>], k: usize) -> f64 {
+        assert_eq!(x.len(), y.len(), "X and Y must have same length");
+
+        let xy_entropy = Self::continuous_joint_entropy(x, y, k);
+        let y_entropy = Self::continuous_entropy(y, k);
+
+        xy_entropy - y_entropy
+    }
+
+    /// Joint entropy H(X,Y) for continuous data
+    pub fn continuous_joint_entropy(x: &[Vec<f32>], y: &[Vec<f32>], k: usize) -> f64 {
+        assert_eq!(x.len(), y.len(), "X and Y must have same length");
+
+        // Stack X and Y horizontally
+        let mut xy = vec![];
+        for (xi, yi) in x.iter().zip(y.iter()) {
+            let mut combined = xi.clone();
+            combined.extend(yi.iter());
+            xy.push(combined);
+        }
+
+        Self::continuous_entropy(&xy, k)
     }
 }

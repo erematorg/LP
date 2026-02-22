@@ -1,9 +1,11 @@
+use super::super::knn_estimators;
 use std::collections::HashMap;
 
 /// Core mutual information calculation for discrete and continuous variables
 ///
 /// Mutual Information I(X;Y) measures how much knowing X tells us about Y
 /// Formula: I(X;Y) = H(X) + H(Y) - H(X,Y)
+/// Extended with continuous k-NN estimators (Kraskov et al. 2004)
 pub struct MutualInfo;
 
 impl MutualInfo {
@@ -109,5 +111,107 @@ impl MutualInfo {
         // Miller-Madow bias correction: (K-1)/(2N) where K is unique states
         let bias_correction = (joint_unique - 1.0) / (2.0 * n);
         (raw_mi - bias_correction).max(0.0)
+    }
+
+    // ========== CONTINUOUS MI (K-NN ESTIMATORS) ==========
+    // Following Kraskov, Stögbauer, Grassberger 2004
+
+    /// Continuous mutual information via k-NN (Kraskov et al.)
+    /// Input: data as vectors of f32
+    /// I(X;Y) = digamma(k) - <digamma(nx)> - <digamma(ny)> + digamma(n)
+    /// where nx, ny are counts in hypercubes around each joint point
+    /// k: number of nearest neighbors (default 3)
+    /// Returns MI in bits
+    pub fn continuous_knn(x: &[Vec<f32>], y: &[Vec<f32>], k: usize) -> f64 {
+        assert_eq!(x.len(), y.len(), "X and Y must have same length");
+        if x.is_empty() || x[0].is_empty() || y[0].is_empty() {
+            return 0.0;
+        }
+
+        let n = x.len() as f64;
+        assert!(k < x.len(), "k must be smaller than number of points");
+
+        // Stack X and Y horizontally for joint space
+        let mut xy = vec![];
+        for (xi, yi) in x.iter().zip(y.iter()) {
+            let mut combined = xi.clone();
+            combined.extend(yi.iter());
+            xy.push(combined);
+        }
+
+        // Add noise to avoid exact duplicates
+        let x_noisy = knn_estimators::add_noise(x, 1e-5);
+        let y_noisy = knn_estimators::add_noise(y, 1e-5);
+        let xy_noisy = knn_estimators::add_noise(&xy, 1e-5);
+
+        // Build distance matrices
+        let x_dists = knn_estimators::build_distance_matrix(&x_noisy);
+        let y_dists = knn_estimators::build_distance_matrix(&y_noisy);
+        let xy_dists = knn_estimators::build_distance_matrix(&xy_noisy);
+
+        // Get k-NN distances in joint space
+        let joint_knn = knn_estimators::knn_distances(&xy_dists, k);
+
+        // For each point, count neighbors within joint distance in X and Y spaces
+        let mut avgdigamma_x = 0.0;
+        let mut avgdigamma_y = 0.0;
+
+        for i in 0..x.len() {
+            let eps = joint_knn[i];
+
+            // Count X-neighbors within distance eps
+            let mut nx = 0;
+            for j in 0..x.len() {
+                if x_dists[i][j] <= eps + 1e-9 {
+                    nx += 1;
+                }
+            }
+
+            // Count Y-neighbors within distance eps
+            let mut ny = 0;
+            for j in 0..y.len() {
+                if y_dists[i][j] <= eps + 1e-9 {
+                    ny += 1;
+                }
+            }
+
+            if nx > 0 && ny > 0 {
+                avgdigamma_x += knn_estimators::digamma(nx as f64);
+                avgdigamma_y += knn_estimators::digamma(ny as f64);
+            }
+        }
+
+        avgdigamma_x /= n;
+        avgdigamma_y /= n;
+
+        // Kraskov MI: digamma(k) - <digamma(nx)> - <digamma(ny)> + digamma(n)
+        let mi_nats = knn_estimators::digamma(k as f64) - avgdigamma_x - avgdigamma_y
+            + knn_estimators::digamma(n);
+
+        mi_nats / std::f64::consts::LN_2 // Convert to bits
+    }
+
+    /// Conditional mutual information I(X;Y|Z) for continuous data via k-NN
+    pub fn continuous_conditional_knn(
+        x: &[Vec<f32>],
+        y: &[Vec<f32>],
+        z: &[Vec<f32>],
+        k: usize,
+    ) -> f64 {
+        assert_eq!(x.len(), y.len(), "X and Y must have same length");
+        assert_eq!(x.len(), z.len(), "X and Z must have same length");
+
+        // I(X;Y|Z) = I(X;Y,Z) - I(X;Z)
+        let mut yz = vec![];
+        for (yi, zi) in y.iter().zip(z.iter()) {
+            let mut combined = yi.clone();
+            combined.extend(zi.iter());
+            yz.push(combined);
+        }
+
+        let i_xyz = Self::continuous_knn(x, &yz, k);
+        let i_xz = Self::continuous_knn(x, z, k);
+
+        (i_xyz - i_xz).max(0.0)
     }
 }

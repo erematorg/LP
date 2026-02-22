@@ -27,9 +27,9 @@ impl Plugin for ElectromagnetismPlugin {
                 charges::mark_charged_entities_spatially_indexed
                     .in_set(SpatialIndexSet::InjectMarkers),
             )
-            // Coulomb forces in Update, in force accumulation, after gravity
+            // Coulomb forces in FixedUpdate, in force accumulation, after gravity
             .add_systems(
-                Update,
+                FixedUpdate,
                 charges::apply_coulomb_pairwise_forces
                     .in_set(PhysicsSet::AccumulateForces)
                     .after(GravitySet::NBodyGravity),

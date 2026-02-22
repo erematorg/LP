@@ -4,6 +4,10 @@ use std::collections::HashMap;
 use utils::{SpatialIndexSet, SpatiallyIndexed, UnifiedSpatialIndex, force_switch};
 
 use crate::conservation::{EnergyQuantity, EnergyType};
+use crate::pairwise::{
+    PairwiseDeterminismConfig, for_each_neighbor_candidate, is_forward_entity_pair,
+    prepare_sorted_entities_from_keys, prepare_staging_map,
+};
 
 /// Configuration for Fourier conduction system.
 ///
@@ -40,6 +44,34 @@ impl Default for ThermalConductionConfig {
             switch_on_radius: 0.8 * cutoff,
             cfl_safety_factor: 0.5,
             thermal_conductivity_w_per_m_k: 1.0, // Explicit default, SI documented
+        }
+    }
+}
+
+/// Lightweight runtime sanity checks for thermal state.
+///
+/// These checks are O(N) and intended for realtime runs.
+/// They are not full conservation diagnostics.
+#[derive(Resource, Debug, Clone, Reflect)]
+#[reflect(Resource)]
+pub struct ThermalSanityConfig {
+    /// Enable/disable sanity checks.
+    pub enabled: bool,
+    /// Warn if total thermal energy drops below this floor (J).
+    pub min_total_thermal_energy_j: f32,
+    /// Warn if total thermal energy grows more than this factor frame-to-frame.
+    pub max_frame_growth_factor: f32,
+    /// Warn if any temperature exceeds this bound (K).
+    pub max_temperature_k: f32,
+}
+
+impl Default for ThermalSanityConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            min_total_thermal_energy_j: 1e-3,
+            max_frame_growth_factor: 2.0,
+            max_temperature_k: 1e8,
         }
     }
 }
@@ -185,6 +217,14 @@ pub struct ThermalTransferEvent {
     pub heat_flow: f32,
 }
 
+#[derive(Default)]
+pub(crate) struct ThermalComputeContext {
+    thermal_data: HashMap<Entity, (Vec2, f32, f32, f32, f32)>,
+    temp_changes: HashMap<Entity, f32>,
+    sorted_entities: Vec<Entity>,
+    neighbor_candidates: Vec<Entity>,
+}
+
 /// Mark thermal entities for spatial indexing.
 ///
 /// **Phase A2**: Inject SpatiallyIndexed marker for UnifiedSpatialIndex.
@@ -200,7 +240,7 @@ fn mark_thermal_entities_spatially_indexed(
 
 /// Compute thermal transfer via Fourier's Law of conduction.
 ///
-/// **LP-0 SCAFFOLDING**: Pairwise particle-particle thermal conduction (O(N) via spatial hash grid).
+/// **LP-0 SCAFFOLDING**: Pairwise particle-particle thermal conduction.
 /// **TEMPORARY**: Will be replaced by grid-based diffusion PDE (∇·(k∇T) = ρc_p ∂T/∂t) in LP-1.
 ///
 /// **PHYSICS**: Fourier's Law q = k·A·ΔT/d (W), Q = P·dt (J)
@@ -222,8 +262,10 @@ pub(crate) fn compute_fourier_conduction(
     mut commands: Commands,
     index: Res<UnifiedSpatialIndex>,
     config: Res<ThermalConductionConfig>,
+    determinism: Res<PairwiseDeterminismConfig>,
     time: Res<Time>,
     mut thermal_transfer_events: MessageWriter<ThermalTransferEvent>,
+    mut ctx: Local<ThermalComputeContext>,
     entities: Query<(
         Entity,
         &Transform,
@@ -236,8 +278,9 @@ pub(crate) fn compute_fourier_conduction(
     // **LP-0 SCAFFOLDING**: Pairwise particle-particle thermal conduction.
     // Future: Grid-based diffusion PDE (∇·(k∇T) = ρc_p ∂T/∂t).
 
-    // Stage entities into map to avoid nested query
-    let mut thermal_data: HashMap<Entity, (Vec2, f32, f32, f32, f32)> = HashMap::new();
+    // Reuse staging buffers across frames to avoid per-frame allocation churn.
+    let estimated = entities.iter().len();
+    prepare_staging_map(&mut ctx.thermal_data, estimated);
     for (entity, trans, temp, conductivity, heat_capacity, radius) in entities.iter() {
         let pos = trans.translation.truncate();
         let k = conductivity.value;
@@ -283,105 +326,125 @@ pub(crate) fn compute_fourier_conduction(
 
         let c = capacity.value;
         let r = rad.value;
-        thermal_data.insert(entity, (pos, t, k, c, r));
+        ctx.thermal_data.insert(entity, (pos, t, k, c, r));
     }
 
-    let mut temp_changes: HashMap<Entity, f32> = HashMap::new();
+    ctx.temp_changes.clear();
+    let staged_count = ctx.thermal_data.len();
+    ctx.temp_changes.reserve(staged_count);
     let dt = time.delta_secs();
 
     let cutoff_radius = config.cutoff_radius;
     let switch_on_radius = config.switch_on_radius;
 
-    // Iterate pairs via UnifiedSpatialIndex
-    for (entity_a, (pos_a, temp_a, k_a, capacity_a, radius_a)) in thermal_data.iter() {
-        // Find neighbors within cutoff using UnifiedSpatialIndex (O(N) average)
-        for entity_b in index.query_radius(*pos_a, cutoff_radius) {
-            // **Pair-once guarantee**: Only process pairs where B > A
-            if entity_b.index() <= entity_a.index() {
-                continue;
-            }
+    // Deterministic outer iteration: sort entities by stable id
+    let staged_entities: Vec<Entity> = ctx.thermal_data.keys().copied().collect();
+    prepare_sorted_entities_from_keys(&mut ctx.sorted_entities, staged_entities);
 
-            // Get data for entity B from staged map
-            let Some((pos_b, temp_b, k_b, capacity_b, radius_b)) = thermal_data.get(&entity_b)
-            else {
-                continue;
-            };
+    // Iterate pairs via UnifiedSpatialIndex.
+    let mut temp_changes = std::mem::take(&mut ctx.temp_changes);
+    let thermal_data = std::mem::take(&mut ctx.thermal_data);
+    let sorted_entities = std::mem::take(&mut ctx.sorted_entities);
+    for &entity_a in &sorted_entities {
+        let (pos_a, temp_a, k_a, capacity_a, radius_a) = thermal_data[&entity_a];
+        // Find neighbors within cutoff using UnifiedSpatialIndex backend.
+        for_each_neighbor_candidate(
+            &index,
+            pos_a,
+            cutoff_radius,
+            determinism.strict_neighbor_order,
+            &mut ctx.neighbor_candidates,
+            |entity_b| {
+                // **Pair-once guarantee**: Only process pairs where B > A
+                if !is_forward_entity_pair(entity_a, entity_b) {
+                    return;
+                }
 
-            let r_vec = *pos_b - *pos_a;
-            let distance = r_vec.length();
+                // Get data for entity B from staged map
+                let Some((pos_b, temp_b, k_b, capacity_b, radius_b)) = thermal_data.get(&entity_b)
+                else {
+                    return;
+                };
 
-            // Property-based softening: use smaller radius as minimum distance
-            let softening = radius_a.min(*radius_b);
-            if distance < softening || distance >= cutoff_radius {
-                continue;
-            }
+                let r_vec = *pos_b - pos_a;
+                let distance = r_vec.length();
 
-            let temp_diff = temp_a - temp_b; // +: A hotter, -: B hotter
+                // Property-based softening: use smaller radius as minimum distance
+                let softening = radius_a.min(*radius_b);
+                if distance < softening || distance >= cutoff_radius {
+                    return;
+                }
 
-            // Cross-sectional contact area: A = π·r² where r = min(r1, r2)
-            //
-            // **LP-0 APPROXIMATION**: Assumes spherical particles in contact.
-            // Future: MPM will use material point volume overlap.
-            let contact_radius = radius_a.min(*radius_b);
-            let contact_area = std::f32::consts::PI * contact_radius.powi(2);
+                let temp_diff = temp_a - temp_b; // +: A hotter, -: B hotter
 
-            // Average thermal conductivity (harmonic mean more accurate, but arithmetic for simplicity)
-            let k_avg = (k_a + k_b) / 2.0;
+                // Cross-sectional contact area: A = π·r² where r = min(r1, r2)
+                //
+                // **LP-0 APPROXIMATION**: Assumes spherical particles in contact.
+                // Future: MPM will use material point volume overlap.
+                let contact_radius = radius_a.min(*radius_b);
+                let contact_area = std::f32::consts::PI * contact_radius.powi(2);
 
-            // Fourier's Law: power = k·A·ΔT/d (Watts)
-            //
-            // **IRL PHYSICS**: Heat flux q = -k·∇T (Fourier's Law)
-            // For 1D: q = k·(T_hot - T_cold)/d
-            let power = k_avg * contact_area * temp_diff / distance; // W
+                // Average thermal conductivity (harmonic mean more accurate, but arithmetic for simplicity)
+                let k_avg = (k_a + k_b) / 2.0;
 
-            if !power.is_finite() {
-                continue; // Skip non-finite power
-            }
+                // Fourier's Law: power = k·A·ΔT/d (Watts)
+                //
+                // **IRL PHYSICS**: Heat flux q = -k·∇T (Fourier's Law)
+                // For 1D: q = k·(T_hot - T_cold)/d
+                let power = k_avg * contact_area * temp_diff / distance; // W
 
-            // Apply C¹ force-switch for smooth cutoff
-            let switch = force_switch(distance, switch_on_radius, cutoff_radius);
-            let power_switched = power * switch;
+                if !power.is_finite() {
+                    return; // Skip non-finite power
+                }
 
-            // Energy transferred this frame: Q = P·dt (Joules)
-            //
-            // **CORRECT UNITS**: Power (W) × time (s) = Energy (J)
-            let heat_energy = power_switched * dt; // J
+                // Apply C¹ force-switch for smooth cutoff
+                let switch = force_switch(distance, switch_on_radius, cutoff_radius);
+                let power_switched = power * switch;
 
-            // First Law of Thermodynamics: ΔU = Q, ΔT = Q/C
-            //
-            // **Energy-symmetric** (not temperature-symmetric):
-            // - Entity A loses Q: ΔU_a = -Q, ΔT_a = -Q/C_a
-            // - Entity B gains Q: ΔU_b = +Q, ΔT_b = +Q/C_b
-            //
-            // Energy is conserved: Q_out = Q_in
-            // Temperature changes differ if C_a ≠ C_b (correct physics!)
-            let delta_t_a = -heat_energy / capacity_a; // Cooling if heat_energy > 0
-            let delta_t_b = heat_energy / capacity_b; // Heating if heat_energy > 0
+                // Energy transferred this frame: Q = P·dt (Joules)
+                //
+                // **CORRECT UNITS**: Power (W) × time (s) = Energy (J)
+                let heat_energy = power_switched * dt; // J
 
-            if !delta_t_a.is_finite() || !delta_t_b.is_finite() {
-                continue; // Skip non-finite temperature changes
-            }
+                // First Law of Thermodynamics: ΔU = Q, ΔT = Q/C
+                //
+                // **Energy-symmetric** (not temperature-symmetric):
+                // - Entity A loses Q: ΔU_a = -Q, ΔT_a = -Q/C_a
+                // - Entity B gains Q: ΔU_b = +Q, ΔT_b = +Q/C_b
+                //
+                // Energy is conserved: Q_out = Q_in
+                // Temperature changes differ if C_a ≠ C_b (correct physics!)
+                let delta_t_a = -heat_energy / capacity_a; // Cooling if heat_energy > 0
+                let delta_t_b = heat_energy / capacity_b; // Heating if heat_energy > 0
 
-            *temp_changes.entry(*entity_a).or_insert(0.0) += delta_t_a;
-            *temp_changes.entry(entity_b).or_insert(0.0) += delta_t_b;
+                if !delta_t_a.is_finite() || !delta_t_b.is_finite() {
+                    return; // Skip non-finite temperature changes
+                }
 
-            thermal_transfer_events.write(ThermalTransferEvent {
-                source: *entity_a,
-                target: entity_b,
-                heat_flow: power_switched.abs(),
-            });
-        }
+                *temp_changes.entry(entity_a).or_insert(0.0) += delta_t_a;
+                *temp_changes.entry(entity_b).or_insert(0.0) += delta_t_b;
+
+                thermal_transfer_events.write(ThermalTransferEvent {
+                    source: entity_a,
+                    target: entity_b,
+                    heat_flow: power_switched.abs(),
+                });
+            },
+        );
     }
+    ctx.thermal_data = thermal_data;
+    ctx.sorted_entities = sorted_entities;
 
     // Apply temperature changes
-    for (entity, delta) in temp_changes {
+    for (&entity, &delta) in &temp_changes {
         if let Ok((_, _, temp, _, _, _)) = entities.get(entity) {
-            let new_temp = (temp.value + delta).max(0.0); // Clamp to 0 K (Third Law approximation)
+            let new_temp = (temp.value + delta).max(0.0); // Numerical guard: clamp to non-negative temperature
             commands
                 .entity(entity)
                 .insert(Temperature { value: new_temp });
         }
     }
+    ctx.temp_changes = temp_changes;
 
     // **LP-0**: Thermal energy U = m·c_p·T not yet synced to EnergyQuantity.
     // TODO: Add sync system (Changed<Temperature> → EnergyQuantity).
@@ -448,15 +511,15 @@ fn check_thermal_stability(
 
         if dt > max_stable_dt {
             warn!(
-                "⚠️  Thermal diffusion may be UNSTABLE!\n\
+                "Thermal diffusion may be UNSTABLE!\n\
                  Current timestep: dt = {:.6} s\n\
                  Stability limit:  dt <= {:.6} s\n\
                  Thermal diffusivity: α = {:.2e} m²/s\n\
                  Grid spacing: dx = {:.2} m\n\
-                 → Simulation may diverge or explode. Consider:\n\
-                   • Smaller timestep (use fixed timestep plugin)\n\
-                   • Coarser grid (increase SpatialGrid cell_size)\n\
-                   • Implicit solver (future MPM work)",
+                 Simulation may diverge or explode. Consider:\n\
+                   - Smaller timestep (use fixed timestep plugin)\n\
+                   - Coarser grid (increase SpatialGrid cell_size)\n\
+                   - Implicit solver (future MPM work)",
                 dt, max_stable_dt, alpha, dx
             );
         }
@@ -497,12 +560,78 @@ fn sync_thermal_energy(
     }
 }
 
+/// Realtime O(N) sanity checks for thermal state.
+///
+/// This catches obvious instability and data corruption early without
+/// introducing expensive diagnostics.
+fn check_thermal_sanity_realtime(
+    config: Res<ThermalSanityConfig>,
+    thermal_entities: Query<(Entity, &Temperature, Option<&HeatCapacity>)>,
+    mut prev_total_energy: Local<Option<f32>>,
+) {
+    if !config.enabled {
+        return;
+    }
+
+    let mut total_energy = 0.0f32;
+    let mut hottest = 0.0f32;
+
+    for (entity, temp, heat_capacity) in thermal_entities.iter() {
+        if !temp.value.is_finite() || temp.value < 0.0 {
+            warn!(
+                "Thermal sanity: non-finite or negative temperature on entity {:?}: {} K",
+                entity, temp.value
+            );
+            continue;
+        }
+
+        hottest = hottest.max(temp.value);
+
+        if let Some(capacity) = heat_capacity {
+            if capacity.value.is_finite() && capacity.value > 0.0 {
+                total_energy += capacity.value * temp.value;
+            }
+        }
+    }
+
+    if !total_energy.is_finite() {
+        warn!("Thermal sanity: total thermal energy is non-finite");
+    } else if total_energy < config.min_total_thermal_energy_j {
+        warn!(
+            "Thermal sanity: total thermal energy too low: {:.6} J",
+            total_energy
+        );
+    }
+
+    if let Some(previous) = *prev_total_energy {
+        if previous > f32::EPSILON {
+            let growth = total_energy / previous;
+            if growth.is_finite() && growth > config.max_frame_growth_factor {
+                warn!(
+                    "Thermal sanity: frame energy jump {:.3}x (prev {:.6} J -> now {:.6} J)",
+                    growth, previous, total_energy
+                );
+            }
+        }
+    }
+    *prev_total_energy = Some(total_energy);
+
+    if hottest > config.max_temperature_k {
+        warn!(
+            "Thermal sanity: hottest temperature {:.3} K exceeds bound {:.3} K",
+            hottest, config.max_temperature_k
+        );
+    }
+}
+
 pub struct ThermalSystemPlugin;
 
 impl Plugin for ThermalSystemPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ThermalConductionConfig>()
+            .init_resource::<ThermalSanityConfig>()
             .register_type::<ThermalConductionConfig>()
+            .register_type::<ThermalSanityConfig>()
             .register_type::<Temperature>()
             .register_type::<ThermalConductivity>()
             .register_type::<ThermalDiffusivity>()
@@ -524,6 +653,7 @@ impl Plugin for ThermalSystemPlugin {
                     compute_fourier_conduction,
                     ApplyDeferred,
                     sync_thermal_energy,
+                    check_thermal_sanity_realtime,
                 )
                     .chain(),
             );

@@ -42,6 +42,8 @@ impl Plugin for SaveSystemPlugin {
         }
 
         app.register_type::<save_system::Saveable>()
+            .register_type::<save_system::PersistentId>()
+            .register_type::<save_system::PersistentIdCounter>()
             .register_type::<save_system::GameState>()
             .register_type::<save_system::GameEvent>()
             .register_type::<save_system::SaveMetadata>();
@@ -51,9 +53,9 @@ impl Plugin for SaveSystemPlugin {
 pub mod prelude {
     pub use super::SaveSystemPlugin;
     pub use crate::save_system::{
-        GameEvent, GameSaveData, GameSnapshot, GameState, GameTracker, SaveMetadata, SaveSettings,
-        Saveable, WorldSaveExt, delete_save_file, get_save_directory, get_save_path,
-        list_save_files, load, load_game_data, save, save_game_data,
+        GameEvent, GameSaveData, GameSnapshot, GameState, GameTracker, PersistentId,
+        PersistentIdCounter, SaveMetadata, SaveSettings, Saveable, WorldSaveExt, delete_save_file,
+        get_saved_entity_components, list_save_files, load, load_game_data, save, save_game_data,
     };
     pub use crate::versioning::{SAVE_VERSION, is_save_up_to_date, upgrade_save};
 }

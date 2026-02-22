@@ -1,13 +1,9 @@
-use super::interpreter::SymbolType;
 use bevy::prelude::*;
 
 // Components
 /// Component for an L-System branch
 #[derive(Component)]
-struct Branch {
-    /// Type of this branch segment
-    symbol_type: SymbolType,
-}
+struct Branch;
 
 // Resources for L-System parameters
 #[derive(Resource)]
@@ -44,16 +40,6 @@ struct BranchBundle {
 /// Spawns the camera
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
-}
-
-/// Adjust thickness based on symbol type
-fn adjust_thickness_for_symbol(thickness: f32, symbol_type: SymbolType) -> f32 {
-    match symbol_type {
-        SymbolType::Core => thickness * 1.5, // Thicker for core elements
-        SymbolType::Bifurcation => thickness * 1.2, // Slightly thicker for branch points
-        SymbolType::Segment => thickness,    // Standard thickness
-        SymbolType::Legacy => thickness,     // Standard thickness
-    }
 }
 
 /// Create a line using a mesh and material
@@ -127,22 +113,18 @@ fn draw_lsystem(
     // Draw the branches
     for i in 0..interpreter_output.positions.len() {
         let (start, end) = interpreter_output.positions[i];
-        let base_thickness = interpreter_output.thicknesses[i];
-        let symbol_type = interpreter_output.types[i];
-
-        // Adjust thickness based on symbol type
-        let adjusted_thickness = adjust_thickness_for_symbol(base_thickness, symbol_type);
+        let thickness = interpreter_output.thicknesses[i];
 
         // Create line mesh
         let (mesh, material, transform) =
-            create_line_mesh(start, end, adjusted_thickness, &mut meshes, &mut materials);
+            create_line_mesh(start, end, thickness, &mut meshes, &mut materials);
 
         // Create the branch bundle
         let branch_bundle = BranchBundle {
             mesh,
             material,
             transform,
-            branch: Branch { symbol_type },
+            branch: Branch,
         };
 
         commands.spawn(branch_bundle);

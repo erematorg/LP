@@ -3,6 +3,10 @@ pub mod core;
 use bevy::prelude::*;
 pub use core::newton_laws::NewtonLawsPlugin;
 
+// TODO: Upgrade from Symplectic Euler (1st order) to Velocity Verlet (2nd order) -- needed for orbital stability over long durations
+// TODO: Implement universal contact/collision physics (momentum, energy, mass conservation) -- required for solid bodies and MPM coupling
+// NOTE: Current integration: Symplectic Euler achieves ~0.1% energy drift over 830+ seconds; sufficient for LP-0 but not for precise orbital mechanics
+
 /// System sets for physics execution order.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum PhysicsSet {

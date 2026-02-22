@@ -6,6 +6,16 @@ pub use save_system;
 use bevy::prelude::*;
 use save_system::save_system::SaveSettings;
 
+// NOTE: Systems domain orchestrates runtime wiring. Core subsystems:
+// - AI: utility-driven agents (production-ready)
+// - Acoustics: physics-based sound (early-stage, partial wave coupling)
+// - MPM: Material Point Method solver (early-stage; needs full rewrite of basic_forces.rs for parameter exposure)
+// - SaveSystem: save/load infrastructure (production-ready)
+//
+// TODO: MPM integration with matter crate -- requires universal collision physics, energy/matter ledger
+// TODO: Acoustics wave energy coupling to main energy ledger
+// TODO: Connect information metrics (MI/entropy) to AI utility functions for emergent behavior
+
 /// Systems domain plugin
 #[derive(Clone, Debug)]
 pub struct SystemsPlugin {

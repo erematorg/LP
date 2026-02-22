@@ -341,9 +341,9 @@ impl Plugin for EnergyConservationPlugin {
             .init_resource::<EnergyConservationTracker>()
             // Add event channel
             .add_message::<EnergyTransferEvent>()
-            // Add systems with explicit ordering
+            // Track energy in FixedUpdate to match physics integration schedule
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     initialize_energy_balance,
                     ApplyDeferred,

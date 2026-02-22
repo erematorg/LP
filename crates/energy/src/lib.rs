@@ -1,5 +1,6 @@
 pub mod conservation;
 pub mod electromagnetism;
+pub(crate) mod pairwise;
 pub mod thermodynamics;
 pub mod waves;
 
@@ -7,6 +8,7 @@ use bevy::prelude::*;
 
 pub use conservation::EnergyConservationPlugin;
 pub use electromagnetism::ElectromagnetismPlugin;
+pub use pairwise::PairwiseDeterminismConfig;
 pub use thermodynamics::ThermodynamicsPlugin;
 pub use waves::WavesPlugin;
 
@@ -102,6 +104,8 @@ pub struct EnergyPlugin;
 impl Plugin for EnergyPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<EnergyType>()
+            .init_resource::<PairwiseDeterminismConfig>()
+            .register_type::<PairwiseDeterminismConfig>()
             .add_plugins(EnergyConservationPlugin)
             .add_plugins(ThermodynamicsPlugin)
             .add_plugins(ElectromagnetismPlugin)
@@ -111,6 +115,7 @@ impl Plugin for EnergyPlugin {
 
 pub mod prelude {
     pub use super::{EnergySystem, EnergyTransferError};
+    pub use crate::PairwiseDeterminismConfig;
 
     pub use crate::conservation::{
         EnergyBalance, EnergyConservationPlugin, EnergyConservationTracker, EnergyDriftMonitor,

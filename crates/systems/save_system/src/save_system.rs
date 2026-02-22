@@ -5,8 +5,9 @@ use bevy::reflect::Reflect;
 use bevy::reflect::serde::ReflectSerializer;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
@@ -163,21 +164,6 @@ fn default_save_root(workspace: &str) -> PathBuf {
     }
 }
 
-/// Convenience helper for legacy code paths that still expect a default directory.
-pub fn get_save_directory() -> PathBuf {
-    let settings = SaveSettings::default();
-    settings
-        .ensure_directory_exists()
-        .unwrap_or_else(|_| settings.resolve_directory())
-}
-
-/// Convenience helper for legacy code paths that still expect a resolved path.
-pub fn get_save_path(filename: &str) -> PathBuf {
-    SaveSettings::default()
-        .resolve_file(filename)
-        .unwrap_or_else(|_| PathBuf::from(filename))
-}
-
 pub fn save<T: Serialize>(data: &T, settings: &SaveSettings, key: &str) -> Result<PathBuf, String> {
     let full_path = settings.resolve_file(key)?;
     if let Some(parent) = full_path.parent() {
@@ -191,9 +177,66 @@ pub fn save<T: Serialize>(data: &T, settings: &SaveSettings, key: &str) -> Resul
     }
     let json =
         serde_json::to_string_pretty(data).map_err(|e| format!("Serialization failed: {}", e))?;
-    fs::write(&full_path, json)
-        .map_err(|e| format!("File write failed ({}): {}", full_path.display(), e))?;
+    write_json_atomic(&full_path, &json)?;
     Ok(full_path)
+}
+
+fn write_json_atomic(path: &Path, json: &str) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("Cannot resolve parent directory for {}", path.display()))?;
+
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| format!("Invalid save file name for {}", path.display()))?;
+
+    let unique = format!(
+        "{}_{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let temp_path = parent.join(format!(".{}.{}.tmp", file_name, unique));
+
+    {
+        let mut temp_file = fs::File::create(&temp_path).map_err(|err| {
+            format!(
+                "Failed to create temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+
+        temp_file.write_all(json.as_bytes()).map_err(|err| {
+            format!(
+                "Failed to write temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+        temp_file.sync_all().map_err(|err| {
+            format!(
+                "Failed to flush temp save file {}: {}",
+                temp_path.display(),
+                err
+            )
+        })?;
+    }
+
+    // std::fs::rename atomically replaces an existing file on both POSIX (single syscall)
+    // and Windows (MoveFileExW with MOVEFILE_REPLACE_EXISTING). No pre-delete needed —
+    // that would open a window where the save is gone if the process dies between the two calls.
+    fs::rename(&temp_path, path).map_err(|err| {
+        format!(
+            "Failed to move temp save {} to {}: {}",
+            temp_path.display(),
+            path.display(),
+            err
+        )
+    })
 }
 
 pub fn load<T>(settings: &SaveSettings, key: &str) -> Result<T, String>
@@ -214,7 +257,7 @@ where
         serde_json::from_str(&json).map_err(|e| format!("Deserialization failed: {}", e))?;
 
     if !is_save_up_to_date(&data) {
-        eprintln!("[Warning] Save file is outdated! Attempting to upgrade...");
+        bevy::log::warn!("Save file is outdated. Attempting upgrade...");
         data = upgrade_save(data);
         save(&data, settings, key)?;
     }
@@ -258,13 +301,6 @@ pub fn delete_save_file(settings: &SaveSettings, key: &str) -> Result<(), String
     Ok(())
 }
 
-pub fn load_or_default<T>(settings: &SaveSettings, key: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de> + Default + Serialize,
-{
-    load(settings, key)
-}
-
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GameSaveData {
     pub version: String,
@@ -279,7 +315,8 @@ pub struct GameSaveData {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Reflect)]
 pub struct SaveMetadata {
-    pub created_at: String,
+    /// Unix epoch seconds at save creation time.
+    pub created_at: u64,
     pub game_version: String,
     pub save_system_version: String,
     pub platform: String,
@@ -289,13 +326,13 @@ pub struct SaveMetadata {
 
 impl Default for SaveMetadata {
     fn default() -> Self {
-        let timestamp = std::time::SystemTime::now()
+        let created_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
 
         Self {
-            created_at: format!("Unix timestamp: {}", timestamp),
+            created_at,
             game_version: env!("CARGO_PKG_VERSION").to_string(),
             save_system_version: crate::versioning::SAVE_VERSION.to_string(),
             platform: std::env::consts::OS.to_string(),
@@ -320,20 +357,63 @@ pub struct GameEvent {
     pub data: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, Reflect)]
-pub struct EntityData {
-    pub position: Option<Vec3>,
-    pub energy: Option<f32>,
-    pub custom: HashMap<String, String>,
-}
-
+/// Marker for entities whose component state should be serialized on save.
 #[derive(Component, Reflect)]
 pub struct Saveable;
+
+/// Stable, cross-session identity for a Saveable entity.
+///
+/// Assign at spawn time via `PersistentIdCounter::generate()`. The ID is stored as
+/// the entity key in `GameSaveData::entities`, replacing the volatile Bevy `Entity`
+/// debug string that changes between sessions.
+///
+/// # Example
+/// ```rust,ignore
+/// let id = counter.generate();
+/// commands.spawn((MyComponent::default(), Saveable, id));
+/// ```
+#[derive(Component, Reflect, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct PersistentId(pub u64);
+
+/// Seeded counter for assigning globally-unique entity IDs.
+///
+/// `Default` seeds from `SystemTime ^ process_id` so IDs from different sessions
+/// and machines are effectively collision-free — no UUID dependency required.
+/// Use `PersistentIdCounter::with_seed(0)` in tests for deterministic IDs.
+#[derive(Resource, Reflect)]
+pub struct PersistentIdCounter(u64);
+
+impl Default for PersistentIdCounter {
+    fn default() -> Self {
+        let t = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos() as u64;
+        // Fibonacci hashing mixes pid bits to reduce correlation with timestamp
+        let pid_mixed = (std::process::id() as u64).wrapping_mul(0x9e3779b97f4a7c15);
+        Self(t ^ pid_mixed)
+    }
+}
+
+impl PersistentIdCounter {
+    /// Create with a fixed seed — use in tests for reproducible IDs.
+    pub fn with_seed(seed: u64) -> Self {
+        Self(seed)
+    }
+
+    /// Issue the next unique ID and advance the counter.
+    pub fn generate(&mut self) -> PersistentId {
+        let id = self.0;
+        self.0 = self.0.wrapping_add(1);
+        PersistentId(id)
+    }
+}
 
 #[derive(Resource, Clone)]
 pub struct GameTracker {
     pub state: GameState,
-    pub events: Vec<GameEvent>,
+    /// Ring buffer: O(1) push_back + pop_front at cap. Convert to Vec when serializing.
+    pub events: VecDeque<GameEvent>,
     pub auto_save_timer: Timer,
     pub snapshots: Vec<GameSnapshot>,
     pub max_snapshots: usize,
@@ -358,7 +438,7 @@ impl GameTracker {
     pub fn new(auto_save_interval: Duration) -> Self {
         Self {
             state: GameState::default(),
-            events: Vec::new(),
+            events: VecDeque::new(),
             auto_save_timer: Timer::from_seconds(
                 auto_save_interval.as_secs_f32(),
                 TimerMode::Repeating,
@@ -386,7 +466,7 @@ impl GameTracker {
     pub fn snapshot(&mut self, name: String, timestamp: f64) {
         let snapshot = GameSnapshot {
             state: self.state.clone(),
-            events: self.events.clone(),
+            events: self.events.iter().cloned().collect(),
             timestamp,
             name,
         };
@@ -403,7 +483,7 @@ impl GameTracker {
     pub fn rollback(&mut self) -> Result<String, String> {
         if let Some(snapshot) = self.snapshots.last() {
             self.state = snapshot.state.clone();
-            self.events = snapshot.events.clone();
+            self.events = snapshot.events.iter().cloned().collect();
             Ok(format!("Rolled back to snapshot: {}", snapshot.name))
         } else {
             Err("No snapshots available for rollback".to_string())
@@ -414,7 +494,7 @@ impl GameTracker {
     pub fn rollback_to(&mut self, name: &str) -> Result<String, String> {
         if let Some(snapshot) = self.snapshots.iter().rev().find(|s| s.name == name) {
             self.state = snapshot.state.clone();
-            self.events = snapshot.events.clone();
+            self.events = snapshot.events.iter().cloned().collect();
             Ok(format!("Rolled back to snapshot: {}", name))
         } else {
             Err(format!("Snapshot '{}' not found", name))
@@ -468,7 +548,7 @@ impl GameTracker {
         data: String,
         game_time: f64,
     ) {
-        self.events.push(GameEvent {
+        self.events.push_back(GameEvent {
             event_type,
             game_time,
             entity_id,
@@ -476,7 +556,7 @@ impl GameTracker {
         });
 
         if self.events.len() > 100 {
-            self.events.remove(0);
+            self.events.pop_front();
         }
     }
 }
@@ -491,14 +571,30 @@ pub fn save_game_data(
 ) -> Result<PathBuf, String> {
     let mut entities = HashMap::new();
 
-    let mut query = world.query_filtered::<Entity, With<Saveable>>();
-    let saveable_entities: Vec<Entity> = query.iter(world).collect();
+    let mut query = world.query_filtered::<(Entity, Option<&PersistentId>), With<Saveable>>();
+    let saveable_entities: Vec<(Entity, Option<PersistentId>)> = query
+        .iter(world)
+        .map(|(e, pid)| (e, pid.copied()))
+        .collect();
 
     let type_registry = world.resource::<AppTypeRegistry>();
     let type_registry = type_registry.read();
 
-    for entity in saveable_entities {
-        let entity_id = format!("{:?}", entity);
+    for (entity, persistent_id) in saveable_entities {
+        // Use stable PersistentId when available; fall back to volatile debug string for
+        // entities spawned before PersistentId was assigned (logged as a warning).
+        let entity_id = match persistent_id {
+            Some(pid) => pid.0.to_string(),
+            None => {
+                bevy::log::warn!(
+                    "Saveable entity {:?} has no PersistentId. \
+                     Add PersistentId via PersistentIdCounter at spawn to ensure \
+                     cross-session identity.",
+                    entity
+                );
+                format!("{:?}", entity)
+            }
+        };
         let mut entity_data = HashMap::new();
 
         if let Ok(entity_ref) = world.get_entity(entity) {
@@ -548,7 +644,7 @@ pub fn save_game_data(
         game_time,
         metadata,
         game_state: tracker.state.clone(),
-        events: tracker.events.clone(),
+        events: tracker.events.iter().cloned().collect(),
         entities,
     };
 
@@ -559,10 +655,31 @@ pub fn load_game_data(settings: &SaveSettings, key: &str) -> Result<GameSaveData
     load::<GameSaveData>(settings, key)
 }
 
+/// Look up the raw reflected component JSON for a specific entity in a loaded save.
+///
+/// Returns `None` if the entity was not saved or has no components.
+/// The game layer is responsible for deserializing and applying the values.
+///
+/// # Example
+/// ```rust,ignore
+/// let save = load_game_data(&settings, "game_save.json")?;
+/// if let Some(components) = get_saved_entity_components(&save, PersistentId(42)) {
+///     // components: HashMap<type_path, serde_json::Value>
+/// }
+/// ```
+pub fn get_saved_entity_components(
+    save_data: &GameSaveData,
+    id: PersistentId,
+) -> Option<&HashMap<String, Value>> {
+    save_data.entities.get(&id.0.to_string())
+}
+
 /// Extension trait for World to add bevy_save-style convenience methods
 pub trait WorldSaveExt {
     fn save_game(&mut self, path: &str) -> Result<(), String>;
     fn load_game(&mut self, path: &str) -> Result<(), String>;
+    fn checkpoint_game(&mut self, name: &str) -> Result<(), String>;
+    fn rollback_game_checkpoint(&mut self, name: Option<&str>) -> Result<(), String>;
 }
 
 impl WorldSaveExt for World {
@@ -615,9 +732,100 @@ impl WorldSaveExt for World {
         // Update GameTracker if it exists
         if let Some(mut tracker) = self.get_resource_mut::<GameTracker>() {
             tracker.state = save_data.game_state;
-            tracker.events = save_data.events;
+            tracker.events = save_data.events.into_iter().collect();
         }
 
         Ok(())
+    }
+
+    fn checkpoint_game(&mut self, name: &str) -> Result<(), String> {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+
+        let snapshot_name = if name.is_empty() {
+            format!("checkpoint-{:.3}", timestamp)
+        } else {
+            name.to_string()
+        };
+
+        let mut tracker = self
+            .get_resource_mut::<GameTracker>()
+            .ok_or_else(|| "GameTracker resource not found".to_string())?;
+        tracker.snapshot(snapshot_name, timestamp);
+        Ok(())
+    }
+
+    fn rollback_game_checkpoint(&mut self, name: Option<&str>) -> Result<(), String> {
+        let mut tracker = self
+            .get_resource_mut::<GameTracker>()
+            .ok_or_else(|| "GameTracker resource not found".to_string())?;
+
+        match name {
+            Some(snapshot_name) => tracker.rollback_to(snapshot_name).map(|_| ()),
+            None => tracker.rollback().map(|_| ()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
+    struct TestSave {
+        value: i32,
+    }
+
+    #[test]
+    fn save_replaces_file_atomically() {
+        let unique = format!(
+            "lp_save_test_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        );
+        let directory = std::env::temp_dir().join(unique);
+        let settings = SaveSettings::default().with_custom_directory(&directory);
+
+        let first = TestSave { value: 10 };
+        let second = TestSave { value: 42 };
+
+        let path = save(&first, &settings, "slot.json").expect("first save should succeed");
+        save(&second, &settings, "slot.json").expect("second save should succeed");
+
+        let loaded: TestSave = load(&settings, "slot.json").expect("load should succeed");
+        assert_eq!(loaded, second);
+        assert!(path.exists());
+
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn tracker_snapshot_limit_and_rollback_work() {
+        let mut tracker = GameTracker::new(Duration::from_secs(5));
+        tracker.max_snapshots = 2;
+
+        tracker.state.total_energy = 1.0;
+        tracker.snapshot("s1".to_string(), 1.0);
+
+        tracker.state.total_energy = 2.0;
+        tracker.snapshot("s2".to_string(), 2.0);
+
+        tracker.state.total_energy = 3.0;
+        tracker.snapshot("s3".to_string(), 3.0);
+
+        assert_eq!(tracker.snapshots.len(), 2);
+        assert_eq!(tracker.snapshots[0].name, "s2");
+        assert_eq!(tracker.snapshots[1].name, "s3");
+
+        tracker.state.total_energy = 99.0;
+        tracker
+            .rollback_to("s2")
+            .expect("rollback to known snapshot should succeed");
+        assert_eq!(tracker.state.total_energy, 2.0);
     }
 }
